@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace EcommerceApi.Controllers.V1
+namespace EcommerceApi.Controllers.V1.Admin
 {
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/Admin")]
@@ -26,7 +26,8 @@ namespace EcommerceApi.Controllers.V1
             _categoryService = categoryService;
         }
 
-        [HttpGet("categories")]
+        [HttpGet]
+        [Route("categories")]
         public async Task<IActionResult> GetListCategory()
         {
             try
@@ -41,7 +42,8 @@ namespace EcommerceApi.Controllers.V1
             }
         }
 
-        [HttpDelete("category/{categoryId:int}")]
+        [HttpDelete]
+        [Route("categories/delete/{categoryId:int}")]
         public async Task<IActionResult> DeleteCategory(int categoryId)
         {
             try
@@ -56,7 +58,8 @@ namespace EcommerceApi.Controllers.V1
             }
         }
 
-        [HttpPost("category")]
+        [HttpPost]
+        [Route("categories/post")]
         public async Task<IActionResult> CreateCategory(CategoryDto categoryDto)
         {
             try
@@ -72,17 +75,18 @@ namespace EcommerceApi.Controllers.V1
                 return BadRequest(e.Message);
             }
         }
-        [HttpPut("category/{categoryId:int}")]
-        public async Task<IActionResult> UpdateCategory(CategoryDto categoryDto,int categoryId)
+        [HttpPut]
+        [Route("categories/update/{categoryId:int}")]
+        public async Task<IActionResult> UpdateCategory(CategoryDto categoryDto, int categoryId)
         {
             try
             {
                 var userName = Helpers.GetUserNameLogin(HttpContext);
                 var result = await _categoryService.UpdateCategoryAsync(categoryDto, categoryId, userName);
-                if(result is null) return BadRequest("Can't update category");
+                if (result is null) return BadRequest("Can't update category");
                 return new JsonResult(result);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 return BadRequest(e.Message);
             }

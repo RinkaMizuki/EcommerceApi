@@ -9,7 +9,13 @@ namespace EcommerceApi
             if ((list.StartsWith("[") && list.EndsWith("]")) || (list.StartsWith("{") && list.EndsWith("}")))
             {
                 if (list == "{}" || list == "[]") return new List<T>();
-                list = list.Substring(1, list.Length - 2);
+                if(list.StartsWith("['") && list.EndsWith("']")) {
+                    list = list.Substring(1, list.Length - 2);
+                }
+                else
+                {
+                    list = list.Substring(1, list.Length - 2);
+                }
                 List<string> listValues = new List<string>();
                 char[] splitOperator = new char[] { ':', ',' };
                 listValues = list.Split(splitOperator).ToList();
@@ -18,6 +24,10 @@ namespace EcommerceApi
                     if (listValues[i].StartsWith("\"") && listValues[i].EndsWith("\""))
                     {
                         listValues[i] = listValues[i].Trim('"');
+                    }
+                    else
+                    {
+                        listValues[i] = listValues[i].Trim('\'');
                     }
                 }
 

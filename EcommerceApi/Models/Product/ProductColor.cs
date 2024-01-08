@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace EcommerceApi.Models.Product;
 
@@ -9,5 +10,6 @@ public class ProductColor
     public string ColorCode { get; set; } = string.Empty;
     public Guid ProductId { get; set; }
     [ForeignKey("ProductId")]
+    [JsonIgnore]
     public Product Product { get; set; }
 }

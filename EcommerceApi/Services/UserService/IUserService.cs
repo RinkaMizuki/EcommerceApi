@@ -8,7 +8,7 @@ public interface IUserService
 {
     public Task<User?> GetUserByIdAsync(int userId);
     public Task<List<UserResponse>> GetListUsersAsync(string sort,string range,string filter,HttpResponse Response);
-    public Task<Boolean> DeleteUserByIdAsync(int userId);
-    public Task<User> UpdateUserByIdAsync(int userId, UserAdminDto userAdminDto, HttpRequest request);
+    public Task<Boolean> DeleteUserByIdAsync(int userId, CancellationToken userCancellationToken);
+    public Task<User> UpdateUserByIdAsync(int userId, UserAdminDto userAdminDto, HttpRequest request,CancellationToken userCancellationToken);
     public Task<User> PostUserAsync(UserAdminDto userAdmin);
 }

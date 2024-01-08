@@ -11,9 +11,9 @@ namespace EcommerceApi.Services;
 public class UserService : IUserService
 {
     private readonly EcommerceDbContext _context;
-    private readonly ICloudflareClient _cloudflareClient;
+    private readonly ICloudflareClientService _cloudflareClient;
 
-    public UserService(EcommerceDbContext context, ICloudflareClient cloudflareClient)
+    public UserService(EcommerceDbContext context, ICloudflareClientService cloudflareClient)
     {
         _context = context;
         _cloudflareClient = cloudflareClient;
@@ -143,16 +143,16 @@ public class UserService : IUserService
 
 
 
-    public async Task<Boolean> DeleteUserByIdAsync(int userId)
+    public async Task<Boolean> DeleteUserByIdAsync(int userId, CancellationToken userCancellationToken)
     {
         var deleteUser = await this.GetUserByIdAsync(userId);
         if (deleteUser == null) return false;
         _context.Users.Remove(deleteUser);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(userCancellationToken);
         return true;
     }
 
-    public async Task<User> UpdateUserByIdAsync(int userId, UserAdminDto userAdminDto, HttpRequest request)
+    public async Task<User> UpdateUserByIdAsync(int userId, UserAdminDto userAdminDto, HttpRequest request, CancellationToken userCancellationToken)
     {
         var updateUser = await this.GetUserByIdAsync(userId);
         if (updateUser == null) return null;
@@ -171,18 +171,18 @@ public class UserService : IUserService
                 {
                     Id = updateUser.UserId,
                     File = userAdminDto.file,
-                },"avatar");
+                },"avatar", userCancellationToken);
             }
             else
             {
-                var res = await _cloudflareClient.DeleteObjectAsync($"avatar_{updateUser.UserId}_{updateUser.Avatar}");
+                var res = await _cloudflareClient.DeleteObjectAsync($"avatar_{updateUser.UserId}_{updateUser.Avatar}", userCancellationToken);
                 if (res.HttpStatusCode == HttpStatusCode.NoContent)
                 {
                     await _cloudflareClient.UploadImageAsync(new UploadDto()
                     {
                         Id = updateUser.UserId,
                         File = userAdminDto.file,
-                    }, "avatar");
+                    }, "avatar",userCancellationToken);
                 }
             }
 
@@ -192,7 +192,7 @@ public class UserService : IUserService
         }
         else if (userAdminDto.file == null && string.IsNullOrEmpty(userAdminDto.Avatar))
         {
-            await _cloudflareClient.DeleteObjectAsync($"avatar_{updateUser.UserId}_{updateUser.Avatar}");
+            await _cloudflareClient.DeleteObjectAsync($"avatar_{updateUser.UserId}_{updateUser.Avatar}", userCancellationToken);
             updateUser.Avatar = string.Empty;
             updateUser.Url = string.Empty;
         }
@@ -211,7 +211,7 @@ public class UserService : IUserService
 
         updateUser.EmailConfirm = userAdminDto.EmailConfirm;
         updateUser.IsActive = userAdminDto.IsActive;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(userCancellationToken);
 
         return updateUser;
     }

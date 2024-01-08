@@ -8,7 +8,7 @@ using EcommerceApi.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace EcommerceApi.Controllers
+namespace EcommerceApi.Controllers.V1.Admin
 {
     [Authorize(Policy = IdentityData.AdminPolicyRole)]
     [ApiVersion("1.0")]
@@ -16,35 +16,37 @@ namespace EcommerceApi.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly ICloudflareClient _cloudflareClient;
+        private readonly ICloudflareClientService _cloudflareClient;
         private readonly IUserService _userService;
-        public UserController(ICloudflareClient cloudflareClient, IUserService userService)
+        public UserController(ICloudflareClientService cloudflareClient, IUserService userService)
         {
             _cloudflareClient = cloudflareClient;
             _userService = userService;
         }
         [AllowAnonymous]
-        [HttpPost("users")]
+        [HttpPost]
+        [Route("users/post")]
         public async Task<IActionResult> CreateUser(UserAdminDto userAdmin)
         {
             var userResponse = await _userService.PostUserAsync(userAdmin);
             return new JsonResult(new UserResponse()
-                {
-                    Id = userResponse.UserId,
-                    UserName = userResponse.UserName,
-                    Email = userResponse.Email,
-                    Avatar = userResponse.Avatar,
-                    BirthDate = Convert.ToDateTime(userResponse.BirthDate.ToShortDateString()),
-                    EmailConfirm = userResponse.EmailConfirm,
-                    IsActive = userResponse.IsActive,
-                    Phone = userResponse.Phone,
-                    Role = userResponse.Role.ToLower(),
-                    Url = userResponse.Url,
-                }
+            {
+                Id = userResponse.UserId,
+                UserName = userResponse.UserName,
+                Email = userResponse.Email,
+                Avatar = userResponse.Avatar,
+                BirthDate = Convert.ToDateTime(userResponse.BirthDate.ToShortDateString()),
+                EmailConfirm = userResponse.EmailConfirm,
+                IsActive = userResponse.IsActive,
+                Phone = userResponse.Phone,
+                Role = userResponse.Role.ToLower(),
+                Url = userResponse.Url,
+            }
             );
         }
 
-        [HttpGet("users/{id:int}")]
+        [HttpGet]
+        [Route("users/{id:int}")]
         public async Task<IActionResult> GetUser(int id)
         {
             try
@@ -72,12 +74,13 @@ namespace EcommerceApi.Controllers
             }
         }
 
-        [HttpPut("users/{id:int}")]
-        public async Task<IActionResult> UpdateUser([FromRoute] int id, [FromForm] UserAdminDto userAdmin)
+        [HttpPut]
+        [Route("users/update/{id:int}")]
+        public async Task<IActionResult> UpdateUser([FromRoute] int id, [FromForm] UserAdminDto userAdmin, CancellationToken userCancellationToken)
         {
             try
             {
-                var updatedUser = await _userService.UpdateUserByIdAsync(id, userAdmin, Request);
+                var updatedUser = await _userService.UpdateUserByIdAsync(id, userAdmin, Request, userCancellationToken);
                 if (updatedUser == null) throw new Exception("Can't update user");
                 var userResponse = new UserResponse()
                 {
@@ -100,12 +103,13 @@ namespace EcommerceApi.Controllers
             }
         }
 
-        [HttpDelete("users/{id:int}")]
-        public async Task<IActionResult> DeleteUser(int id)
+        [HttpDelete]
+        [Route("users/delete/{id:int}")]
+        public async Task<IActionResult> DeleteUser(int id, CancellationToken userCancellationToken)
         {
             try
             {
-                var response = await _userService.DeleteUserByIdAsync(id);
+                var response = await _userService.DeleteUserByIdAsync(id, userCancellationToken);
                 if (!response) throw new Exception("User not found");
                 return Ok(new
                 {
@@ -118,18 +122,20 @@ namespace EcommerceApi.Controllers
             }
         }
 
-        [HttpGet("users")]
+        [HttpGet]
+        [Route("users")]
         public async Task<IActionResult> GetListUsers(
             [FromQuery(Name = "sort")] string sort,
             [FromQuery(Name = "range")] string range,
             [FromQuery(Name = "filter")] string filter
         )
         {
-            var listUsers = await _userService.GetListUsersAsync(sort,range,filter, Response);
+            var listUsers = await _userService.GetListUsersAsync(sort, range, filter, Response);
             return new JsonResult(listUsers);
         }
         [AllowAnonymous]
-        [HttpGet("users/preview")]
+        [HttpGet]
+        [Route("users/preview")]
         public async Task<IActionResult> GetImage(string avatar)
         {
             try

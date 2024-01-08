@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
-namespace EcommerceApi.Controllers
+namespace EcommerceApi.Controllers.V1.Admin
 {
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
@@ -28,7 +28,8 @@ namespace EcommerceApi.Controllers
             _config = config;
         }
 
-        [HttpPost("register")]
+        [HttpPost]
+        [Route("register")]
         public async Task<IActionResult> Register(UserDto User)
         {
             if (string.IsNullOrEmpty(User.UserName)
@@ -75,7 +76,8 @@ namespace EcommerceApi.Controllers
             });
         }
 
-        [HttpPost("login")]
+        [HttpPost]
+        [Route("login")]
         public async Task<IActionResult> Login(LoginDto Login)
         {
             if (string.IsNullOrEmpty(Login.UserNameOrEmail)
@@ -102,7 +104,7 @@ namespace EcommerceApi.Controllers
 
             var isMatchPassword = BCrypt.Net.BCrypt.Verify(Login.Password, userLogin.PasswordHash);
             if (!isMatchPassword ||
-                (userLogin.UserName != Login.UserNameOrEmail && userLogin.Email != Login.UserNameOrEmail))
+                userLogin.UserName != Login.UserNameOrEmail && userLogin.Email != Login.UserNameOrEmail)
             {
                 return BadRequest(new
                 {
@@ -140,7 +142,8 @@ namespace EcommerceApi.Controllers
             });
         }
 
-        [HttpPost("refresh-token")]
+        [HttpPost]
+        [Route("refresh-token")]
         public async Task<IActionResult> RefreshToken()
         {
             var refreshToken = Request.Cookies["refreshToken"];
@@ -185,7 +188,8 @@ namespace EcommerceApi.Controllers
             });
         }
 
-        [HttpPost("logout")]
+        [HttpPost]
+        [Route("logout")]
         public async Task<IActionResult> Logout(int userId)
         {
             var refreshToken = Request.Cookies["refreshToken"];

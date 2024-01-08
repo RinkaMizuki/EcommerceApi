@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace EcommerceApi.Services;
 
-public class CloudflareClientService : ICloudflareClient
+public class CloudflareClientService : ICloudflareClientService
 {
     private readonly CloudflareR2 _options;
 
@@ -30,7 +30,7 @@ public class CloudflareClientService : ICloudflareClient
         return s3Client;
     }
 
-    public async Task<PutObjectResponse> UploadImageAsync(UploadDto Upload, string prefix)
+    public async Task<PutObjectResponse> UploadImageAsync(UploadDto Upload, string prefix, CancellationToken userCancellationToken)
     {
         var s3Client = Authenticate();
         var request = new PutObjectRequest()
@@ -42,7 +42,7 @@ public class CloudflareClientService : ICloudflareClient
             DisablePayloadSigning = true
         };
 
-        var response = await s3Client.PutObjectAsync(request);
+        var response = await s3Client.PutObjectAsync(request, userCancellationToken);
 
         if (response.HttpStatusCode != System.Net.HttpStatusCode.OK &&
             response.HttpStatusCode != System.Net.HttpStatusCode.Accepted)
@@ -53,7 +53,7 @@ public class CloudflareClientService : ICloudflareClient
         return response;
     }
 
-    public async Task<IEnumerable<S3ObjectDto>> GetListObjectAsync(string? prefix)
+    public async Task<List<S3Object>> GetListObjectAsync(string? prefix)
     {
         var s3Client = Authenticate();
         var request = new ListObjectsV2Request
@@ -67,23 +67,25 @@ public class CloudflareClientService : ICloudflareClient
             throw new Exception("Can't not get list object !!!");
         }
 
-        var s3Objects = result.S3Objects.Select((s3Obj) =>
-        {
-            AWSConfigsS3.UseSignatureVersion4 = true;
-            var presign = new GetPreSignedUrlRequest()
-            {
-                BucketName = s3Obj.BucketName,
-                Key = s3Obj.Key,
-                Verb = HttpVerb.GET,
-                Expires = DateTime.Now.AddMinutes(1)
-            };
-            return new S3ObjectDto()
-            {
-                Name = s3Obj.Key.ToString(),
-                PreSignedUrl = s3Client.GetPreSignedURL(presign)
-            };
-        });
-        return s3Objects;
+        //Generate PreSignedURL
+
+        //var s3Objects = result.S3Objects.Select((s3Obj) =>
+        //{
+        //    AWSConfigsS3.UseSignatureVersion4 = true;
+        //    var presign = new GetPreSignedUrlRequest()
+        //    {
+        //        BucketName = s3Obj.BucketName,
+        //        Key = s3Obj.Key,
+        //        Verb = HttpVerb.GET,
+        //        Expires = DateTime.Now.AddMinutes(1)
+        //    };
+        //    return new S3ObjectDto()
+        //    {
+        //        Name = s3Obj.Key.ToString(),
+        //        PreSignedUrl = s3Client.GetPreSignedURL(presign)
+        //    };
+        //});
+        return result.S3Objects;
     }
 
     public async Task<GetObjectResponse> GetObjectAsync(string key)
@@ -95,11 +97,11 @@ public class CloudflareClientService : ICloudflareClient
         return s3Object;
     }
 
-    public async Task<DeleteObjectResponse> DeleteObjectAsync(string key)
+    public async Task<DeleteObjectResponse> DeleteObjectAsync(string key, CancellationToken userCancellationToken)
     {
         var s3Client = Authenticate();
         var bucketExists = await Amazon.S3.Util.AmazonS3Util.DoesS3BucketExistV2Async(s3Client, _options.bucketName);
         if (!bucketExists) throw new Exception($"Bucket {_options.bucketName} does not exist.");
-        return await s3Client.DeleteObjectAsync(_options.bucketName, key);
+        return await s3Client.DeleteObjectAsync(_options.bucketName, key, userCancellationToken);
     }
 }

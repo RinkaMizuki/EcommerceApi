@@ -36,8 +36,8 @@ var configuration = builder.Configuration;
 // Add services to the container.
 builder.Services.AddTransient<JwtMiddleware>();
 //Add NewtonsoftJson Options fix ReferenceLoopHandling is currently not supported in the System.Text.Json serializer.
- builder.Services.AddControllers().AddNewtonsoftJson(options =>
-     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+ //builder.Services.AddControllers().AddNewtonsoftJson(options =>
+ //    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
 builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new ApiVersion(1, 0);
@@ -55,7 +55,7 @@ builder.Services.AddSwaggerGen(options => {
 });
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<ICategoryService, CategoryService>();
-builder.Services.AddTransient<ICloudflareClient, CloudflareClientService>();
+builder.Services.AddTransient<ICloudflareClientService, CloudflareClientService>();
 builder.Services.AddTransient<IProductService, ProductService>();
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 builder.Services.Configure<CloudflareR2>(configuration.GetSection("CloudflareR2Config"));
