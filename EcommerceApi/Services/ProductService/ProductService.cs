@@ -44,6 +44,7 @@ namespace EcommerceApi.Services.ProductService
             return await _context.Products
                                         .Include(p => p.ProductImages)
                                         .Include(p => p.ProductColors)
+                                        .Include(p => p.ProductRates)
                                         .AsNoTracking()
                                         .ToListAsync();
         }
@@ -66,6 +67,7 @@ namespace EcommerceApi.Services.ProductService
                                          .Where(p => p.ProductId == productId)
                                          .Include(p => p.ProductImages)
                                          .Include(p => p.ProductColors)
+                                         .Include(p => p.ProductRates)
                                          .AsNoTracking()
                                          .FirstOrDefaultAsync();
             return productById;

@@ -6,6 +6,7 @@ using EcommerceApi.Models.CloudflareR2;
 using EcommerceApi.Models.IdentityData;
 using EcommerceApi.Services;
 using EcommerceApi.Services.CategoryService;
+using EcommerceApi.Services.FeedbackService;
 using EcommerceApi.Services.ProductService;
 using EcommerceApi.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -57,6 +58,7 @@ builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<ICategoryService, CategoryService>();
 builder.Services.AddTransient<ICloudflareClientService, CloudflareClientService>();
 builder.Services.AddTransient<IProductService, ProductService>();
+builder.Services.AddTransient<IRateService, RateService>();
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 builder.Services.Configure<CloudflareR2>(configuration.GetSection("CloudflareR2Config"));
 builder.Services.AddCors(options =>

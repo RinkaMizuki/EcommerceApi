@@ -6,6 +6,7 @@ namespace EcommerceApi
     {
         public static List<T> ParseString<T>(string list)
         {
+            if (string.IsNullOrEmpty(list)) return new List<T>();
             if ((list.StartsWith("[") && list.EndsWith("]")) || (list.StartsWith("{") && list.EndsWith("}")))
             {
                 if (list == "{}" || list == "[]") return new List<T>();

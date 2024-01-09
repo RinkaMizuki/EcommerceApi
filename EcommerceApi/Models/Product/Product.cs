@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
-using EcommerceApi.Models.Order;
 
 namespace EcommerceApi.Models.Product;
 
@@ -28,7 +27,8 @@ public class Product
     public int CategoryId { get; set; }
     [ForeignKey("CategoryId")]
     [JsonIgnore]
-    public ProductCategory ProductCategory { get; set; }
-    public List<ProductImage> ProductImages { get; set; }
-    public List<ProductColor> ProductColors { get; set; }
+    public ProductCategory ProductCategory { get; set; } = new ProductCategory();
+    public List<ProductImage> ProductImages { get; set; } = new List<ProductImage>();
+    public List<ProductColor> ProductColors { get; set; } = new List<ProductColor>();
+    public List<Rate.Rate> ProductRates { get; set; } = new List<Rate.Rate>();
 }

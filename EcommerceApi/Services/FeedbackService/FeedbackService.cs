@@ -1,4 +1,4 @@
-﻿namespace EcommerceApi.Services.FeedbackService
+﻿namespace EcommerceApi.Services.FeedbackRateService
 {
     public class FeedbackService : IFeedbackService
     {

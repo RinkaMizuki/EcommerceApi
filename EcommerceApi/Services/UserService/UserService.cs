@@ -58,7 +58,18 @@ public class UserService : IUserService
     {
         var listUser = await _context.Users.AsNoTracking().ToListAsync();
         List<int> rangeValues = Helpers.ParseString<int>(range);
+
+        if(rangeValues.Count == 0) { 
+            rangeValues.AddRange(new List<int> { 0, 4 }); 
+        };
+
         List<string> sortValues = Helpers.ParseString<string>(sort);
+
+        if(sortValues.Count == 0)
+        {
+            sortValues.AddRange(new List<string> { "", "" });
+        }
+
         List<string> filterValues = Helpers.ParseString<string>(filter);
         if (!filterValues.Contains("q"))
         {

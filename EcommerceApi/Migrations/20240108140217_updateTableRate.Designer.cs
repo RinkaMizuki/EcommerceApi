@@ -4,6 +4,7 @@ using EcommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EcommerceApi.Migrations
 {
     [DbContext(typeof(EcommerceDbContext))]
-    partial class EcommerceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240108140217_updateTableRate")]
+    partial class updateTableRate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -119,34 +122,6 @@ namespace EcommerceApi.Migrations
                     b.HasIndex("CouponId");
 
                     b.ToTable("CouponConditions");
-                });
-
-            modelBuilder.Entity("EcommerceApi.Models.Feedback.FeedbackRate", b =>
-                {
-                    b.Property<int>("FeedbackRateId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("ModifiedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ModifiedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("FeedbackRateId");
-
-                    b.ToTable("FeedbackRate");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Order.Order", b =>
@@ -581,17 +556,6 @@ namespace EcommerceApi.Migrations
                     b.Navigation("Coupon");
                 });
 
-            modelBuilder.Entity("EcommerceApi.Models.Feedback.FeedbackRate", b =>
-                {
-                    b.HasOne("EcommerceApi.Models.Rate.Rate", "Rate")
-                        .WithOne("FeedbackRate")
-                        .HasForeignKey("EcommerceApi.Models.Feedback.FeedbackRate", "FeedbackRateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Rate");
-                });
-
             modelBuilder.Entity("EcommerceApi.Models.Order.Order", b =>
                 {
                     b.HasOne("EcommerceApi.Models.Coupon.Coupon", "Coupon")
@@ -733,12 +697,6 @@ namespace EcommerceApi.Migrations
             modelBuilder.Entity("EcommerceApi.Models.Product.ProductCategory", b =>
                 {
                     b.Navigation("ListProductCategoryChild");
-                });
-
-            modelBuilder.Entity("EcommerceApi.Models.Rate.Rate", b =>
-                {
-                    b.Navigation("FeedbackRate")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Segment.User", b =>

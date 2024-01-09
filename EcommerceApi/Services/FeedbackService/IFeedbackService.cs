@@ -1,9 +1,6 @@
-﻿using EcommerceApi.Models.Rate;
-
-namespace EcommerceApi.Services.FeedbackService
+﻿namespace EcommerceApi.Services.FeedbackRateService
 {
     public interface IFeedbackService
     {
-        public Task<List<Rate>> GetListFeedback(CancellationToken userCancellationToken);
     }
 }
