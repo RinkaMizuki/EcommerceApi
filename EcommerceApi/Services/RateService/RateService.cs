@@ -18,7 +18,7 @@ namespace EcommerceApi.Services.FeedbackService
                                         .Where(r => r.RateId == rateId)
                                         .FirstOrDefaultAsync(userCancellationToken);
             if (rateByID is null) return false;
-            _context.Rates .Remove(rateByID);
+            _context.Rates.Remove(rateByID);
             await _context.SaveChangesAsync(userCancellationToken);
             return true;
         }
@@ -27,6 +27,7 @@ namespace EcommerceApi.Services.FeedbackService
         {
             var listRates = await _context
                                         .Rates
+                                        .Include(r => r.FeedbackRate)
                                         .AsNoTracking()
                                         .ToListAsync(userCancellationToken);
             return listRates;

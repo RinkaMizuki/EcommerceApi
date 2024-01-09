@@ -6,6 +6,7 @@ using EcommerceApi.Models.CloudflareR2;
 using EcommerceApi.Models.IdentityData;
 using EcommerceApi.Services;
 using EcommerceApi.Services.CategoryService;
+using EcommerceApi.Services.FeedbackRateService;
 using EcommerceApi.Services.FeedbackService;
 using EcommerceApi.Services.ProductService;
 using EcommerceApi.Swagger;
@@ -59,6 +60,7 @@ builder.Services.AddTransient<ICategoryService, CategoryService>();
 builder.Services.AddTransient<ICloudflareClientService, CloudflareClientService>();
 builder.Services.AddTransient<IProductService, ProductService>();
 builder.Services.AddTransient<IRateService, RateService>();
+builder.Services.AddTransient<IFeedbackService, FeedbackService>();
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 builder.Services.Configure<CloudflareR2>(configuration.GetSection("CloudflareR2Config"));
 builder.Services.AddCors(options =>
@@ -100,6 +102,8 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+app.UseExceptionHandler("/error");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

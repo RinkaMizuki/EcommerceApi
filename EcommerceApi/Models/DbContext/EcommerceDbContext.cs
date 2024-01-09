@@ -1,4 +1,5 @@
 using EcommerceApi.Models.Coupon;
+using EcommerceApi.Models.Feedback;
 using EcommerceApi.Models.Order;
 using EcommerceApi.Models.Product;
 using EcommerceApi.Models.Segment;
@@ -21,6 +22,7 @@ public class EcommerceDbContext : DbContext
     public DbSet<ProductColor> ProductColors { get; set; }
     public DbSet<ProductImage> ProductImages { get; set; }
     public DbSet<Rate.Rate> Rates { get; set; }
+    public DbSet<FeedbackRate> Feedbacks { get; set; }
     public DbSet<UserSegment> UserSegments { get; set; }
     public DbSet<Segment.Segment> Segments { get; set; }
 

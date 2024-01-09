@@ -49,77 +49,56 @@ namespace EcommerceApi.Controllers.V1.Admin
         [Route("users/{id:int}")]
         public async Task<IActionResult> GetUser(int id)
         {
-            try
+            var user = await _userService.GetUserByIdAsync(id);
+            if (user == null) return NotFound();
+            var userResponse = new UserResponse()
             {
-                var user = await _userService.GetUserByIdAsync(id);
-                if (user == null) return NotFound();
-                var userResponse = new UserResponse()
-                {
-                    Id = user.UserId,
-                    UserName = user.UserName,
-                    Email = user.Email,
-                    Avatar = user.Avatar,
-                    BirthDate = user.BirthDate,
-                    EmailConfirm = user.EmailConfirm,
-                    IsActive = user.IsActive,
-                    Phone = user.Phone,
-                    Role = user.Role.ToLower(),
-                    Url = user.Url,
-                };
-                return new JsonResult(userResponse);
-            }
-            catch (Exception e)
-            {
-                return BadRequest(e.Message);
-            }
+                Id = user.UserId,
+                UserName = user.UserName,
+                Email = user.Email,
+                Avatar = user.Avatar,
+                BirthDate = user.BirthDate,
+                EmailConfirm = user.EmailConfirm,
+                IsActive = user.IsActive,
+                Phone = user.Phone,
+                Role = user.Role.ToLower(),
+                Url = user.Url,
+            };
+            return new JsonResult(userResponse);
         }
 
         [HttpPut]
         [Route("users/update/{id:int}")]
         public async Task<IActionResult> UpdateUser([FromRoute] int id, [FromForm] UserAdminDto userAdmin, CancellationToken userCancellationToken)
         {
-            try
+            var updatedUser = await _userService.UpdateUserByIdAsync(id, userAdmin, Request, userCancellationToken);
+            
+            var userResponse = new UserResponse()
             {
-                var updatedUser = await _userService.UpdateUserByIdAsync(id, userAdmin, Request, userCancellationToken);
-                if (updatedUser == null) throw new Exception("Can't update user");
-                var userResponse = new UserResponse()
-                {
-                    Id = updatedUser.UserId,
-                    UserName = updatedUser.UserName,
-                    Email = updatedUser.Email,
-                    Avatar = updatedUser.Avatar,
-                    BirthDate = updatedUser.BirthDate,
-                    EmailConfirm = updatedUser.EmailConfirm,
-                    IsActive = updatedUser.IsActive,
-                    Phone = updatedUser.Phone,
-                    Role = updatedUser.Role.ToLower(),
-                    Url = updatedUser.Url,
-                };
-                return new JsonResult(userResponse);
-            }
-            catch (Exception e)
-            {
-                return BadRequest(e.Message);
-            }
+                Id = updatedUser.UserId,
+                UserName = updatedUser.UserName,
+                Email = updatedUser.Email,
+                Avatar = updatedUser.Avatar,
+                BirthDate = updatedUser.BirthDate,
+                EmailConfirm = updatedUser.EmailConfirm,
+                IsActive = updatedUser.IsActive,
+                Phone = updatedUser.Phone,
+                Role = updatedUser.Role.ToLower(),
+                Url = updatedUser.Url,
+            };
+            return new JsonResult(userResponse);
         }
 
         [HttpDelete]
         [Route("users/delete/{id:int}")]
         public async Task<IActionResult> DeleteUser(int id, CancellationToken userCancellationToken)
         {
-            try
-            {
-                var response = await _userService.DeleteUserByIdAsync(id, userCancellationToken);
+            var response = await _userService.DeleteUserByIdAsync(id, userCancellationToken);
                 if (!response) throw new Exception("User not found");
                 return Ok(new
                 {
                     message = "Delete successfully"
                 });
-            }
-            catch (Exception e)
-            {
-                return BadRequest(e.Message);
-            }
         }
 
         [HttpGet]
@@ -136,22 +115,11 @@ namespace EcommerceApi.Controllers.V1.Admin
         [AllowAnonymous]
         [HttpGet]
         [Route("users/preview")]
-        public async Task<IActionResult> GetImage(string avatar)
+        public async Task<IActionResult> GetUserAvatar(string avatar)
         {
-            try
-            {
-                var response = await _cloudflareClient.GetObjectAsync(avatar);
-                if (response.HttpStatusCode == HttpStatusCode.OK)
-                {
-                    return File(response.ResponseStream, response.Headers.ContentType);
-                }
-
-                throw new Exception("Can't not get object");
-            }
-            catch (Exception e)
-            {
-                return BadRequest(e.Message);
-            }
+            
+           var userAvatar = await _userService.GetAvatarAsync(avatar);
+           return File(userAvatar.FileStream, userAvatar.ContentType);
         }
     }
 }

@@ -1,9 +1,11 @@
 using System.Net;
 using EcommerceApi.Dtos.Admin;
 using EcommerceApi.Dtos.Upload;
+using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models;
 using EcommerceApi.Models.Segment;
 using EcommerceApi.Responses;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace EcommerceApi.Services;
@@ -24,7 +26,7 @@ public class UserService : IUserService
         if (_context.Users.AsNoTracking().Where(u => u.UserName == userAdmin.UserName || u.Email == userAdmin.Email)
             .Any())
         {
-            return null;
+            throw new HttpStatusException(HttpStatusCode.Conflict, "The request could not be completed due to a conflict with the current state of the resource.");
         }
 
         var newUser = new User()
@@ -42,14 +44,21 @@ public class UserService : IUserService
         };
         await _context.Users.AddAsync(newUser);
         await _context.SaveChangesAsync();
-        var userResponse = await _context.Users.AsNoTracking().Where(u => u.UserName == newUser.UserName)
-            .FirstOrDefaultAsync();
+        var userResponse = await _context
+                                        .Users
+                                        .AsNoTracking()
+                                        .Where(u => u.UserName == newUser.UserName)
+                                        .FirstOrDefaultAsync();
         return userResponse;
     }
 
     public async Task<User?> GetUserByIdAsync(int userId)
     {
         var user = await _context.Users.FindAsync(userId);
+        if(user == null)
+        {
+            throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
+        }
         return user;
     }
 
@@ -157,7 +166,10 @@ public class UserService : IUserService
     public async Task<Boolean> DeleteUserByIdAsync(int userId, CancellationToken userCancellationToken)
     {
         var deleteUser = await this.GetUserByIdAsync(userId);
-        if (deleteUser == null) return false;
+        if (deleteUser == null)
+        {
+            throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
+        }
         _context.Users.Remove(deleteUser);
         await _context.SaveChangesAsync(userCancellationToken);
         return true;
@@ -166,12 +178,14 @@ public class UserService : IUserService
     public async Task<User> UpdateUserByIdAsync(int userId, UserAdminDto userAdminDto, HttpRequest request, CancellationToken userCancellationToken)
     {
         var updateUser = await this.GetUserByIdAsync(userId);
-        if (updateUser == null) return null;
+        if (updateUser == null) {
+            throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
+        };
         if (_context.Users
             .Where(u => (u.UserName == userAdminDto.UserName || u.Email == userAdminDto.Email) && u.UserId != userId)
             .Any())
         {
-            return null;
+            throw new HttpStatusException(HttpStatusCode.Conflict, "The request could not be completed due to a conflict with the current state of the resource.");
         }
 
         if (userAdminDto.file != null && userAdminDto.Avatar != "")
@@ -225,5 +239,17 @@ public class UserService : IUserService
         await _context.SaveChangesAsync(userCancellationToken);
 
         return updateUser;
+    }
+
+    public async Task<FileStreamResult> GetAvatarAsync(string avatarUrl)
+    {
+        var response = await _cloudflareClient.GetObjectAsync(avatarUrl);
+        if(response.HttpStatusCode == HttpStatusCode.OK)
+        {
+            return new FileStreamResult(response.ResponseStream, response.Headers.ContentType) { 
+                FileDownloadName = avatarUrl
+            };
+        }
+        throw new HttpStatusException(response.HttpStatusCode, "Image not found.");
     }
 }

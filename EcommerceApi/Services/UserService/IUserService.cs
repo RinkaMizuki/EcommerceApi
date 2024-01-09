@@ -1,6 +1,7 @@
 using EcommerceApi.Dtos.Admin;
 using EcommerceApi.Models.Segment;
 using EcommerceApi.Responses;
+using Microsoft.AspNetCore.Mvc;
 
 namespace EcommerceApi.Services;
 
@@ -11,4 +12,5 @@ public interface IUserService
     public Task<Boolean> DeleteUserByIdAsync(int userId, CancellationToken userCancellationToken);
     public Task<User> UpdateUserByIdAsync(int userId, UserAdminDto userAdminDto, HttpRequest request,CancellationToken userCancellationToken);
     public Task<User> PostUserAsync(UserAdminDto userAdmin);
+    public Task<FileStreamResult> GetAvatarAsync(string avatarUrl);
 }

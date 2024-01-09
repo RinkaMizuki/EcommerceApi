@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace EcommerceApi.Models.Feedback
 {
@@ -11,6 +12,7 @@ namespace EcommerceApi.Models.Feedback
         public DateTime ModifiedAt { get; set; }
         public string ModifiedBy { get; set; } = string.Empty;
         public string CreatedBy { get; set; } = string.Empty;
+        [JsonIgnore]
         public Rate.Rate Rate { get; set; }
     }
 }
