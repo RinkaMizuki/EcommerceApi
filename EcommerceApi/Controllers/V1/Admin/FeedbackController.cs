@@ -22,63 +22,31 @@ namespace EcommerceApi.Controllers.V1.Admin
         [Route("feedbacks")]
         public async Task<IActionResult> GetListFeedback(CancellationToken userCancellationToken)
         {
-           try
-           {
-               var listFeedbacks = await _feedbackService.GetListFeedbackAsync(userCancellationToken);
-               return Ok(listFeedbacks);
-           }
-           catch (Exception ex)
-           {
-                return BadRequest(ex.Message);
-           }
+            var listFeedbacks = await _feedbackService.GetListFeedbackAsync(userCancellationToken);
+            return Ok(listFeedbacks);
         }
         [HttpPost]
         [Route("feedbacks/post/{rateId:int}")]
         public async Task<IActionResult> CreateFeedback(FeedbackDto feedbackDto, int rateId, CancellationToken userCancellationToken)
         {
-            try
-            {
-                var userName = Helpers.GetUserNameLogin(HttpContext);
-                var feedbackRes = await _feedbackService.PostFeedbackAsync(feedbackDto, rateId, userName, userCancellationToken);
-
-                if (feedbackRes is null) return BadRequest();
-                
-                return Ok(feedbackRes);
-            }
-            catch(Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var userName = Helpers.GetUserNameLogin(HttpContext);
+            var feedbackRes = await _feedbackService.PostFeedbackAsync(feedbackDto, rateId, userName, userCancellationToken);
+            return Ok(feedbackRes);
         }
         [HttpDelete]
         [Route("feedbacks/delete/{feedbackId:int}")]
         public async Task<IActionResult> DeleteFeedback(int feedbackId, CancellationToken userCancellationToken)
         {
-            try
-            {
-                var feedbackRes = await _feedbackService.DeleteFeedbackAsync(feedbackId, userCancellationToken);
-                if(!feedbackRes) return BadRequest();
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            await _feedbackService.DeleteFeedbackAsync(feedbackId, userCancellationToken);
+            return NoContent();
         }
         [HttpPut]
         [Route("feedbacks/update/{feedbackId:int}")]
         public async Task<IActionResult> UpdateFeedback(FeedbackDto feedbackDto, int feedbackId, CancellationToken userCancellationToken) {
-            try
-            {
-                var userName = Helpers.GetUserNameLogin(HttpContext);
-                var feedbackRes = await _feedbackService.UpdateFeedbackAsync(feedbackDto, userName, feedbackId, userCancellationToken);
-                if(feedbackRes is null) return BadRequest();
-                return Ok(feedbackRes);
-            }
-            catch(Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var userName = Helpers.GetUserNameLogin(HttpContext);
+            var feedbackRes = await _feedbackService.UpdateFeedbackAsync(feedbackDto, userName, feedbackId, userCancellationToken);
+            if (feedbackRes is null) return BadRequest();
+            return Ok(feedbackRes);
         }
     }
 }

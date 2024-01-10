@@ -103,7 +103,7 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
-app.UseExceptionHandler("/error");
+app.UseExceptionHandler("/error"); // add middleware into pipeline to handle global exceptions
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

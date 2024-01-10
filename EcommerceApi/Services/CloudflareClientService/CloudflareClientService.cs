@@ -1,9 +1,9 @@
 using System.Net;
-using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using EcommerceApi.Dtos.Upload;
+using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models.CloudflareR2;
 using Microsoft.Extensions.Options;
 
@@ -44,16 +44,16 @@ public class CloudflareClientService : ICloudflareClientService
 
         var response = await s3Client.PutObjectAsync(request, userCancellationToken);
 
-        if (response.HttpStatusCode != System.Net.HttpStatusCode.OK &&
-            response.HttpStatusCode != System.Net.HttpStatusCode.Accepted)
+        if (response.HttpStatusCode != HttpStatusCode.OK &&
+            response.HttpStatusCode != HttpStatusCode.Accepted)
         {
-            throw new Exception("Upload to Cloudflare R2 failed");
+            throw new HttpStatusException(HttpStatusCode.BadRequest, "Upload to Cloudflare R2 failed.");
         }
 
         return response;
     }
 
-    public async Task<List<S3Object>> GetListObjectAsync(string? prefix)
+    public async Task<List<S3Object>> GetListObjectAsync(string? prefix, CancellationToken userCancellationToken)
     {
         var s3Client = Authenticate();
         var request = new ListObjectsV2Request
@@ -61,10 +61,10 @@ public class CloudflareClientService : ICloudflareClientService
             BucketName = _options.bucketName,
             Prefix = prefix,
         };
-        var result = await s3Client.ListObjectsV2Async(request);
+        var result = await s3Client.ListObjectsV2Async(request, userCancellationToken);
         if (!(result.HttpStatusCode == HttpStatusCode.OK))
         {
-            throw new Exception("Can't not get list object !!!");
+            throw new HttpStatusException(HttpStatusCode.BadRequest, "Can't not get list object.");
         }
 
         //Generate PreSignedURL
@@ -88,12 +88,12 @@ public class CloudflareClientService : ICloudflareClientService
         return result.S3Objects;
     }
 
-    public async Task<GetObjectResponse> GetObjectAsync(string key)
+    public async Task<GetObjectResponse> GetObjectAsync(string key, CancellationToken userCancellationToken)
     {
         var s3Client = Authenticate();
         var bucketExists = await Amazon.S3.Util.AmazonS3Util.DoesS3BucketExistV2Async(s3Client, _options.bucketName);
         if (!bucketExists) throw new Exception($"Bucket {_options.bucketName} does not exist.");
-        var s3Object = await s3Client.GetObjectAsync(_options.bucketName, key);
+        var s3Object = await s3Client.GetObjectAsync(_options.bucketName, key, userCancellationToken);
         return s3Object;
     }
 

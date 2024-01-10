@@ -27,131 +27,66 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
         [HttpGet]
         [Route("products")]
-        public async Task<IActionResult> GetListProduct()
+        public async Task<IActionResult> GetListProduct(CancellationToken userCancellationToken)
         {
-            try
-            {
-                var listProduct = await _productService.GetListProductAsync();
-                return new JsonResult(listProduct);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var listProduct = await _productService.GetListProductAsync(userCancellationToken);
+            return new JsonResult(listProduct);
         }
         [HttpGet]
         [Route("products/{productId:Guid}")]
-        public async Task<IActionResult> GetListProduct(Guid productId)
+        public async Task<IActionResult> GetListProduct(Guid productId, CancellationToken userCancellationToken)
         {
-            try
-            {
-                var productById = await _productService.GetProductByIdAsync(productId);
-                return new JsonResult(productById);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var productById = await _productService.GetProductByIdAsync(productId, userCancellationToken);
+            return new JsonResult(productById);
         }
         [HttpPost]
         [Route("products/post")]
         public async Task<IActionResult> CreateProduct([FromForm] ProductDto productDto, CancellationToken userCancellationToken)
         {
-            try
-            {
-                var userName = Helpers.GetUserNameLogin(HttpContext);
-                var newProduct = await _productService.PostProductAsync(productDto, userName, Request, userCancellationToken);
-                return new JsonResult(newProduct);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var userName = Helpers.GetUserNameLogin(HttpContext);
+            var newProduct = await _productService.PostProductAsync(productDto, userName, Request, userCancellationToken);
+            return new JsonResult(newProduct);
         }
         [HttpDelete]
         [Route("products/delete/{productId:Guid}")]
         public async Task<IActionResult> DeleteProduct(Guid productId, CancellationToken userCancellationToken)
         {
-            try
-            {
-                var result = await _productService.DeleteProductAsync(productId, userCancellationToken);
-                if (!result) return BadRequest();
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            await _productService.DeleteProductAsync(productId, userCancellationToken);
+            return NoContent();
         }
         [HttpPut]
         [Route("products/update/{productId:Guid}")]
         public async Task<IActionResult> UpdateProduct([FromForm] ProductDto productDto, Guid productId, CancellationToken userCancellationToken)
         {
-            try
-            {
-                var userName = Helpers.GetUserNameLogin(HttpContext);
-                var result = await _productService.UpdateProductAsync(productDto, productId, userName, Request, userCancellationToken);
-                if (result == null) return BadRequest();
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var userName = Helpers.GetUserNameLogin(HttpContext);
+            var result = await _productService.UpdateProductAsync(productDto, productId, userName, Request, userCancellationToken);
+            return Ok(result);
         }
         [HttpGet]
         [Route("products/category/{categoryId:int}")]
         public async Task<IActionResult> GetProductByCategory(int categoryId, CancellationToken userCancellationToken)
         {
-            try
-            {
-                var listProductByCate = await _productService.GetProductByCategoryAsync(categoryId, userCancellationToken);
-                return new JsonResult(listProductByCate);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var listProductByCate = await _productService.GetProductByCategoryAsync(categoryId, userCancellationToken);
+            return new JsonResult(listProductByCate);
         }
         [AllowAnonymous]
         [HttpGet]
         [Route("products/preview")]
-        public async Task<IActionResult> GetImage(string productImage)
+        public async Task<IActionResult> GetProductImage(string productImage, CancellationToken userCancellationToken)
         {
-            try
-            {
-                var response = await _cloudFlareService.GetObjectAsync(productImage);
-                if (response.HttpStatusCode == HttpStatusCode.OK)
-                {
-                    return File(response.ResponseStream, response.Headers.ContentType);
-                }
-
-                throw new Exception("Can't not get object");
-            }
-            catch (Exception e)
-            {
-                return BadRequest(e.Message);
-            }
+            var userAvatar = await _productService.GetImageAsync(productImage, userCancellationToken);
+            return File(userAvatar.FileStream, userAvatar.ContentType);
         }
 
         [AllowAnonymous]
         [HttpGet]
         [Route("products/images")]
-        public async Task<IActionResult> GetListImage(string prefix)
+        public async Task<IActionResult> GetListProductImage(string prefix, CancellationToken userCancellationToken)
         {
-            try
-            {
-                var response = await _cloudFlareService.GetListObjectAsync(prefix);
-                var files = response.Select(x => x.Key);
-                var arquivos = files.Select(x => $"{Request.Scheme}://{Request.Host}/api/v1/Admin/product/preview?productImage={Path.GetFileName(x)}").ToList();
-                return Ok(arquivos);
-
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-
-            }
+            var response = await _cloudFlareService.GetListObjectAsync(prefix, userCancellationToken);
+            var files = response.Select(x => x.Key);
+            var arquivos = files.Select(x => $"{Request.Scheme}://{Request.Host}/api/v1/Admin/product/preview?productImage={Path.GetFileName(x)}").ToList();
+            return Ok(arquivos);
         }
     }
 }

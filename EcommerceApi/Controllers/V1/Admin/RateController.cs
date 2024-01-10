@@ -23,60 +23,35 @@ namespace EcommerceApi.Controllers.V1.Admin
         [Route("rates")]
         public async Task<IActionResult> GetListFeedback(CancellationToken userCancellationToken)
         {
-            try
-            {
-                var listFeedback = await _feedbackService.GetListFeedbackAsync(userCancellationToken);
-                return Ok(listFeedback);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+
+            var listFeedback = await _feedbackService.GetListFeedbackAsync(userCancellationToken);
+            return Ok(listFeedback);
+
         }
         [HttpPost]
         [Route("rates/post")]
         public async Task<IActionResult> CreateRate(RateDto rateDto,CancellationToken userCancellationToken)
         {
-            try
-            {
-                var rate = await _feedbackService.PostFeedbackAsync(rateDto, userCancellationToken);
-                if (rate == null) return BadRequest();
-                return new JsonResult(rate);
-            }
-            catch(Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var rate = await _feedbackService.PostFeedbackAsync(rateDto, userCancellationToken);
+            if (rate == null) return BadRequest();
+            return new JsonResult(rate);
+
         }
         [HttpPut]
         [Route("rates/update/{rateId:int}")]
         public async Task<IActionResult> UpdateRate(RateDto rateDto, int rateId, CancellationToken userCancellationToken)
         {
-            try
-            {
-                var updateRate = await _feedbackService.UpdateFeedbackAsync(rateDto, rateId, userCancellationToken);
-                if (updateRate == null) return BadRequest();
-                return Ok(updateRate);
-            }
-            catch(Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var updateRate = await _feedbackService.UpdateFeedbackAsync(rateDto, rateId, userCancellationToken);
+            if (updateRate == null) return BadRequest();
+            return Ok(updateRate);
         }
         [HttpDelete]
         [Route("rates/delete/{rateId:int}")]
         public async Task<IActionResult> DeleteRate(int rateId, CancellationToken userCancellationToken)
         {
-            try
-            {
-                var result = await _feedbackService.DeleteFeedbackAsync(rateId, userCancellationToken);
-                if(!result) return BadRequest();
-                return NoContent();
-            }
-            catch(Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _feedbackService.DeleteFeedbackAsync(rateId, userCancellationToken);
+            if (!result) return BadRequest();
+            return NoContent();
         }
     }
 }

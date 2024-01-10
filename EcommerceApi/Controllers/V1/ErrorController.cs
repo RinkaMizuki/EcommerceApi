@@ -19,11 +19,10 @@ namespace EcommerceApi.Controllers.V1
                                     .Features
                                     .Get<IExceptionHandlerFeature>();
             var exception = context?.Error;
-            var code = 500;
 
             if(exception is HttpStatusException httpException)
             {
-                Response.StatusCode = code;
+                Response.StatusCode = Convert.ToInt32(httpException?.Status);
                 return new JsonResult(new
                 {
                     message = httpException?.Message,
@@ -34,19 +33,19 @@ namespace EcommerceApi.Controllers.V1
             else if (exception?.InnerException is HttpErrorResponseException)
             {
                 var AwsException = (Amazon.S3.AmazonS3Exception)exception;
-                //return new JsonResult(new
-                //{
-                //    message = AwsException.Message,
-                //    statusCode = AwsException.StatusCode,
-                //});
-                return NotFound();
+                Response.StatusCode = Convert.ToInt32(AwsException.StatusCode);
+                return new JsonResult(new
+                {
+                    message = AwsException.Message,
+                    statusCode = AwsException.StatusCode,
+                });
             }
             else
             {
                 return new JsonResult(new
                 {
                     message = "Has been an error on the server",
-                    statusCode = code,
+                    statusCode = 500,
                 });
             }
         }

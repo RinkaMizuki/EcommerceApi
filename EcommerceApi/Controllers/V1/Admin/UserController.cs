@@ -26,9 +26,9 @@ namespace EcommerceApi.Controllers.V1.Admin
         [AllowAnonymous]
         [HttpPost]
         [Route("users/post")]
-        public async Task<IActionResult> CreateUser(UserAdminDto userAdmin)
+        public async Task<IActionResult> CreateUser(UserAdminDto userAdmin, CancellationToken userCancellationToken)
         {
-            var userResponse = await _userService.PostUserAsync(userAdmin);
+            var userResponse = await _userService.PostUserAsync(userAdmin, userCancellationToken);
             return new JsonResult(new UserResponse()
             {
                 Id = userResponse.UserId,
@@ -47,9 +47,9 @@ namespace EcommerceApi.Controllers.V1.Admin
 
         [HttpGet]
         [Route("users/{id:int}")]
-        public async Task<IActionResult> GetUser(int id)
+        public async Task<IActionResult> GetUser(int id, CancellationToken userCancellationToken)
         {
-            var user = await _userService.GetUserByIdAsync(id);
+            var user = await _userService.GetUserByIdAsync(id, userCancellationToken);
             if (user == null) return NotFound();
             var userResponse = new UserResponse()
             {
@@ -106,19 +106,20 @@ namespace EcommerceApi.Controllers.V1.Admin
         public async Task<IActionResult> GetListUsers(
             [FromQuery(Name = "sort")] string sort,
             [FromQuery(Name = "range")] string range,
-            [FromQuery(Name = "filter")] string filter
+            [FromQuery(Name = "filter")] string filter,
+            CancellationToken userCancellationToken
         )
         {
-            var listUsers = await _userService.GetListUsersAsync(sort, range, filter, Response);
+            var listUsers = await _userService.GetListUsersAsync(sort, range, filter, Response, userCancellationToken);
             return new JsonResult(listUsers);
         }
         [AllowAnonymous]
         [HttpGet]
         [Route("users/preview")]
-        public async Task<IActionResult> GetUserAvatar(string avatar)
+        public async Task<IActionResult> GetUserAvatar(string avatar, CancellationToken userCancellationToken)
         {
             
-           var userAvatar = await _userService.GetAvatarAsync(avatar);
+           var userAvatar = await _userService.GetAvatarAsync(avatar, userCancellationToken);
            return File(userAvatar.FileStream, userAvatar.ContentType);
         }
     }
