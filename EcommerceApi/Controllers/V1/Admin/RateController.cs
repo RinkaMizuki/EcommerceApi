@@ -24,7 +24,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         public async Task<IActionResult> GetListFeedback(CancellationToken userCancellationToken)
         {
 
-            var listFeedback = await _feedbackService.GetListFeedbackAsync(userCancellationToken);
+            var listFeedback = await _feedbackService.GetListRateAsync(userCancellationToken);
             return Ok(listFeedback);
 
         }
@@ -32,7 +32,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         [Route("rates/post")]
         public async Task<IActionResult> CreateRate(RateDto rateDto,CancellationToken userCancellationToken)
         {
-            var rate = await _feedbackService.PostFeedbackAsync(rateDto, userCancellationToken);
+            var rate = await _feedbackService.PostRateAsync(rateDto, userCancellationToken);
             if (rate == null) return BadRequest();
             return new JsonResult(rate);
 
@@ -41,7 +41,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         [Route("rates/update/{rateId:int}")]
         public async Task<IActionResult> UpdateRate(RateDto rateDto, int rateId, CancellationToken userCancellationToken)
         {
-            var updateRate = await _feedbackService.UpdateFeedbackAsync(rateDto, rateId, userCancellationToken);
+            var updateRate = await _feedbackService.UpdateRateAsync(rateDto, rateId, userCancellationToken);
             if (updateRate == null) return BadRequest();
             return Ok(updateRate);
         }
@@ -49,7 +49,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         [Route("rates/delete/{rateId:int}")]
         public async Task<IActionResult> DeleteRate(int rateId, CancellationToken userCancellationToken)
         {
-            var result = await _feedbackService.DeleteFeedbackAsync(rateId, userCancellationToken);
+            var result = await _feedbackService.DeleteRateAsync(rateId, userCancellationToken);
             if (!result) return BadRequest();
             return NoContent();
         }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EcommerceApi.Migrations
 {
     [DbContext(typeof(EcommerceDbContext))]
-    [Migration("20240105141841_InitDB")]
-    partial class InitDB
+    [Migration("20240112080502_InitDb")]
+    partial class InitDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -64,11 +64,9 @@ namespace EcommerceApi.Migrations
 
             modelBuilder.Entity("EcommerceApi.Models.Coupon.Condition", b =>
                 {
-                    b.Property<int>("ConditionId")
+                    b.Property<Guid>("ConditionId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ConditionId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Attribute")
                         .IsRequired()
@@ -85,11 +83,9 @@ namespace EcommerceApi.Migrations
 
             modelBuilder.Entity("EcommerceApi.Models.Coupon.Coupon", b =>
                 {
-                    b.Property<int>("CouponId")
+                    b.Property<Guid>("CouponId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CouponId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CouponCode")
                         .IsRequired()
@@ -108,11 +104,11 @@ namespace EcommerceApi.Migrations
 
             modelBuilder.Entity("EcommerceApi.Models.Coupon.CouponCondition", b =>
                 {
-                    b.Property<int>("ConditionId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("ConditionId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("CouponId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("CouponId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Value")
                         .HasColumnType("decimal(18,2)");
@@ -124,16 +120,42 @@ namespace EcommerceApi.Migrations
                     b.ToTable("CouponConditions");
                 });
 
+            modelBuilder.Entity("EcommerceApi.Models.Feedback.FeedbackRate", b =>
+                {
+                    b.Property<int>("FeedbackRateId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("FeedbackRateId");
+
+                    b.ToTable("Feedbacks");
+                });
+
             modelBuilder.Entity("EcommerceApi.Models.Order.Order", b =>
                 {
-                    b.Property<int>("OrderId")
+                    b.Property<Guid>("OrderId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderId"));
-
-                    b.Property<int>("CouponId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("CouponId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("Delivered")
                         .HasColumnType("bit");
@@ -167,8 +189,8 @@ namespace EcommerceApi.Migrations
 
             modelBuilder.Entity("EcommerceApi.Models.Order.OrderDetail", b =>
                 {
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
@@ -386,8 +408,9 @@ namespace EcommerceApi.Migrations
                     b.Property<int>("Star")
                         .HasColumnType("int");
 
-                    b.Property<bool>("Status")
-                        .HasColumnType("bit");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -555,6 +578,17 @@ namespace EcommerceApi.Migrations
                     b.Navigation("Coupon");
                 });
 
+            modelBuilder.Entity("EcommerceApi.Models.Feedback.FeedbackRate", b =>
+                {
+                    b.HasOne("EcommerceApi.Models.Rate.Rate", "Rate")
+                        .WithOne("FeedbackRate")
+                        .HasForeignKey("EcommerceApi.Models.Feedback.FeedbackRate", "FeedbackRateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Rate");
+                });
+
             modelBuilder.Entity("EcommerceApi.Models.Order.Order", b =>
                 {
                     b.HasOne("EcommerceApi.Models.Coupon.Coupon", "Coupon")
@@ -616,7 +650,7 @@ namespace EcommerceApi.Migrations
             modelBuilder.Entity("EcommerceApi.Models.Product.ProductColor", b =>
                 {
                     b.HasOne("EcommerceApi.Models.Product.Product", "Product")
-                        .WithMany("Colors")
+                        .WithMany("ProductColors")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -638,7 +672,7 @@ namespace EcommerceApi.Migrations
             modelBuilder.Entity("EcommerceApi.Models.Rate.Rate", b =>
                 {
                     b.HasOne("EcommerceApi.Models.Product.Product", "Product")
-                        .WithMany()
+                        .WithMany("ProductRates")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -686,14 +720,22 @@ namespace EcommerceApi.Migrations
 
             modelBuilder.Entity("EcommerceApi.Models.Product.Product", b =>
                 {
-                    b.Navigation("Colors");
+                    b.Navigation("ProductColors");
 
                     b.Navigation("ProductImages");
+
+                    b.Navigation("ProductRates");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Product.ProductCategory", b =>
                 {
                     b.Navigation("ListProductCategoryChild");
+                });
+
+            modelBuilder.Entity("EcommerceApi.Models.Rate.Rate", b =>
+                {
+                    b.Navigation("FeedbackRate")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Segment.User", b =>

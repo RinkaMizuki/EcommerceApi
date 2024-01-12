@@ -193,9 +193,9 @@ namespace EcommerceApi.Services.ProductService
 
                 return newProduct;
             }
-            catch(SqlException ex)
+            catch(DbUpdateException ex)
             {
-                throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
+                throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 

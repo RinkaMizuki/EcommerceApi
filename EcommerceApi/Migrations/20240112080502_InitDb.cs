@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace EcommerceApi.Migrations
 {
     /// <inheritdoc />
-    public partial class InitDB : Migration
+    public partial class InitDb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,8 +15,7 @@ namespace EcommerceApi.Migrations
                 name: "Conditions",
                 columns: table => new
                 {
-                    ConditionId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ConditionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Attribute = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Operator = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
@@ -29,8 +28,7 @@ namespace EcommerceApi.Migrations
                 name: "Coupons",
                 columns: table => new
                 {
-                    CouponId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CouponId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CouponCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     DiscountPercent = table.Column<int>(type: "int", nullable: false)
@@ -109,8 +107,8 @@ namespace EcommerceApi.Migrations
                 name: "CouponConditions",
                 columns: table => new
                 {
-                    CouponId = table.Column<int>(type: "int", nullable: false),
-                    ConditionId = table.Column<int>(type: "int", nullable: false),
+                    CouponId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ConditionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Value = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
                 },
                 constraints: table =>
@@ -192,10 +190,9 @@ namespace EcommerceApi.Migrations
                 name: "Orders",
                 columns: table => new
                 {
-                    OrderId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    OrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: false),
-                    CouponId = table.Column<int>(type: "int", nullable: false),
+                    CouponId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DeliveredDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Delivered = table.Column<bool>(type: "bit", nullable: false),
@@ -317,7 +314,7 @@ namespace EcommerceApi.Migrations
                     UserId = table.Column<int>(type: "int", nullable: false),
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Star = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<bool>(type: "bit", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -342,7 +339,7 @@ namespace EcommerceApi.Migrations
                 name: "OrderDetails",
                 columns: table => new
                 {
-                    OrderId = table.Column<int>(type: "int", nullable: false),
+                    OrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DiscountProduct = table.Column<int>(type: "int", nullable: false),
                     PriceProduct = table.Column<int>(type: "int", nullable: false),
@@ -364,6 +361,28 @@ namespace EcommerceApi.Migrations
                         column: x => x.ProductId,
                         principalTable: "Products",
                         principalColumn: "ProductId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Feedbacks",
+                columns: table => new
+                {
+                    FeedbackRateId = table.Column<int>(type: "int", nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Feedbacks", x => x.FeedbackRateId);
+                    table.ForeignKey(
+                        name: "FK_Feedbacks_Rates_FeedbackRateId",
+                        column: x => x.FeedbackRateId,
+                        principalTable: "Rates",
+                        principalColumn: "RateId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -448,6 +467,9 @@ namespace EcommerceApi.Migrations
                 name: "CouponConditions");
 
             migrationBuilder.DropTable(
+                name: "Feedbacks");
+
+            migrationBuilder.DropTable(
                 name: "OrderDetails");
 
             migrationBuilder.DropTable(
@@ -455,9 +477,6 @@ namespace EcommerceApi.Migrations
 
             migrationBuilder.DropTable(
                 name: "ProductImages");
-
-            migrationBuilder.DropTable(
-                name: "Rates");
 
             migrationBuilder.DropTable(
                 name: "RefreshTokens");
@@ -469,13 +488,16 @@ namespace EcommerceApi.Migrations
                 name: "Conditions");
 
             migrationBuilder.DropTable(
+                name: "Rates");
+
+            migrationBuilder.DropTable(
                 name: "Orders");
 
             migrationBuilder.DropTable(
-                name: "Products");
+                name: "Segments");
 
             migrationBuilder.DropTable(
-                name: "Segments");
+                name: "Products");
 
             migrationBuilder.DropTable(
                 name: "Coupons");

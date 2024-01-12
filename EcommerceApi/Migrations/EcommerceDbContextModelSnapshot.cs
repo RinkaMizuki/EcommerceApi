@@ -61,11 +61,9 @@ namespace EcommerceApi.Migrations
 
             modelBuilder.Entity("EcommerceApi.Models.Coupon.Condition", b =>
                 {
-                    b.Property<int>("ConditionId")
+                    b.Property<Guid>("ConditionId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ConditionId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Attribute")
                         .IsRequired()
@@ -82,11 +80,9 @@ namespace EcommerceApi.Migrations
 
             modelBuilder.Entity("EcommerceApi.Models.Coupon.Coupon", b =>
                 {
-                    b.Property<int>("CouponId")
+                    b.Property<Guid>("CouponId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CouponId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CouponCode")
                         .IsRequired()
@@ -105,11 +101,11 @@ namespace EcommerceApi.Migrations
 
             modelBuilder.Entity("EcommerceApi.Models.Coupon.CouponCondition", b =>
                 {
-                    b.Property<int>("ConditionId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("ConditionId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("CouponId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("CouponId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Value")
                         .HasColumnType("decimal(18,2)");
@@ -151,14 +147,12 @@ namespace EcommerceApi.Migrations
 
             modelBuilder.Entity("EcommerceApi.Models.Order.Order", b =>
                 {
-                    b.Property<int>("OrderId")
+                    b.Property<Guid>("OrderId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderId"));
-
-                    b.Property<int>("CouponId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("CouponId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("Delivered")
                         .HasColumnType("bit");
@@ -192,8 +186,8 @@ namespace EcommerceApi.Migrations
 
             modelBuilder.Entity("EcommerceApi.Models.Order.OrderDetail", b =>
                 {
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");

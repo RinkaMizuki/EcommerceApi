@@ -9,11 +9,13 @@ using EcommerceApi.Services;
 using EcommerceApi.Services.CacheService;
 using EcommerceApi.Services.CategoryService;
 using EcommerceApi.Services.ContactService;
+using EcommerceApi.Services.CouponService;
 using EcommerceApi.Services.EmailService;
 using EcommerceApi.Services.FeedbackRateService;
 using EcommerceApi.Services.FeedbackService;
 using EcommerceApi.Services.MailService;
 using EcommerceApi.Services.ProductService;
+using EcommerceApi.Services.SegmentService;
 using EcommerceApi.Swagger;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -77,6 +79,9 @@ builder.Services.Decorate<IProductService, CacheProductService>(); // ensure rec
 builder.Services.AddTransient<IRateService, RateService>();
 builder.Services.AddTransient<IFeedbackService, FeedbackService>();
 builder.Services.AddTransient<IContactService, ContactService>();
+builder.Services.AddTransient<ICouponService, CouponService>();
+builder.Services.AddTransient<ISegmentService, SegmentService>();
+
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 builder.Services.AddTransient<IMailService, MailService>();
 builder.Services.Configure<CloudflareR2Config>(configuration.GetSection("CloudflareR2Config"));

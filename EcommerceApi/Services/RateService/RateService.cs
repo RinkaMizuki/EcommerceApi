@@ -2,6 +2,8 @@
 using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models;
 using EcommerceApi.Models.Rate;
+using EcommerceApi.Models.Segment;
+using EcommerceApi.Services.SegmentService;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
@@ -11,21 +13,21 @@ namespace EcommerceApi.Services.FeedbackService
     public class RateService : IRateService
     {
         private readonly EcommerceDbContext _context;
-        public RateService(EcommerceDbContext context) {
+        private readonly ISegmentService _segmentService;
+
+        public RateService(EcommerceDbContext context, ISegmentService segmentService) {
             _context = context;
+            _segmentService = segmentService;
         }
-        public async Task<bool> DeleteFeedbackAsync(int rateId, CancellationToken userCancellationToken)
+        public async Task<bool> DeleteRateAsync(int rateId, CancellationToken userCancellationToken)
         {
             try
             {
                 var rateByID = await _context
                                         .Rates
                                         .Where(r => r.RateId == rateId)
-                                        .FirstOrDefaultAsync(userCancellationToken);
-                if (rateByID is null)
-                {
-                    throw new HttpStatusException(HttpStatusCode.NotFound, "Rate not found.");
-                }
+                                        .FirstOrDefaultAsync(userCancellationToken) 
+                                        ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Rate not found.");
                 _context.Rates.Remove(rateByID);
                 await _context.SaveChangesAsync(userCancellationToken);
                 return true;
@@ -36,7 +38,7 @@ namespace EcommerceApi.Services.FeedbackService
             }
         }
 
-        public async Task<List<Rate>> GetListFeedbackAsync(CancellationToken userCancellationToken)
+        public async Task<List<Rate>> GetListRateAsync(CancellationToken userCancellationToken)
         {
             try
             {
@@ -53,7 +55,7 @@ namespace EcommerceApi.Services.FeedbackService
             }
         }
 
-        public async Task<Rate> PostFeedbackAsync(RateDto rateDto, CancellationToken userCancellationToken)
+        public async Task<Rate> PostRateAsync(RateDto rateDto, CancellationToken userCancellationToken)
         {
             try
             {
@@ -63,8 +65,14 @@ namespace EcommerceApi.Services.FeedbackService
                                             .Include(p => p.ProductRates)
                                             .FirstOrDefaultAsync(userCancellationToken);
                 var userRate = await _context
-                                            .Users.Where(u => u.UserId == rateDto.UserId)
+                                            .Users
+                                            .Where(u => u.UserId == rateDto.UserId)
                                             .FirstOrDefaultAsync(userCancellationToken);
+                var segments = await _context
+                                            .Segments
+                                            .Include(s => s.Users)
+                                            .AsNoTracking()
+                                            .ToListAsync(userCancellationToken);
 
                 if (productRate is null)
                 {
@@ -92,6 +100,37 @@ namespace EcommerceApi.Services.FeedbackService
                     UserId = userRate.UserId,
                 };
 
+                bool flag = false;
+
+                Segment segment = null;
+
+                foreach (var s in segments)
+                {
+                    if(s.Title == "Review")
+                    {
+                        segment = s;
+                        foreach (var u in s.Users)
+                        {
+                            if(u.UserId == userRate.UserId)
+                            {
+                                flag = true;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                if(!flag)
+                {
+                    var newUserSegment = new UserSegment() { 
+                        SegmentId = segment!.SegmentId,
+                        UserId = userRate.UserId,
+                        User = userRate,
+                    };
+                   await _context.UserSegments.AddAsync(newUserSegment, userCancellationToken);
+                }
+
                 await _context
                               .Rates
                               .AddAsync(newRate, userCancellationToken);
@@ -106,7 +145,7 @@ namespace EcommerceApi.Services.FeedbackService
             }
         }
 
-        public async Task<Rate> UpdateFeedbackAsync(RateDto rateDto, int rateId, CancellationToken userCancellationToken)
+        public async Task<Rate> UpdateRateAsync(RateDto rateDto, int rateId, CancellationToken userCancellationToken)
         {
             try
             {
@@ -122,7 +161,6 @@ namespace EcommerceApi.Services.FeedbackService
                 updateRate.Status = rateDto.Status;
 
                 await _context.SaveChangesAsync(userCancellationToken);
-
                 return updateRate;
             }
             catch(SqlException ex)

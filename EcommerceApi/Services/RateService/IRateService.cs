@@ -6,9 +6,9 @@ namespace EcommerceApi.Services.FeedbackService
 {
     public interface IRateService
     {
-        public Task<List<Rate>> GetListFeedbackAsync(CancellationToken userCancellationToken);
-        public Task<Rate> UpdateFeedbackAsync(RateDto rateDto, int rateId,CancellationToken userCancellationToken);
-        public Task<Boolean> DeleteFeedbackAsync(int rateId, CancellationToken userCancellationToken);
-        public Task<Rate> PostFeedbackAsync(RateDto rateDto, CancellationToken userCancellationToken);
+        public Task<List<Rate>> GetListRateAsync(CancellationToken userCancellationToken);
+        public Task<Rate> UpdateRateAsync(RateDto rateDto, int rateId,CancellationToken userCancellationToken);
+        public Task<Boolean> DeleteRateAsync(int rateId, CancellationToken userCancellationToken);
+        public Task<Rate> PostRateAsync(RateDto rateDto, CancellationToken userCancellationToken);
     }
 }
