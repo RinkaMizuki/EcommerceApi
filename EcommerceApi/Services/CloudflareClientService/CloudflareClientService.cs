@@ -2,18 +2,18 @@ using System.Net;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
+using EcommerceApi.Config;
 using EcommerceApi.Dtos.Upload;
 using EcommerceApi.ExtensionExceptions;
-using EcommerceApi.Models.CloudflareR2;
 using Microsoft.Extensions.Options;
 
 namespace EcommerceApi.Services;
 
 public class CloudflareClientService : ICloudflareClientService
 {
-    private readonly CloudflareR2 _options;
+    private readonly CloudflareR2Config _options;
 
-    public CloudflareClientService(IOptions<CloudflareR2> options)
+    public CloudflareClientService(IOptions<CloudflareR2Config> options)
     {
         _options = options.Value;
     }

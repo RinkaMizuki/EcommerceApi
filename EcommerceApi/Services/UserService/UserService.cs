@@ -31,7 +31,6 @@ public class UserService : IUserService
             {
                 throw new HttpStatusException(HttpStatusCode.Conflict, "The request could not be completed due to a conflict with the current state of the resource.");
             }
-
             var newUser = new User()
             {
                 UserName = userAdmin.UserName,

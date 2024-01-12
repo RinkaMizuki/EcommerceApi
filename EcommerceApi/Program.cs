@@ -1,17 +1,25 @@
 using System.Text;
 using Asp.Versioning;
+using EcommerceApi.Config;
+using EcommerceApi.Extensions;
 using EcommerceApi.Middleware;
 using EcommerceApi.Models;
-using EcommerceApi.Models.CloudflareR2;
 using EcommerceApi.Models.IdentityData;
 using EcommerceApi.Services;
+using EcommerceApi.Services.CacheService;
 using EcommerceApi.Services.CategoryService;
+using EcommerceApi.Services.ContactService;
+using EcommerceApi.Services.EmailService;
 using EcommerceApi.Services.FeedbackRateService;
 using EcommerceApi.Services.FeedbackService;
+using EcommerceApi.Services.MailService;
 using EcommerceApi.Services.ProductService;
 using EcommerceApi.Swagger;
+using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -51,18 +59,29 @@ builder.Services.AddApiVersioning(options =>
     options.GroupNameFormat = "'v'VVV";
     options.SubstituteApiVersionInUrl = true;
 });
+builder.Services.AddMemoryCache();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHealthChecksUI().AddInMemoryStorage();
+builder.Services.AddHealthChecks()
+                .AddSqlServer(configuration.GetConnectionString("DefaultConnection")!)
+                .AddCheck<MyHealthCheck>("MyHealthCheck");
 builder.Services.AddSwaggerGen(options => { 
     options.OperationFilter<SwaggerDefaultValues>();
 });
+
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<ICategoryService, CategoryService>();
 builder.Services.AddTransient<ICloudflareClientService, CloudflareClientService>();
-builder.Services.AddTransient<IProductService, ProductService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.Decorate<IProductService, CacheProductService>(); // ensure receives the expected ProductService
 builder.Services.AddTransient<IRateService, RateService>();
 builder.Services.AddTransient<IFeedbackService, FeedbackService>();
+builder.Services.AddTransient<IContactService, ContactService>();
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
-builder.Services.Configure<CloudflareR2>(configuration.GetSection("CloudflareR2Config"));
+builder.Services.AddTransient<IMailService, MailService>();
+builder.Services.Configure<CloudflareR2Config>(configuration.GetSection("CloudflareR2Config"));
+builder.Services.Configure<EmailConfig>(configuration.GetSection("EmailConfiguration"));
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("MyAllowSpecificOrigins",
@@ -126,6 +145,14 @@ app.UseMiddleware<JwtMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthChecks("/health", new HealthCheckOptions()
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
+});
+
+app.MapHealthChecksUI(options => {
+    options.AddCustomStylesheet("dotnet.css");
+});
 app.MapControllers();
 
 app.Run();
