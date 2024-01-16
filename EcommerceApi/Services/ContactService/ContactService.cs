@@ -34,7 +34,6 @@ namespace EcommerceApi.Services.ContactService
                                                 ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
                 var segments = await _context
                                             .Segments
-                                            .Include(s => s.Users)
                                             .AsNoTracking()
                                             .ToListAsync(userCancellationToken);
 
@@ -50,24 +49,20 @@ namespace EcommerceApi.Services.ContactService
 
                 bool flag = false;
 
-                Segment segment = null;
-
-                foreach (var s in segments)
+                foreach (var s in userContact.UserSegments)
                 {
-                    if (s.Title == "Contact")
+                    if (s.Segment.Title == "Contact" && s.UserId == userContact.UserId)
                     {
-                        segment = s;
-                        foreach (var u in s.Users)
-                        {
-                            if (u.UserId == userContact.UserId)
-                            {
-                                flag = true;
-                                break;
-                            }
-                        }
+                        flag = true;
                         break;
                     }
                 }
+
+                var segment = await _context
+                                            .Segments
+                                            .Where(s => s.Title == "Contact")
+                                            .FirstOrDefaultAsync(userCancellationToken)
+                                            ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Segment not found.");
 
                 if (!flag)
                 {

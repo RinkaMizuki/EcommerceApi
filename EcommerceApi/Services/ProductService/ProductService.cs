@@ -182,12 +182,14 @@ namespace EcommerceApi.Services.ProductService
                 await _context
                             .Products
                             .AddAsync(newProduct, userCancellationToken);
+
                 await _context
                             .ProductImages
                             .AddRangeAsync(listProductImage, userCancellationToken);
                 await _context
                             .ProductColors
                             .AddRangeAsync(listColor, userCancellationToken);
+
                 await _context
                             .SaveChangesAsync(userCancellationToken);
 

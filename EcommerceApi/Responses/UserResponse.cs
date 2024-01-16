@@ -1,6 +1,7 @@
 using EcommerceApi.Models.Coupon;
 using EcommerceApi.Models.Order;
 using EcommerceApi.Models.Rate;
+using EcommerceApi.Models.Segment;
 
 namespace EcommerceApi.Responses;
 
@@ -16,4 +17,5 @@ public class UserResponse
     public Boolean IsActive { get; set; }
     public string Avatar { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
+    public List<Segment> Segments { get; set; } = new List<Segment>();
 }

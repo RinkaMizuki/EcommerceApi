@@ -2,6 +2,7 @@
 using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models;
 using EcommerceApi.Models.Segment;
+using EcommerceApi.Responses;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 
@@ -38,20 +39,18 @@ namespace EcommerceApi.Services.SegmentService
             }
         }
 
-        public async Task<List<Segment>> GetListSegmentAsync(CancellationToken userCancellationToken)
+        public async Task<List<SegmentResponse>> GetListSegmentAsync(CancellationToken userCancellationToken)
         {
             try
             {
                 var listSegment = await _context
                                             .Segments
-                                            .Include(s => s.Users)
-                                            .ThenInclude(us => us.User)
-                                            //.ThenInclude(u => u.Rates)
-                                            //.ThenInclude(ur => ur.FeedbackRate)
-                                            //.Include(s => s.Users)
-                                            //.ThenInclude(u => u.User)
-                                            //.ThenInclude(u => u.Orders)
                                             .AsNoTracking()
+                                            .Select(s => new SegmentResponse
+                                            {
+                                                Id = s.SegmentId,
+                                                Title = s.Title,
+                                            })
                                             .ToListAsync(userCancellationToken);
                 return listSegment;
             }

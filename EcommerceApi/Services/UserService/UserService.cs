@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using EcommerceApi.Dtos.Admin;
 using EcommerceApi.Dtos.Upload;
@@ -39,7 +40,7 @@ public class UserService : IUserService
                 CreatedAt = DateTime.Now,
                 ModifiedAt = DateTime.Now,
                 Role = userAdmin.Role,
-                Phone = userAdmin.Phone,
+                Phone = userAdmin.Phone!,
                 BirthDate = userAdmin.BirthDate,
                 IsActive = userAdmin.IsActive,
                 EmailConfirm = userAdmin.EmailConfirm,
@@ -51,7 +52,7 @@ public class UserService : IUserService
                                             .AsNoTracking()
                                             .Where(u => u.UserName == newUser.UserName)
                                             .FirstOrDefaultAsync(userCancellationToken);
-            return userResponse;
+            return userResponse!;
         }
         catch(SqlException ex)
         {
@@ -102,43 +103,102 @@ public class UserService : IUserService
                 filterValues.Insert(0, "q");
                 filterValues.Insert(1, "");
             }
-
-            if (!filterValues.Contains("email"))
+            else
             {
-                filterValues.Add("email");
+                var search = filterValues.IndexOf("q") + 1;
+                filterValues.Insert(0, filterValues[search]);
+                filterValues.Insert(0, "q");
+
+                if (filterValues[filterValues.Count - 1] == "q")
+                {
+                    filterValues.RemoveAt(filterValues.LastIndexOf("q") - 1);
+                    filterValues.RemoveAt(filterValues.LastIndexOf("q"));
+                }
+                else
+                {
+                    filterValues.RemoveAt(filterValues.LastIndexOf("q") + 1);
+                    filterValues.RemoveAt(filterValues.LastIndexOf("q"));
+                }
+            }
+
+            if (!filterValues.Contains("segments"))
+            {
+                filterValues.Add("segments");
                 filterValues.Add("");
+            }
+
+            if (!filterValues.Contains("isActive"))
+            {
+                filterValues.Add("isActive");
+                filterValues.Add("");
+            }
+            else
+            {
+                var indexActive = filterValues.IndexOf("isActive");
+                filterValues.Add("isActive");
+                filterValues.Add(filterValues[indexActive + 1]);
+                filterValues.Remove("isActive");
+                filterValues.Remove(filterValues[indexActive]);
             }
 
             var perPage = rangeValues[1] - rangeValues[0] + 1;
             var currentPage = Convert.ToInt32(Math.Ceiling((double)rangeValues[0] / perPage)) + 1;
             var sortBy = sortValues[0].ToLower();
             var sortType = sortValues[1].ToLower();
-            var listUsers = await _context.Users.Select(u => new UserResponse()
-            {
-                Id = u.UserId,
-                UserName = u.UserName,
-                Email = u.Email,
-                Avatar = u.Avatar,
-                BirthDate = Convert.ToDateTime(u.BirthDate.ToShortDateString()),
-                EmailConfirm = u.EmailConfirm,
-                IsActive = u.IsActive,
-                Phone = u.Phone,
-                Role = u.Role,
-                Url = u.Url,
-            }).ToListAsync(userCancellationToken);
+
+            var listUsers = await _context
+                                          .Users
+                                          .Where(u => u.Role != "admin")
+                                          .Include(u => u.UserSegments)
+                                          .ThenInclude(u => u.Segment)
+                                          .Select(u => new UserResponse()
+                                          {
+                                               Id = u.UserId,
+                                               UserName = u.UserName,
+                                               Email = u.Email,
+                                               Avatar = u.Avatar,
+                                               BirthDate = Convert.ToDateTime(u.BirthDate.ToShortDateString()),
+                                               EmailConfirm = u.EmailConfirm,
+                                               IsActive = u.IsActive,
+                                               Phone = u.Phone,
+                                               Role = u.Role,
+                                               Url = u.Url,
+                                               Segments = u.UserSegments.Select(us => new Segment
+                                               {
+                                                   SegmentId = us.Segment.SegmentId,
+                                                   Title = us.Segment.Title,
+                                               }).ToList()
+                                          })
+                                          .ToListAsync(userCancellationToken);
+
             var totalUser = listUsers.Count;
+
+            var filterBan = filterValues[filterValues.IndexOf("isActive") + 1];
+
             listUsers = listUsers
-                .Where(u => (filterValues[3] != "" && filterValues[1] != ""
-                        ? u.UserName.ToLower().Contains(filterValues[1].ToLower()) &&
-                          u.Email.ToLower().Contains(filterValues[3].ToLower())
-                        : filterValues[3] == "" && filterValues[1] == ""
-                            ? filterValues[3] == "" && filterValues[1] == ""
-                            : filterValues[1] != "" && filterValues[3] == ""
-                                ? u.UserName.ToLower().Contains(filterValues[1].ToLower())
-                                : u.Email.ToLower().Contains(filterValues[3].ToLower())
-                    ))
-                .Skip((currentPage - 1) * perPage).Take(perPage).ToList();
+                                .Where(u => filterValues[3] != "" && filterValues[1] != "" && filterBan != ""
+                                        ? u.UserName.ToLower().Contains(filterValues[1].ToLower()) &&
+                                        IsExistSegment(u.Segments, filterValues) && u.IsActive.ToString().ToLower() == filterBan.ToString().ToLower()
+                                        : filterValues[3] == "" && filterValues[1] == "" && filterBan == ""
+                                            ? filterValues[3] == "" && filterValues[1] == "" && filterBan == ""
+                                            : filterValues[1] != "" && filterValues[3] == "" && filterBan == ""
+                                                ? u.UserName.ToLower().Contains(filterValues[1].ToLower())
+                                                : filterValues[1] == "" && filterValues[3] != "" && filterBan == "" 
+                                                ? IsExistSegment(u.Segments, filterValues)
+                                                : filterValues[1] == "" && filterValues[3] == "" && filterBan != ""
+                                                ? u.IsActive.ToString().ToLower() == filterBan.ToString().ToLower()
+                                                : filterValues[1] != "" && filterValues[3] != "" && filterBan == ""
+                                                ? u.UserName.ToLower().Contains(filterValues[1].ToLower()) && IsExistSegment(u.Segments, filterValues)
+                                                : filterValues[1] == "" && filterValues[3] != "" && filterBan != ""
+                                                ? IsExistSegment(u.Segments, filterValues) && u.IsActive.ToString().ToLower() == filterBan.ToString().ToLower()
+                                                : u.UserName.ToLower().Contains(filterValues[1].ToLower()) && u.IsActive.ToString().ToLower() == filterBan.ToString().ToLower()
+                                    )
+                                .Skip((currentPage - 1) * perPage)
+                                .Take(perPage)
+                                .ToList();
+
             if (sortType == "desc") listUsers.Reverse();
+
             switch (sortType)
             {
                 case "asc":
@@ -183,9 +243,34 @@ public class UserService : IUserService
         }
     }
 
+    private bool IsExistSegment(List<Segment> segments, List<string> segmentFitler) {
 
+        var filters = segmentFitler
+                                   .Skip(segmentFitler.IndexOf("segments") + 1)
+                                   .Take(segmentFitler.Count)
+                                   .ToList();
+        if(filters.Contains("isActive"))
+        {
+            filters.RemoveAt(filters.IndexOf("isActive") + 1);
+            filters.RemoveAt(filters.IndexOf("isActive"));
+        }
 
-    public async Task<Boolean> DeleteUserByIdAsync(int userId, CancellationToken userCancellationToken)
+        int elmCount = 0;
+        foreach(var us in segments) // review, order
+        {
+            foreach(var f in filters) // review
+            {
+                if (f.ToLower() == us.Title.ToLower())
+                {
+                    elmCount++;
+                    break;
+                } 
+            }
+        }
+        return elmCount >= filters.Count();
+    }
+
+    public async Task<bool> DeleteUserByIdAsync(int userId, CancellationToken userCancellationToken)
     {
         try
         {

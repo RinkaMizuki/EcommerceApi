@@ -51,7 +51,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         public async Task<IActionResult> CreateContact(ContactDto contactDto, CancellationToken userCancellationToken)
         {
             var newContact = await _contactService.PostContactAsync(contactDto, userCancellationToken);
-            return Ok(newContact);
+            return StatusCode(201, newContact);
         }
     }
 }

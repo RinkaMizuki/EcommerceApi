@@ -15,12 +15,13 @@ public class User
     public DateTime BirthDate { get; set; } = DateTime.Now;
     public bool EmailConfirm { get; set; } = false;
     public bool IsActive { get; set; } = false;
+    public bool IsGetOff { get; set; } = false;
     public string Avatar { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
+    [JsonIgnore]
     public List<Rate.Rate> Rates { get; set; } = new List<Rate.Rate> ();
     public List<Order.Order> Orders { get; set; } = new List<Order.Order> ();
-    [JsonIgnore]
     public List<UserSegment> UserSegments { get; set; } = new List<UserSegment> ();
 }

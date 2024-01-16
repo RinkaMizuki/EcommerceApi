@@ -22,7 +22,17 @@ namespace EcommerceApi
                 listValues = list.Split(splitOperator).ToList();
                 for (int i = 0; i < listValues.Count; i++)
                 {
-                    if (listValues[i].StartsWith("\"") && listValues[i].EndsWith("\""))
+                    if(listValues[i].StartsWith("[") || listValues[i].EndsWith("]"))
+                    {
+                        listValues[i] = listValues[i].Trim('[');
+                        listValues[i] = listValues[i].Trim(']');
+                        listValues[i] = listValues[i].Trim('"');
+                    }
+                    else if (listValues[i].StartsWith("[\"") && listValues[i].EndsWith("\"]"))
+                    {
+                        listValues[i] = listValues[i].Substring(2, listValues[i].Length - 4);
+                    }
+                    else if (listValues[i].StartsWith("\"") && listValues[i].EndsWith("\""))
                     {
                         listValues[i] = listValues[i].Trim('"');
                     }

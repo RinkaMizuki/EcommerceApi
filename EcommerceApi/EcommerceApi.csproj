@@ -43,7 +43,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Controllers\V1\User\" />
       <Folder Include="Controllers\V2\" />
     </ItemGroup>
 

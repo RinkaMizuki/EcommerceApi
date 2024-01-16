@@ -10,7 +10,7 @@ namespace EcommerceApi.Controllers.V1.Admin
 {
     [ApiVersion("1.0")]
     [Authorize(Policy = IdentityData.AdminPolicyName)]
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/Admin/")]
     [ApiController]
     public class SegmentController : ControllerBase
     {

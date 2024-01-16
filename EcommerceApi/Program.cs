@@ -8,12 +8,14 @@ using EcommerceApi.Models.IdentityData;
 using EcommerceApi.Services;
 using EcommerceApi.Services.CacheService;
 using EcommerceApi.Services.CategoryService;
+using EcommerceApi.Services.ConfirmService;
 using EcommerceApi.Services.ContactService;
 using EcommerceApi.Services.CouponService;
 using EcommerceApi.Services.EmailService;
 using EcommerceApi.Services.FeedbackRateService;
 using EcommerceApi.Services.FeedbackService;
 using EcommerceApi.Services.MailService;
+using EcommerceApi.Services.OrderService;
 using EcommerceApi.Services.ProductService;
 using EcommerceApi.Services.SegmentService;
 using EcommerceApi.Swagger;
@@ -81,7 +83,9 @@ builder.Services.AddTransient<IFeedbackService, FeedbackService>();
 builder.Services.AddTransient<IContactService, ContactService>();
 builder.Services.AddTransient<ICouponService, CouponService>();
 builder.Services.AddTransient<ISegmentService, SegmentService>();
+builder.Services.AddTransient<IOrderService, OrderService>();
 
+builder.Services.AddTransient<IConfirmService, ConfirmService>();
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 builder.Services.AddTransient<IMailService, MailService>();
 builder.Services.Configure<CloudflareR2Config>(configuration.GetSection("CloudflareR2Config"));
@@ -122,7 +126,9 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(IdentityData.AdminPolicyName,
-        policy => { policy.RequireClaim("Role", IdentityData.AdminPolicyRole); });
+        policy => { 
+            policy.RequireClaim("Role", IdentityData.AdminPolicyRole);
+        });
 });
 
 var app = builder.Build();

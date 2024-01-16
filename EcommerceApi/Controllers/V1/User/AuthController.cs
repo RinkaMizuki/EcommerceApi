@@ -5,14 +5,19 @@ using System.Security.Cryptography;
 using System.Text;
 using Asp.Versioning;
 using EcommerceApi.Dtos.User;
+using UserModel = EcommerceApi.Models.Segment.User;
+using MessageModel = EcommerceApi.Models.Message.Message;
 using EcommerceApi.Models;
-using EcommerceApi.Models.Segment;
 using EcommerceApi.Responses;
+using EcommerceApi.Services.ConfirmService;
+using EcommerceApi.Services.MailService;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Humanizer;
+using EcommerceApi.ExtensionExceptions;
 
-namespace EcommerceApi.Controllers.V1.Admin
+namespace EcommerceApi.Controllers.V1.User
 {
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
@@ -21,16 +26,20 @@ namespace EcommerceApi.Controllers.V1.Admin
     {
         private readonly EcommerceDbContext _context;
         private readonly IConfiguration _config;
+        private readonly IMailService _mailService;
+        private readonly IConfirmService _confirmService;
 
-        public AuthController(EcommerceDbContext context, IConfiguration config)
+        public AuthController(EcommerceDbContext context, IConfiguration config, IMailService mailService, IConfirmService confirmService)
         {
             _context = context;
             _config = config;
+            _mailService = mailService;
+            _confirmService = confirmService;
         }
 
         [HttpPost]
         [Route("register")]
-        public async Task<IActionResult> Register(UserDto User)
+        public async Task<IActionResult> Register(UserDto User, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(User.UserName)
                 || string.IsNullOrEmpty(User.Email)
@@ -58,7 +67,7 @@ namespace EcommerceApi.Controllers.V1.Admin
             }
 
             var PasswordHash = BCrypt.Net.BCrypt.HashPassword(User.Password);
-            var newUser = new User()
+            var newUser = new UserModel()
             {
                 UserName = User.UserName,
                 Email = User.Email,
@@ -67,15 +76,53 @@ namespace EcommerceApi.Controllers.V1.Admin
                 CreatedAt = DateTime.Now,
                 ModifiedAt = DateTime.Now,
             };
-            await _context.Users.AddAsync(newUser);
-            await _context.SaveChangesAsync();
-            return Ok(new
+            await _context.Users.AddAsync(newUser, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            var token = _confirmService.GenerateEmailConfirmToken(newUser, 1);
+
+            var message = $"{Request.Scheme}://{Request.Host}/api/v1/Auth/confirm-email?email={newUser.Email}&token={token}";
+
+            await _mailService.SendEmailAsync(new MessageModel(
+                newUser.Email,
+                newUser.UserName,
+                "Please confirm your email",
+                message
+            ), cancellationToken);
+
+            return StatusCode(201, new
             {
                 message = "register successfully",
                 statusCode = HttpStatusCode.Created,
             });
         }
-
+        [HttpGet]
+        [Route("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery]string email, [FromQuery] string token, CancellationToken cancellationToken) {
+            var userConfirm = await _context
+                                            .Users
+                                            .Where(u => u.Email == email)
+                                            .FirstOrDefaultAsync(cancellationToken)
+                                            ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
+            if(_confirmService.ValidateEmailConfirmationToken(token, out ClaimsPrincipal claimsPrincipal))
+            {
+                userConfirm.EmailConfirm = true;
+                await _context.SaveChangesAsync(cancellationToken);
+                return StatusCode(200, new
+                {
+                    message = "confirm email successfully",
+                    statusCode = 200,
+                });
+            }
+            else
+            {
+                return StatusCode(400, new
+                {
+                    message = "confirm email failed",
+                    statusCode = 400,
+                });
+            }
+        }
         [HttpPost]
         [Route("login")]
         public async Task<IActionResult> Login(LoginDto Login)
@@ -206,7 +253,7 @@ namespace EcommerceApi.Controllers.V1.Admin
             });
         }
 
-        private List<Claim> GetListClaim(User user)
+        private List<Claim> GetListClaim(UserModel user)
         {
             var claims = new List<Claim>
             {

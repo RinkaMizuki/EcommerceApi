@@ -4,6 +4,7 @@ using EcommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EcommerceApi.Migrations
 {
     [DbContext(typeof(EcommerceDbContext))]
-    partial class EcommerceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240113063649_UpdateTableOrder")]
+    partial class UpdateTableOrder
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -157,26 +160,22 @@ namespace EcommerceApi.Migrations
                     b.Property<Guid>("CouponId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("Delivered")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("DeliveredDate")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("Returned")
+                    b.Property<bool>("Status")
                         .HasColumnType("bit");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("Token")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("TotalDiscount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TotalPrice")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("TotalQuantity")
@@ -516,9 +515,6 @@ namespace EcommerceApi.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsGetOff")
-                        .HasColumnType("bit");
-
                     b.Property<DateTime>("ModifiedAt")
                         .HasColumnType("datetime2");
 
@@ -627,12 +623,12 @@ namespace EcommerceApi.Migrations
             modelBuilder.Entity("EcommerceApi.Models.Order.OrderDetail", b =>
                 {
                     b.HasOne("EcommerceApi.Models.Order.Order", "Order")
-                        .WithMany("OrderDetails")
+                        .WithMany()
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EcommerceApi.Models.Product.Product", "Product")
+                    b.HasOne("EcommerceApi.Models.Product.Product", "Proclearduct")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -640,7 +636,7 @@ namespace EcommerceApi.Migrations
 
                     b.Navigation("Order");
 
-                    b.Navigation("Product");
+                    b.Navigation("Proclearduct");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Product.Product", b =>
@@ -737,11 +733,6 @@ namespace EcommerceApi.Migrations
             modelBuilder.Entity("EcommerceApi.Models.Coupon.Coupon", b =>
                 {
                     b.Navigation("CouponConditions");
-                });
-
-            modelBuilder.Entity("EcommerceApi.Models.Order.Order", b =>
-                {
-                    b.Navigation("OrderDetails");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Product.Product", b =>

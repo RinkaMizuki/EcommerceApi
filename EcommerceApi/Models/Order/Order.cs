@@ -13,8 +13,12 @@ public class Order
     [ForeignKey("CouponId")] public Coupon.Coupon Coupon { get; set; }
     public DateTime OrderDate { get; set; }
     public DateTime DeliveredDate { get; set; }
-    public bool Delivered { get; set; }
-    public bool Status { get; set; }
+    public string Status { get; set; } = string.Empty;
     public decimal TotalDiscount { get; set; }
     public int TotalQuantity { get; set; }
+    public decimal TotalPrice { get; set; }
+    public bool Returned { get; set; }
+    public bool Confirm { get; set; } = false;
+    public Guid Token { get; set; }
+    public List<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail> ();
 }

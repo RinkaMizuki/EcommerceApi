@@ -7,6 +7,7 @@ using EcommerceApi.Services;
 using EcommerceApi.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace EcommerceApi.Controllers.V1.Admin
 {
@@ -16,11 +17,9 @@ namespace EcommerceApi.Controllers.V1.Admin
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly ICloudflareClientService _cloudflareClient;
         private readonly IUserService _userService;
-        public UserController(ICloudflareClientService cloudflareClient, IUserService userService)
+        public UserController(IUserService userService)
         {
-            _cloudflareClient = cloudflareClient;
             _userService = userService;
         }
         [AllowAnonymous]

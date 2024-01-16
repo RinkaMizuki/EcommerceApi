@@ -66,14 +66,10 @@ namespace EcommerceApi.Services.FeedbackService
                                             .FirstOrDefaultAsync(userCancellationToken);
                 var userRate = await _context
                                             .Users
+                                            .Include(u => u.UserSegments)
+                                            .ThenInclude(us => us.Segment)
                                             .Where(u => u.UserId == rateDto.UserId)
                                             .FirstOrDefaultAsync(userCancellationToken);
-                var segments = await _context
-                                            .Segments
-                                            .Include(s => s.Users)
-                                            .AsNoTracking()
-                                            .ToListAsync(userCancellationToken);
-
                 if (productRate is null)
                 {
                     throw new HttpStatusException(HttpStatusCode.NotFound, "Product not found.");
@@ -102,24 +98,20 @@ namespace EcommerceApi.Services.FeedbackService
 
                 bool flag = false;
 
-                Segment segment = null;
-
-                foreach (var s in segments)
+                foreach (var s in userRate.UserSegments)
                 {
-                    if(s.Title == "Review")
+                    if(s.Segment.Title == "Review" && s.UserId == userRate.UserId)
                     {
-                        segment = s;
-                        foreach (var u in s.Users)
-                        {
-                            if(u.UserId == userRate.UserId)
-                            {
-                                flag = true;
-                                break;
-                            }
-                        }
+                        flag = true;
                         break;
                     }
                 }
+
+                var segment = await _context
+                                            .Segments
+                                            .Where(s => s.Title == "Review")
+                                            .FirstOrDefaultAsync(userCancellationToken)
+                                            ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Segment not found.");
 
                 if(!flag)
                 {

@@ -9,10 +9,11 @@ public class UserSegment
     [JsonIgnore]
     public int UserId { get; set; }
     [ForeignKey("UserId")]
+
+    [JsonIgnore]
     public User User { get; set; }
     [JsonIgnore]
     public int SegmentId { get; set; }
     [ForeignKey("SegmentId")]
-    [JsonIgnore]
     public Segment Segment { get; set; }
 }
