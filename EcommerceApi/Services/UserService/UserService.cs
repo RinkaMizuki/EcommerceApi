@@ -177,7 +177,7 @@ public class UserService : IUserService
             listUsers = listUsers
                                 .Where(u => filterValues[3] != "" && filterValues[1] != "" && filterBan != ""
                                         ? u.UserName.ToLower().Contains(filterValues[1].ToLower()) &&
-                                        IsExistSegment(u.Segments, filterValues) && u.IsActive.ToString().ToLower() == filterBan.ToString().ToLower()
+                                        IsExistSegment(u.Segments, filterValues) && u.IsActive.ToString().ToLower() == filterBan.ToLower()
                                         : filterValues[3] == "" && filterValues[1] == "" && filterBan == ""
                                             ? filterValues[3] == "" && filterValues[1] == "" && filterBan == ""
                                             : filterValues[1] != "" && filterValues[3] == "" && filterBan == ""
@@ -185,12 +185,12 @@ public class UserService : IUserService
                                                 : filterValues[1] == "" && filterValues[3] != "" && filterBan == "" 
                                                 ? IsExistSegment(u.Segments, filterValues)
                                                 : filterValues[1] == "" && filterValues[3] == "" && filterBan != ""
-                                                ? u.IsActive.ToString().ToLower() == filterBan.ToString().ToLower()
+                                                ? u.IsActive.ToString().ToLower() == filterBan.ToLower()
                                                 : filterValues[1] != "" && filterValues[3] != "" && filterBan == ""
                                                 ? u.UserName.ToLower().Contains(filterValues[1].ToLower()) && IsExistSegment(u.Segments, filterValues)
                                                 : filterValues[1] == "" && filterValues[3] != "" && filterBan != ""
-                                                ? IsExistSegment(u.Segments, filterValues) && u.IsActive.ToString().ToLower() == filterBan.ToString().ToLower()
-                                                : u.UserName.ToLower().Contains(filterValues[1].ToLower()) && u.IsActive.ToString().ToLower() == filterBan.ToString().ToLower()
+                                                ? IsExistSegment(u.Segments, filterValues) && u.IsActive.ToString().ToLower() == filterBan.ToLower()
+                                                : u.UserName.ToLower().Contains(filterValues[1].ToLower()) && u.IsActive.ToString().ToLower() == filterBan.ToLower()
                                     )
                                 .Skip((currentPage - 1) * perPage)
                                 .Take(perPage)

@@ -28,9 +28,9 @@ namespace EcommerceApi.Controllers.V1.Admin
         [HttpGet]
         [Route("products")]
         public async Task<IActionResult> GetListProduct(
-            [FromQuery(Name = "sort")] string sort,
-            [FromQuery(Name = "range")] string range,
-            [FromQuery(Name = "filter")] string filter, 
+            [FromQuery] string sort,
+            [FromQuery] string range,
+            [FromQuery] string filter, 
             CancellationToken userCancellationToken
             )
         {

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
+using EcommerceApi.Constant;
 
 namespace EcommerceApi.Services.ProductService
 {
@@ -69,48 +70,54 @@ namespace EcommerceApi.Services.ProductService
                 }
 
                 List<string> filterValues = Helpers.ParseString<string>(filter);
-                if (!filterValues.Contains("q"))
+                if (!filterValues.Contains(ProductFilterType.Search))
                 {
-                    filterValues.Insert(0, "q");
+                    filterValues.Insert(0, ProductFilterType.Search);
                     filterValues.Insert(1, "");
                 }
                 else
                 {
-                    var search = filterValues.IndexOf("q") + 1;
+                    var search = filterValues.IndexOf(ProductFilterType.Search) + 1;
                     filterValues.Insert(0, filterValues[search]);
-                    filterValues.Insert(0, "q");
+                    filterValues.Insert(0, ProductFilterType.Search);
 
-                    if (filterValues[filterValues.Count - 1] == "q")
+                    if (filterValues[^1] == "q") // filterValues[filterValues.Count - 1] == filterValues[^1]
                     {
-                        filterValues.RemoveAt(filterValues.LastIndexOf("q") - 1);
-                        filterValues.RemoveAt(filterValues.LastIndexOf("q"));
+                        filterValues.RemoveAt(filterValues.LastIndexOf(ProductFilterType.Search) - 1);
+                        filterValues.RemoveAt(filterValues.LastIndexOf(ProductFilterType.Search));
                     }
                     else
                     {
-                        filterValues.RemoveAt(filterValues.LastIndexOf("q") + 1);
-                        filterValues.RemoveAt(filterValues.LastIndexOf("q"));
+                        filterValues.RemoveAt(filterValues.LastIndexOf(ProductFilterType.Search) + 1);
+                        filterValues.RemoveAt(filterValues.LastIndexOf(ProductFilterType.Search));
                     }
                 }
-                
-                if (!filterValues.Contains("stockRange"))
+
+                if (!filterValues.Contains(ProductFilterType.Category))
                 {
-                    filterValues.Add("stockRange");
+                    filterValues.Add(ProductFilterType.Category);
+                    filterValues.Add("");
+                }
+                
+                if (!filterValues.Contains(ProductFilterType.StockRange))
+                {
+                    filterValues.Add(ProductFilterType.StockRange);
                     filterValues.Add("");
                     filterValues.Add("");
                 }
                 else
                 {
-                    var indexActive = filterValues.IndexOf("stockRange");
-                    filterValues.Add("stockRange");
+                    var indexActive = filterValues.IndexOf(ProductFilterType.StockRange);
+                    filterValues.Add(ProductFilterType.StockRange);
                     filterValues.Add(filterValues[indexActive + 1]);
                     filterValues.Add(filterValues[indexActive + 2]);
-                    filterValues.Remove("stockRange");
+                    filterValues.Remove(ProductFilterType.StockRange);
                     filterValues.Remove(filterValues[indexActive + 1]);
                     filterValues.Remove(filterValues[indexActive]);
                 }
 
                 var stockRange = filterValues
-                                             .Skip(filterValues.IndexOf("stockRange") + 1)
+                                             .Skip(filterValues.IndexOf(ProductFilterType.StockRange) + 1)
                                              .Take(2)
                                              .ToList();
                 
@@ -129,15 +136,23 @@ namespace EcommerceApi.Services.ProductService
                                                .ToListAsync(userCancellationToken);
                 
                 var totalProduct = listProduct.Count;
+                
+                //conditions filter
                 var minStock = string.IsNullOrEmpty(stockRange[0]) ? -999 : Convert.ToInt32(stockRange[0]);
                 var maxStock = string.IsNullOrEmpty(stockRange[1]) ? -999 : Convert.ToInt32(stockRange[1]);
+                var category = filterValues[filterValues.IndexOf(ProductFilterType.Category) + 1];
+                var searchValue = filterValues[filterValues.IndexOf(ProductFilterType.Search) + 1].ToLower();
+                
                 listProduct = listProduct
-                                        .Where(p => (p.Quantity >= minStock
+                                        .Where(p => ((p.Quantity >= minStock
                                                     && p.Quantity <= maxStock)
                                                     || (p.Quantity >= minStock
                                                     && maxStock < 0)
                                                     || (minStock < 0
-                                                    && maxStock < 0)
+                                                    && maxStock < 0))
+                                                    && (string.IsNullOrEmpty(category) 
+                                                    || p.CategoryId == Convert.ToInt32(category))
+                                                    && (string.IsNullOrEmpty(searchValue) || p.Title.ToLower().Contains(searchValue.ToLower()))
                                               )
                                         .Skip((currentPage - 1) * perPage)
                                         .Take(perPage)
