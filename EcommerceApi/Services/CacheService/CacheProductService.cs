@@ -31,13 +31,22 @@ namespace EcommerceApi.Services.CacheService
             return await _productService.GetImageAsync(imageUrl, userCancellationToken);
         }
 
-        public async Task<List<Product>> GetListProductAsync(CancellationToken userCancellationToken)
+        public async Task<List<Product>> GetListProductAsync(string sort, string range, string filter, HttpResponse response, CancellationToken userCancellationToken)
         {
-            var productCache = await _cache.GetOrCreateAsync(CacheKey.Product, async entry => {
-                entry.SlidingExpiration = TimeSpan.FromSeconds(60);
-                entry.AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(5);
-                return await _productService.GetListProductAsync(userCancellationToken);
-            });
+            //var productCache = await _cache.GetOrCreateAsync(CacheKey.Product, async entry => {
+            //    entry.SlidingExpiration = TimeSpan.FromSeconds(60);
+            //    entry.AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(5);
+            //});
+            var productCache = await _productService.GetListProductAsync(sort,  range,  filter, response, userCancellationToken);
+            
+            //List<int> rangeValues = Helpers.ParseString<int>(range);
+            //if (rangeValues.Count == 0)
+            //{
+            //    rangeValues.AddRange(new List<int> { 0, 4 });
+            //};
+            
+            //response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
+            //response.Headers.Append("Content-Range", $"products {rangeValues[0]}-{rangeValues[1]}/{productCache?.Count}");
             return productCache ?? new List<Product>();
         }
 

@@ -33,8 +33,10 @@ namespace EcommerceApi.Controllers.V1.Admin
             try
             {
                 var listCate = await _categoryService.GetListCategoryAsync(userCancellationToken);
-                listCate = listCate.Where(pc => pc?.ParentProductCategory == null).ToList();
-                return new JsonResult(listCate);
+                var listCateResponse = listCate
+                                                .Where(pc => pc?.ParentProductCategory == null)
+                                                .ToList();
+                return new JsonResult(listCateResponse);
             }
             catch (Exception e)
             {

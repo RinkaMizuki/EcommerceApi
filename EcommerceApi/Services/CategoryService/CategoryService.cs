@@ -24,8 +24,11 @@ public class CategoryService : ICategoryService
         //await _context.SaveChangesAsync();
         try
         {
-            var listCate = await _context.ProductCategories
-                                                       .ToListAsync(userCancellationToken);
+            var listCate = await _context
+                                        .ProductCategories
+                                        .Include(p => p.Products)
+                                        .AsNoTracking()
+                                        .ToListAsync(userCancellationToken);
             return listCate;
         }
         catch(SqlException ex)

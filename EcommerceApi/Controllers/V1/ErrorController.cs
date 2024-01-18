@@ -44,7 +44,7 @@ namespace EcommerceApi.Controllers.V1
             {
                 return new JsonResult(new
                 {
-                    message = "Has been an error on the server",
+                    message = exception?.Message,
                     statusCode = 500,
                 });
             }

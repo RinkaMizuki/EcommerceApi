@@ -27,9 +27,14 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
         [HttpGet]
         [Route("products")]
-        public async Task<IActionResult> GetListProduct(CancellationToken userCancellationToken)
+        public async Task<IActionResult> GetListProduct(
+            [FromQuery(Name = "sort")] string sort,
+            [FromQuery(Name = "range")] string range,
+            [FromQuery(Name = "filter")] string filter, 
+            CancellationToken userCancellationToken
+            )
         {
-            var listProduct = await _productService.GetListProductAsync(userCancellationToken);
+            var listProduct = await _productService.GetListProductAsync(sort, range, filter, HttpContext.Response, userCancellationToken);
             return new JsonResult(listProduct);
         }
         [HttpGet]
@@ -71,7 +76,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
         [AllowAnonymous]
         [HttpGet]
-        [Route("products/preview")]
+        [Route("product/preview")]
         public async Task<IActionResult> GetProductImage(string productImage, CancellationToken userCancellationToken)
         {
             var userAvatar = await _productService.GetImageAsync(productImage, userCancellationToken);

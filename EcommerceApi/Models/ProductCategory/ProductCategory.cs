@@ -6,6 +6,7 @@ namespace EcommerceApi.Models.Product;
 
 public class ProductCategory
 {
+    [JsonPropertyName("id")]
     [Key] public int CategoryId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
@@ -22,5 +23,6 @@ public class ProductCategory
     [ForeignKey("ParentCategoryId")]
     public ProductCategory ParentProductCategory { get; set; } = null;
 
+    public List<Product> Products { get; set; } = new();
     public List<ProductCategory> ListProductCategoryChild { get; set; } = new List<ProductCategory>();
 }

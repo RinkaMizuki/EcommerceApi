@@ -78,11 +78,10 @@ public class UserService : IUserService
     }
 
     public async Task<List<UserResponse>> GetListUsersAsync(string sort, string range, string filter,
-        HttpResponse Response, CancellationToken userCancellationToken)
+        HttpResponse response, CancellationToken userCancellationToken)
     {
         try
         {
-            var listUser = await _context.Users.AsNoTracking().ToListAsync(userCancellationToken);
             List<int> rangeValues = Helpers.ParseString<int>(range);
 
             if (rangeValues.Count == 0)
@@ -233,8 +232,8 @@ public class UserService : IUserService
                     break;
             }
 
-            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
-            Response.Headers.Append("Content-Range", $"users {rangeValues[0]}-{rangeValues[1]}/{totalUser}");
+            response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
+            response.Headers.Append("Content-Range", $"users {rangeValues[0]}-{rangeValues[1]}/{totalUser}");
             return listUsers;
         }
         catch(SqlException ex)

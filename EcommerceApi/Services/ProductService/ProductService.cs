@@ -50,16 +50,103 @@ namespace EcommerceApi.Services.ProductService
                 throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
             }
         }
-        public async Task<List<Product>> GetListProductAsync(CancellationToken userCancellationToken)
+        public async Task<List<Product>> GetListProductAsync(string sort, string range, string filter, HttpResponse response, CancellationToken userCancellationToken)
         {
             try
             {
-                return await _context.Products
-                                       .Include(p => p.ProductImages)
-                                       .Include(p => p.ProductColors)
-                                       .Include(p => p.ProductRates)
-                                       .AsNoTracking()
-                                       .ToListAsync(userCancellationToken);
+                List<int> rangeValues = Helpers.ParseString<int>(range);
+
+                if (rangeValues.Count == 0)
+                {
+                    rangeValues.AddRange(new List<int> { 0, 4 });
+                };
+
+                List<string> sortValues = Helpers.ParseString<string>(sort);
+
+                if (sortValues.Count == 0)
+                {
+                    sortValues.AddRange(new List<string> { "", "" });
+                }
+
+                List<string> filterValues = Helpers.ParseString<string>(filter);
+                if (!filterValues.Contains("q"))
+                {
+                    filterValues.Insert(0, "q");
+                    filterValues.Insert(1, "");
+                }
+                else
+                {
+                    var search = filterValues.IndexOf("q") + 1;
+                    filterValues.Insert(0, filterValues[search]);
+                    filterValues.Insert(0, "q");
+
+                    if (filterValues[filterValues.Count - 1] == "q")
+                    {
+                        filterValues.RemoveAt(filterValues.LastIndexOf("q") - 1);
+                        filterValues.RemoveAt(filterValues.LastIndexOf("q"));
+                    }
+                    else
+                    {
+                        filterValues.RemoveAt(filterValues.LastIndexOf("q") + 1);
+                        filterValues.RemoveAt(filterValues.LastIndexOf("q"));
+                    }
+                }
+                
+                if (!filterValues.Contains("stockRange"))
+                {
+                    filterValues.Add("stockRange");
+                    filterValues.Add("");
+                    filterValues.Add("");
+                }
+                else
+                {
+                    var indexActive = filterValues.IndexOf("stockRange");
+                    filterValues.Add("stockRange");
+                    filterValues.Add(filterValues[indexActive + 1]);
+                    filterValues.Add(filterValues[indexActive + 2]);
+                    filterValues.Remove("stockRange");
+                    filterValues.Remove(filterValues[indexActive + 1]);
+                    filterValues.Remove(filterValues[indexActive]);
+                }
+
+                var stockRange = filterValues
+                                             .Skip(filterValues.IndexOf("stockRange") + 1)
+                                             .Take(2)
+                                             .ToList();
+                
+                
+                var perPage = rangeValues[1] - rangeValues[0] + 1;
+                var currentPage = Convert.ToInt32(Math.Ceiling((double)rangeValues[0] / perPage)) + 1;
+                var sortBy = sortValues[0].ToLower();
+                var sortType = sortValues[1].ToLower();
+                
+                var listProduct = await _context
+                                               .Products
+                                               .Include(p => p.ProductImages)
+                                               .Include(p => p.ProductColors)
+                                               .Include(p => p.ProductRates)
+                                               .AsNoTracking()
+                                               .ToListAsync(userCancellationToken);
+                
+                var totalProduct = listProduct.Count;
+                var minStock = string.IsNullOrEmpty(stockRange[0]) ? -999 : Convert.ToInt32(stockRange[0]);
+                var maxStock = string.IsNullOrEmpty(stockRange[1]) ? -999 : Convert.ToInt32(stockRange[1]);
+                listProduct = listProduct
+                                        .Where(p => (p.Quantity >= minStock
+                                                    && p.Quantity <= maxStock)
+                                                    || (p.Quantity >= minStock
+                                                    && maxStock < 0)
+                                                    || (minStock < 0
+                                                    && maxStock < 0)
+                                              )
+                                        .Skip((currentPage - 1) * perPage)
+                                        .Take(perPage)
+                                        .ToList();
+                
+                response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
+                response.Headers.Append("Content-Range", $"products {rangeValues[0]}-{rangeValues[1]}/{totalProduct}");
+                
+                return listProduct;
             }
             catch(SqlException ex)
             {
@@ -72,12 +159,12 @@ namespace EcommerceApi.Services.ProductService
             try
             {
                 var productByCate = await _context
-                                            .Products
-                                            .Where(p => p.CategoryId == categoryId)
-                                            .Include(p => p.ProductColors)
-                                            .Include(p => p.ProductImages)
-                                            .AsNoTracking()
-                                            .ToListAsync(userCancellationToken);
+                                                            .Products
+                                                            .Where(p => p.CategoryId == categoryId)
+                                                            .Include(p => p.ProductColors)
+                                                            .Include(p => p.ProductImages)
+                                                            .AsNoTracking()
+                                                            .ToListAsync(userCancellationToken);
                 return productByCate;
             }
             catch(SqlException ex)
@@ -91,13 +178,13 @@ namespace EcommerceApi.Services.ProductService
             try
             {
                 var productById = await _context.Products
-                                         .Where(p => p.ProductId == productId)
-                                         .Include(p => p.ProductImages)
-                                         .Include(p => p.ProductColors)
-                                         .Include(p => p.ProductRates)
-                                         .AsNoTracking()
-                                         .FirstOrDefaultAsync(userCancellationToken)
-                                         ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Product not found.");
+                                                         .Where(p => p.ProductId == productId)
+                                                         .Include(p => p.ProductImages)
+                                                         .Include(p => p.ProductColors)
+                                                         .Include(p => p.ProductRates)
+                                                         .AsNoTracking()
+                                                         .FirstOrDefaultAsync(userCancellationToken)
+                                                         ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Product not found.");
 
                 return productById;
             }
