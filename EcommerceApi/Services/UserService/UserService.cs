@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Net;
+using EcommerceApi.Constant;
 using EcommerceApi.Dtos.Admin;
 using EcommerceApi.Dtos.Upload;
 using EcommerceApi.ExtensionExceptions;
@@ -97,46 +98,46 @@ public class UserService : IUserService
             }
 
             List<string> filterValues = Helpers.ParseString<string>(filter);
-            if (!filterValues.Contains("q"))
+            if (!filterValues.Contains(UserFilterType.Search))
             {
-                filterValues.Insert(0, "q");
+                filterValues.Insert(0, UserFilterType.Search);
                 filterValues.Insert(1, "");
             }
             else
             {
-                var search = filterValues.IndexOf("q") + 1;
+                var search = filterValues.IndexOf(UserFilterType.Search) + 1;
                 filterValues.Insert(0, filterValues[search]);
                 filterValues.Insert(0, "q");
 
                 if (filterValues[filterValues.Count - 1] == "q")
                 {
-                    filterValues.RemoveAt(filterValues.LastIndexOf("q") - 1);
-                    filterValues.RemoveAt(filterValues.LastIndexOf("q"));
+                    filterValues.RemoveAt(filterValues.LastIndexOf(UserFilterType.Search) - 1);
+                    filterValues.RemoveAt(filterValues.LastIndexOf(UserFilterType.Search));
                 }
                 else
                 {
-                    filterValues.RemoveAt(filterValues.LastIndexOf("q") + 1);
-                    filterValues.RemoveAt(filterValues.LastIndexOf("q"));
+                    filterValues.RemoveAt(filterValues.LastIndexOf(UserFilterType.Search) + 1);
+                    filterValues.RemoveAt(filterValues.LastIndexOf(UserFilterType.Search));
                 }
             }
 
-            if (!filterValues.Contains("segments"))
+            if (!filterValues.Contains(UserFilterType.Segments))
             {
-                filterValues.Add("segments");
+                filterValues.Add(UserFilterType.Segments);
                 filterValues.Add("");
             }
 
-            if (!filterValues.Contains("isActive"))
+            if (!filterValues.Contains(UserFilterType.IsActive))
             {
-                filterValues.Add("isActive");
+                filterValues.Add(UserFilterType.IsActive);
                 filterValues.Add("");
             }
             else
             {
-                var indexActive = filterValues.IndexOf("isActive");
-                filterValues.Add("isActive");
+                var indexActive = filterValues.IndexOf(UserFilterType.IsActive);
+                filterValues.Add(UserFilterType.IsActive);
                 filterValues.Add(filterValues[indexActive + 1]);
-                filterValues.Remove("isActive");
+                filterValues.Remove(UserFilterType.IsActive);
                 filterValues.Remove(filterValues[indexActive]);
             }
 
@@ -172,7 +173,7 @@ public class UserService : IUserService
 
             var totalUser = listUsers.Count;
 
-            var filterBan = filterValues[filterValues.IndexOf("isActive") + 1];
+            var filterBan = filterValues[filterValues.IndexOf(UserFilterType.IsActive) + 1];
 
             listUsers = listUsers
                                 .Where(u => filterValues[3] != "" && filterValues[1] != "" && filterBan != ""
@@ -245,13 +246,13 @@ public class UserService : IUserService
     private bool IsExistSegment(List<Segment> segments, List<string> segmentFitler) {
 
         var filters = segmentFitler
-                                   .Skip(segmentFitler.IndexOf("segments") + 1)
+                                   .Skip(segmentFitler.IndexOf(UserFilterType.Segments) + 1)
                                    .Take(segmentFitler.Count)
                                    .ToList();
-        if(filters.Contains("isActive"))
+        if(filters.Contains(UserFilterType.IsActive))
         {
-            filters.RemoveAt(filters.IndexOf("isActive") + 1);
-            filters.RemoveAt(filters.IndexOf("isActive"));
+            filters.RemoveAt(filters.IndexOf(UserFilterType.IsActive) + 1);
+            filters.RemoveAt(filters.IndexOf(UserFilterType.IsActive));
         }
 
         int elmCount = 0;
@@ -266,7 +267,7 @@ public class UserService : IUserService
                 } 
             }
         }
-        return elmCount >= filters.Count();
+        return elmCount >= filters.Count;
     }
 
     public async Task<bool> DeleteUserByIdAsync(int userId, CancellationToken userCancellationToken)

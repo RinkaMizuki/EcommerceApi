@@ -21,7 +21,7 @@ public class User
     public DateTime CreatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
     [JsonIgnore]
-    public List<Rate.Rate> Rates { get; set; } = new List<Rate.Rate> ();
-    public List<Order.Order> Orders { get; set; } = new List<Order.Order> ();
-    public List<UserSegment> UserSegments { get; set; } = new List<UserSegment> ();
+    public List<Rate.Rate> Rates { get; set; } = new();
+    public List<Order.Order> Orders { get; set; } = new();
+    public List<UserSegment> UserSegments { get; set; } = new();
 }
