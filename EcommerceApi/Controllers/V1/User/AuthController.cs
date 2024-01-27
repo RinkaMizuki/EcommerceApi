@@ -14,7 +14,6 @@ using EcommerceApi.Services.MailService;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Humanizer;
 using EcommerceApi.ExtensionExceptions;
 
 namespace EcommerceApi.Controllers.V1.User
@@ -29,7 +28,8 @@ namespace EcommerceApi.Controllers.V1.User
         private readonly IMailService _mailService;
         private readonly IConfirmService _confirmService;
 
-        public AuthController(EcommerceDbContext context, IConfiguration config, IMailService mailService, IConfirmService confirmService)
+        public AuthController(EcommerceDbContext context, IConfiguration config, IMailService mailService,
+            IConfirmService confirmService)
         {
             _context = context;
             _config = config;
@@ -39,13 +39,13 @@ namespace EcommerceApi.Controllers.V1.User
 
         [HttpPost]
         [Route("register")]
-        public async Task<IActionResult> Register(UserDto User, CancellationToken cancellationToken)
+        public async Task<IActionResult> Register(UserDto userDto, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(User.UserName)
-                || string.IsNullOrEmpty(User.Email)
-                || string.IsNullOrEmpty(User.Password)
-                || string.IsNullOrEmpty(User.ConfirmPassword)
-                || User.Password != User.ConfirmPassword
+            if (string.IsNullOrEmpty(userDto.UserName)
+                || string.IsNullOrEmpty(userDto.Email)
+                || string.IsNullOrEmpty(userDto.Password)
+                || string.IsNullOrEmpty(userDto.ConfirmPassword)
+                || userDto.Password != userDto.ConfirmPassword
                )
             {
                 return BadRequest(new
@@ -55,7 +55,9 @@ namespace EcommerceApi.Controllers.V1.User
                 });
             }
 
-            var isAccountExist = _context.Users.Where(u => u.UserName == User.UserName || u.Email == User.Email).Any();
+            var isAccountExist =
+                await _context.Users.AnyAsync(u => u.UserName == userDto.UserName || u.Email == userDto.Email,
+                    cancellationToken);
             if (isAccountExist)
             {
                 return new JsonResult(new
@@ -66,12 +68,12 @@ namespace EcommerceApi.Controllers.V1.User
                 });
             }
 
-            var PasswordHash = BCrypt.Net.BCrypt.HashPassword(User.Password);
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
             var newUser = new UserModel()
             {
-                UserName = User.UserName,
-                Email = User.Email,
-                PasswordHash = PasswordHash,
+                UserName = userDto.UserName,
+                Email = userDto.Email,
+                PasswordHash = passwordHash,
                 BirthDate = DateTime.Now,
                 CreatedAt = DateTime.Now,
                 ModifiedAt = DateTime.Now,
@@ -81,7 +83,8 @@ namespace EcommerceApi.Controllers.V1.User
 
             var token = _confirmService.GenerateEmailConfirmToken(newUser, 1);
 
-            var message = $"{Request.Scheme}://{Request.Host}/api/v1/Auth/confirm-email?email={newUser.Email}&token={token}";
+            var message =
+                $"{Request.Scheme}://{Request.Host}/api/v1/Auth/confirm-email?email={newUser.Email}&token={token}";
 
             await _mailService.SendEmailAsync(new MessageModel(
                 newUser.Email,
@@ -96,15 +99,18 @@ namespace EcommerceApi.Controllers.V1.User
                 statusCode = HttpStatusCode.Created,
             });
         }
+
         [HttpGet]
         [Route("confirm-email")]
-        public async Task<IActionResult> ConfirmEmail([FromQuery]string email, [FromQuery] string token, CancellationToken cancellationToken) {
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string email, [FromQuery] string token,
+            CancellationToken cancellationToken)
+        {
             var userConfirm = await _context
-                                            .Users
-                                            .Where(u => u.Email == email)
-                                            .FirstOrDefaultAsync(cancellationToken)
-                                            ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
-            if(_confirmService.ValidateEmailConfirmationToken(token, out ClaimsPrincipal claimsPrincipal))
+                                  .Users
+                                  .Where(u => u.Email == email)
+                                  .FirstOrDefaultAsync(cancellationToken)
+                              ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
+            if (_confirmService.ValidateEmailConfirmationToken(token, out ClaimsPrincipal claimsPrincipal))
             {
                 userConfirm.EmailConfirm = true;
                 await _context.SaveChangesAsync(cancellationToken);
@@ -123,12 +129,13 @@ namespace EcommerceApi.Controllers.V1.User
                 });
             }
         }
+
         [HttpPost]
         [Route("login")]
-        public async Task<IActionResult> Login(LoginDto Login)
+        public async Task<IActionResult> Login(LoginDto loginDto)
         {
-            if (string.IsNullOrEmpty(Login.UserNameOrEmail)
-                || string.IsNullOrEmpty(Login.Password))
+            if (string.IsNullOrEmpty(loginDto.UserNameOrEmail)
+                || string.IsNullOrEmpty(loginDto.Password))
             {
                 return BadRequest(new
                 {
@@ -138,7 +145,7 @@ namespace EcommerceApi.Controllers.V1.User
             }
 
             var userLogin = await _context.Users
-                .Where(u => u.UserName == Login.UserNameOrEmail || u.Email == Login.UserNameOrEmail)
+                .Where(u => u.UserName == loginDto.UserNameOrEmail || u.Email == loginDto.UserNameOrEmail)
                 .FirstOrDefaultAsync();
             if (userLogin == null)
             {
@@ -149,9 +156,9 @@ namespace EcommerceApi.Controllers.V1.User
                 });
             }
 
-            var isMatchPassword = BCrypt.Net.BCrypt.Verify(Login.Password, userLogin.PasswordHash);
+            var isMatchPassword = BCrypt.Net.BCrypt.Verify(loginDto.Password, userLogin.PasswordHash);
             if (!isMatchPassword ||
-                userLogin.UserName != Login.UserNameOrEmail && userLogin.Email != Login.UserNameOrEmail)
+                userLogin.UserName != loginDto.UserNameOrEmail && userLogin.Email != loginDto.UserNameOrEmail)
             {
                 return BadRequest(new
                 {
@@ -257,11 +264,11 @@ namespace EcommerceApi.Controllers.V1.User
         {
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email.ToString(), ClaimTypes.Email),
-                new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName, ClaimTypes.Name),
-                new Claim("UserId", user.UserId.ToString()),
-                new Claim("Role", user.Role),
+                new (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new (JwtRegisteredClaimNames.Email, user.Email, ClaimTypes.Email),
+                new (JwtRegisteredClaimNames.UniqueName, user.UserName, ClaimTypes.Name),
+                new ("UserId", user.UserId.ToString()),
+                new ("Role", user.Role),
             };
             return claims;
         }

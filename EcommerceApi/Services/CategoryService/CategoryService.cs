@@ -5,6 +5,7 @@ using EcommerceApi.Models.Product;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
+using EcommerceApi.Responses;
 
 namespace EcommerceApi.Services.CategoryService;
 
@@ -17,7 +18,7 @@ public class CategoryService : ICategoryService
         _context = context;
     }
 
-    public async Task<List<ProductCategory>> GetListCategoryAsync(CancellationToken userCancellationToken)
+    public async Task<List<ProductCategoryResponse>> GetListCategoryAsync(CancellationToken userCancellationToken)
     {
         //var listFakeCate = FakeCategory();
         //await _context.ProductCategories.AddRangeAsync(listFakeCate);
@@ -25,13 +26,27 @@ public class CategoryService : ICategoryService
         try
         {
             var listCate = await _context
-                                        .ProductCategories
-                                        .Include(p => p.Products)
-                                        .AsNoTracking()
-                                        .ToListAsync(userCancellationToken);
+                .ProductCategories
+                .Where(pc => pc.ParentProductCategory == null)
+                .Select(pc => new ProductCategoryResponse()
+                {
+                    Id = pc.CategoryId,
+                    Title = pc.Title,
+                    Description = pc.Description,
+                    Status = pc.Status,
+                    Hot = pc.Hot,
+                    Product = pc.Products
+                        .Select(p => new ProductResponse()
+                        {
+                            Image = p.Image,
+                            Url = p.Url,
+                        }).FirstOrDefault()!,
+                })
+                .AsNoTracking()
+                .ToListAsync(userCancellationToken);
             return listCate;
         }
-        catch(SqlException ex)
+        catch (SqlException ex)
         {
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
         }
@@ -98,10 +113,10 @@ public class CategoryService : ICategoryService
         {
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
         }
-        
     }
-    
-    public async Task<ProductCategory> PostCategoryAsync(CategoryDto categoryDto, string userName, CancellationToken userCancellationToken)
+
+    public async Task<ProductCategory> PostCategoryAsync(CategoryDto categoryDto, string userName,
+        CancellationToken userCancellationToken)
     {
         try
         {
@@ -121,11 +136,11 @@ public class CategoryService : ICategoryService
                 CreatedBy = userName,
                 ModifiedBy = userName,
             };
-            await _context.ProductCategories.AddAsync(newCategory,userCancellationToken);
+            await _context.ProductCategories.AddAsync(newCategory, userCancellationToken);
             await _context.SaveChangesAsync(userCancellationToken);
             return newCategory;
         }
-        catch(SqlException ex)
+        catch (SqlException ex)
         {
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
         }
@@ -135,7 +150,9 @@ public class CategoryService : ICategoryService
     {
         try
         {
-            var deletedCate = await _context.ProductCategories.FindAsync(new object[] { categoryId }, userCancellationToken) ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Category not found.");
+            var deletedCate =
+                await _context.ProductCategories.FindAsync(new object[] { categoryId }, userCancellationToken) ??
+                throw new HttpStatusException(HttpStatusCode.NotFound, "Category not found.");
             _context.ProductCategories.Remove(deletedCate);
             await _context.SaveChangesAsync(userCancellationToken);
             return true;
@@ -146,16 +163,17 @@ public class CategoryService : ICategoryService
         }
     }
 
-    public async Task<ProductCategory> UpdateCategoryAsync(CategoryDto categoryDto, int categoryId, string userName, CancellationToken userCancellationToken)
+    public async Task<ProductCategory> UpdateCategoryAsync(CategoryDto categoryDto, int categoryId, string userName,
+        CancellationToken userCancellationToken)
     {
         try
         {
             var updateCategory = await _context.ProductCategories
-                                            .Where(cate => cate.CategoryId == categoryId)
-                                            .Include(c => c.ListProductCategoryChild)
-                                            .Include(c => c.ParentProductCategory)
-                                            .FirstOrDefaultAsync(userCancellationToken)
-                                            ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Category not found.");
+                                     .Where(cate => cate.CategoryId == categoryId)
+                                     .Include(c => c.ListProductCategoryChild)
+                                     .Include(c => c.ParentProductCategory)
+                                     .FirstOrDefaultAsync(userCancellationToken)
+                                 ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Category not found.");
 
             if (Convert.ToInt32(categoryDto.ParentCategoryId) == -1)
             {
@@ -167,9 +185,12 @@ public class CategoryService : ICategoryService
                         childCate.ParentProductCategory = updateCategory.ParentProductCategory;
                     }
                 }
+
                 updateCategory.ParentCategoryId = null;
             }
-            else if (updateCategory.ListProductCategoryChild.Where(cateChild => cateChild.CategoryId == categoryDto.ParentCategoryId).Any() || categoryDto.ParentCategoryId == updateCategory.CategoryId)
+            else if (updateCategory.ListProductCategoryChild
+                         .Where(cateChild => cateChild.CategoryId == categoryDto.ParentCategoryId).Any() ||
+                     categoryDto.ParentCategoryId == updateCategory.CategoryId)
             {
                 throw new HttpStatusException(HttpStatusCode.BadRequest, "Can't update category");
             }
@@ -183,6 +204,7 @@ public class CategoryService : ICategoryService
                         childCate.ParentProductCategory = updateCategory.ParentProductCategory;
                     }
                 }
+
                 updateCategory.ParentCategoryId = categoryDto.ParentCategoryId;
             }
 
@@ -197,7 +219,7 @@ public class CategoryService : ICategoryService
 
             return updateCategory;
         }
-        catch(SqlException ex)
+        catch (SqlException ex)
         {
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
         }
@@ -207,10 +229,16 @@ public class CategoryService : ICategoryService
     {
         try
         {
-            var cateById = await _context.ProductCategories.FindAsync(new object[] { categoryId }, userCancellationToken) ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Category not found.");
+            var cateById = await _context
+                               .ProductCategories
+                               .Include(pc => pc.ListProductCategoryChild)
+                               .ThenInclude(pc => pc.Products)
+                               .Where(pc => pc.CategoryId == categoryId)
+                               .FirstOrDefaultAsync(userCancellationToken)
+                           ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Category not found.");
             return cateById;
         }
-        catch(SqlException ex)
+        catch (SqlException ex)
         {
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
         }

@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Net;
 using EcommerceApi.Constant;
 using EcommerceApi.Dtos.Admin;
@@ -10,6 +9,7 @@ using EcommerceApi.Responses;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using SortOrder = EcommerceApi.Constant.SortOrder;
 
 namespace EcommerceApi.Services;
 
@@ -29,10 +29,12 @@ public class UserService : IUserService
         try
         {
             if (_context.Users.AsNoTracking().Where(u => u.UserName == userAdmin.UserName || u.Email == userAdmin.Email)
-            .Any())
+                .Any())
             {
-                throw new HttpStatusException(HttpStatusCode.Conflict, "The request could not be completed due to a conflict with the current state of the resource.");
+                throw new HttpStatusException(HttpStatusCode.Conflict,
+                    "The request could not be completed due to a conflict with the current state of the resource.");
             }
+
             var newUser = new User()
             {
                 UserName = userAdmin.UserName,
@@ -49,13 +51,13 @@ public class UserService : IUserService
             await _context.Users.AddAsync(newUser, userCancellationToken);
             await _context.SaveChangesAsync(userCancellationToken);
             var userResponse = await _context
-                                            .Users
-                                            .AsNoTracking()
-                                            .Where(u => u.UserName == newUser.UserName)
-                                            .FirstOrDefaultAsync(userCancellationToken);
+                .Users
+                .AsNoTracking()
+                .Where(u => u.UserName == newUser.UserName)
+                .FirstOrDefaultAsync(userCancellationToken);
             return userResponse!;
         }
-        catch(SqlException ex)
+        catch (SqlException ex)
         {
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
         }
@@ -70,9 +72,10 @@ public class UserService : IUserService
             {
                 throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
             }
+
             return user;
         }
-        catch(SqlException ex)
+        catch (SqlException ex)
         {
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
         }
@@ -83,12 +86,14 @@ public class UserService : IUserService
     {
         try
         {
-            List<int> rangeValues = Helpers.ParseString<int>(range);
+            var rangeValues = Helpers.ParseString<int>(range);
 
             if (rangeValues.Count == 0)
             {
                 rangeValues.AddRange(new List<int> { 0, 4 });
-            };
+            }
+
+            ;
 
             List<string> sortValues = Helpers.ParseString<string>(sort);
 
@@ -146,56 +151,60 @@ public class UserService : IUserService
             var sortBy = sortValues[0].ToLower();
             var sortType = sortValues[1].ToLower();
 
-            var listUsers = await _context
-                                          .Users
-                                          .Where(u => u.Role != "admin")
-                                          .Include(u => u.UserSegments)
-                                          .ThenInclude(u => u.Segment)
-                                          .Select(u => new UserResponse()
-                                          {
-                                               Id = u.UserId,
-                                               UserName = u.UserName,
-                                               Email = u.Email,
-                                               Avatar = u.Avatar,
-                                               BirthDate = Convert.ToDateTime(u.BirthDate.ToShortDateString()),
-                                               EmailConfirm = u.EmailConfirm,
-                                               IsActive = u.IsActive,
-                                               Phone = u.Phone,
-                                               Role = u.Role,
-                                               Url = u.Url,
-                                               Segments = u.UserSegments.Select(us => new Segment
-                                               {
-                                                   SegmentId = us.Segment.SegmentId,
-                                                   Title = us.Segment.Title,
-                                               }).ToList()
-                                          })
-                                          .ToListAsync(userCancellationToken);
-
-            var totalUser = listUsers.Count;
+            var listUsersQuery = _context
+                .Users
+                .Where(u => u.Role != "admin")
+                .Include(u => u.UserSegments)
+                .ThenInclude(u => u.Segment)
+                .Select(u => new UserResponse()
+                {
+                    Id = u.UserId,
+                    UserName = u.UserName,
+                    Email = u.Email,
+                    Avatar = u.Avatar,
+                    BirthDate = Convert.ToDateTime(u.BirthDate.ToShortDateString()),
+                    EmailConfirm = u.EmailConfirm,
+                    IsActive = u.IsActive,
+                    Phone = u.Phone,
+                    Role = u.Role,
+                    Url = u.Url,
+                    Segments = u.UserSegments.Select(us => new Segment
+                    {
+                        SegmentId = us.Segment.SegmentId,
+                        Title = us.Segment.Title,
+                    }).ToList()
+                });
 
             var filterBan = filterValues[filterValues.IndexOf(UserFilterType.IsActive) + 1];
 
+            var listUsers = await listUsersQuery
+                .Skip((currentPage - 1) * perPage)
+                .Take(perPage)
+                .ToListAsync(userCancellationToken);
+
             listUsers = listUsers
-                                .Where(u => filterValues[3] != "" && filterValues[1] != "" && filterBan != ""
+                .Where(u => filterValues[3] != "" && filterValues[1] != "" && filterBan != ""
+                    ? u.UserName.ToLower().Contains(filterValues[1].ToLower()) &&
+                      IsExistSegment(u.Segments, filterValues) && u.IsActive.ToString().ToLower() == filterBan.ToLower()
+                    : filterValues[3] == "" && filterValues[1] == "" && filterBan == ""
+                        ? filterValues[3] == "" && filterValues[1] == "" && filterBan == ""
+                        : filterValues[1] != "" && filterValues[3] == "" && filterBan == ""
+                            ? u.UserName.ToLower().Contains(filterValues[1].ToLower())
+                            : filterValues[1] == "" && filterValues[3] != "" && filterBan == ""
+                                ? IsExistSegment(u.Segments, filterValues)
+                                : filterValues[1] == "" && filterValues[3] == "" && filterBan != ""
+                                    ? u.IsActive.ToString().ToLower() == filterBan.ToLower()
+                                    : filterValues[1] != "" && filterValues[3] != "" && filterBan == ""
                                         ? u.UserName.ToLower().Contains(filterValues[1].ToLower()) &&
-                                        IsExistSegment(u.Segments, filterValues) && u.IsActive.ToString().ToLower() == filterBan.ToLower()
-                                        : filterValues[3] == "" && filterValues[1] == "" && filterBan == ""
-                                            ? filterValues[3] == "" && filterValues[1] == "" && filterBan == ""
-                                            : filterValues[1] != "" && filterValues[3] == "" && filterBan == ""
-                                                ? u.UserName.ToLower().Contains(filterValues[1].ToLower())
-                                                : filterValues[1] == "" && filterValues[3] != "" && filterBan == "" 
-                                                ? IsExistSegment(u.Segments, filterValues)
-                                                : filterValues[1] == "" && filterValues[3] == "" && filterBan != ""
-                                                ? u.IsActive.ToString().ToLower() == filterBan.ToLower()
-                                                : filterValues[1] != "" && filterValues[3] != "" && filterBan == ""
-                                                ? u.UserName.ToLower().Contains(filterValues[1].ToLower()) && IsExistSegment(u.Segments, filterValues)
-                                                : filterValues[1] == "" && filterValues[3] != "" && filterBan != ""
-                                                ? IsExistSegment(u.Segments, filterValues) && u.IsActive.ToString().ToLower() == filterBan.ToLower()
-                                                : u.UserName.ToLower().Contains(filterValues[1].ToLower()) && u.IsActive.ToString().ToLower() == filterBan.ToLower()
-                                    )
-                                .Skip((currentPage - 1) * perPage)
-                                .Take(perPage)
-                                .ToList();
+                                          IsExistSegment(u.Segments, filterValues)
+                                        : filterValues[1] == "" && filterValues[3] != "" && filterBan != ""
+                                            ? IsExistSegment(u.Segments, filterValues) &&
+                                              u.IsActive.ToString().ToLower() == filterBan.ToLower()
+                                            : u.UserName.ToLower().Contains(filterValues[1].ToLower()) &&
+                                              u.IsActive.ToString().ToLower() == filterBan.ToLower()
+                ).ToList();
+
+            var totalUser = listUsers.Count;
 
             if (sortType == "desc") listUsers.Reverse();
 
@@ -204,10 +213,10 @@ public class UserService : IUserService
                 case "asc":
                     switch (sortBy)
                     {
-                        case SortOrder.SortOrder.SortById:
+                        case SortOrder.SortById:
                             listUsers = listUsers.OrderBy(u => u.Id).ToList();
                             break;
-                        case SortOrder.SortOrder.SortByBirthDate:
+                        case SortOrder.SortByBirthDate:
                             listUsers = listUsers.OrderBy(u => u.BirthDate).ToList();
                             break;
                         default:
@@ -219,10 +228,10 @@ public class UserService : IUserService
                 case "desc":
                     switch (sortBy)
                     {
-                        case SortOrder.SortOrder.SortById:
+                        case SortOrder.SortById:
                             listUsers = listUsers.OrderByDescending(u => u.Id).ToList();
                             break;
-                        case SortOrder.SortOrder.SortByBirthDate:
+                        case SortOrder.SortByBirthDate:
                             listUsers = listUsers.OrderByDescending(u => u.BirthDate).ToList();
                             break;
                         default:
@@ -237,36 +246,37 @@ public class UserService : IUserService
             response.Headers.Append("Content-Range", $"users {rangeValues[0]}-{rangeValues[1]}/{totalUser}");
             return listUsers;
         }
-        catch(SqlException ex)
+        catch (SqlException ex)
         {
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
         }
     }
 
-    private bool IsExistSegment(List<Segment> segments, List<string> segmentFitler) {
-
+    private bool IsExistSegment(List<Segment> segments, List<string> segmentFitler)
+    {
         var filters = segmentFitler
-                                   .Skip(segmentFitler.IndexOf(UserFilterType.Segments) + 1)
-                                   .Take(segmentFitler.Count)
-                                   .ToList();
-        if(filters.Contains(UserFilterType.IsActive))
+            .Skip(segmentFitler.IndexOf(UserFilterType.Segments) + 1)
+            .Take(segmentFitler.Count)
+            .ToList();
+        if (filters.Contains(UserFilterType.IsActive))
         {
             filters.RemoveAt(filters.IndexOf(UserFilterType.IsActive) + 1);
             filters.RemoveAt(filters.IndexOf(UserFilterType.IsActive));
         }
 
         int elmCount = 0;
-        foreach(var us in segments) // review, order
+        foreach (var us in segments) // review, order
         {
-            foreach(var f in filters) // review
+            foreach (var f in filters) // review
             {
                 if (f.ToLower() == us.Title.ToLower())
                 {
                     elmCount++;
                     break;
-                } 
+                }
             }
         }
+
         return elmCount >= filters.Count;
     }
 
@@ -279,17 +289,19 @@ public class UserService : IUserService
             {
                 throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
             }
+
             _context.Users.Remove(deleteUser);
             await _context.SaveChangesAsync(userCancellationToken);
             return true;
         }
-        catch(SqlException ex)
+        catch (SqlException ex)
         {
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
         }
     }
 
-    public async Task<User> UpdateUserByIdAsync(int userId, UserAdminDto userAdminDto, HttpRequest request, CancellationToken userCancellationToken)
+    public async Task<User> UpdateUserByIdAsync(int userId, UserAdminDto userAdminDto, HttpRequest request,
+        CancellationToken userCancellationToken)
     {
         try
         {
@@ -297,12 +309,16 @@ public class UserService : IUserService
             if (updateUser == null)
             {
                 throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
-            };
+            }
+
+            ;
             if (_context.Users
-                .Where(u => (u.UserName == userAdminDto.UserName || u.Email == userAdminDto.Email) && u.UserId != userId)
+                .Where(u => (u.UserName == userAdminDto.UserName || u.Email == userAdminDto.Email) &&
+                            u.UserId != userId)
                 .Any())
             {
-                throw new HttpStatusException(HttpStatusCode.Conflict, "The request could not be completed due to a conflict with the current state of the resource.");
+                throw new HttpStatusException(HttpStatusCode.Conflict,
+                    "The request could not be completed due to a conflict with the current state of the resource.");
             }
 
             if (userAdminDto.file != null && userAdminDto.Avatar != "")
@@ -317,7 +333,8 @@ public class UserService : IUserService
                 }
                 else
                 {
-                    var res = await _cloudflareClient.DeleteObjectAsync($"avatar_{updateUser.UserId}_{updateUser.Avatar}", userCancellationToken);
+                    var res = await _cloudflareClient.DeleteObjectAsync(
+                        $"avatar_{updateUser.UserId}_{updateUser.Avatar}", userCancellationToken);
                     if (res.HttpStatusCode == HttpStatusCode.NoContent)
                     {
                         await _cloudflareClient.UploadImageAsync(new UploadDto()
@@ -334,7 +351,8 @@ public class UserService : IUserService
             }
             else if (userAdminDto.file == null && string.IsNullOrEmpty(userAdminDto.Avatar))
             {
-                await _cloudflareClient.DeleteObjectAsync($"avatar_{updateUser.UserId}_{updateUser.Avatar}", userCancellationToken);
+                await _cloudflareClient.DeleteObjectAsync($"avatar_{updateUser.UserId}_{updateUser.Avatar}",
+                    userCancellationToken);
                 updateUser.Avatar = string.Empty;
                 updateUser.Url = string.Empty;
             }
@@ -357,7 +375,8 @@ public class UserService : IUserService
 
             return updateUser;
         }
-        catch(SqlException ex) {
+        catch (SqlException ex)
+        {
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
         }
     }
@@ -365,12 +384,14 @@ public class UserService : IUserService
     public async Task<FileStreamResult> GetAvatarAsync(string avatarUrl, CancellationToken userCancellationToken)
     {
         var response = await _cloudflareClient.GetObjectAsync(avatarUrl, userCancellationToken);
-        if(response.HttpStatusCode == HttpStatusCode.OK)
+        if (response.HttpStatusCode == HttpStatusCode.OK)
         {
-            return new FileStreamResult(response.ResponseStream, response.Headers.ContentType) { 
+            return new FileStreamResult(response.ResponseStream, response.Headers.ContentType)
+            {
                 FileDownloadName = avatarUrl
             };
         }
+
         throw new HttpStatusException(response.HttpStatusCode, "Avatar not found.");
     }
 }

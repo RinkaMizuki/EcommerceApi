@@ -8,6 +8,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using EcommerceApi.Constant;
+using SortOrder = EcommerceApi.Constant.SortOrder;
 
 namespace EcommerceApi.Services.ProductService
 {
@@ -15,19 +16,22 @@ namespace EcommerceApi.Services.ProductService
     {
         private readonly EcommerceDbContext _context;
         private readonly ICloudflareClientService _cloudflareClient;
-        public ProductService(EcommerceDbContext context, ICloudflareClientService cloudflareClient) {
+
+        public ProductService(EcommerceDbContext context, ICloudflareClientService cloudflareClient)
+        {
             _context = context;
             _cloudflareClient = cloudflareClient;
         }
+
         public async Task<bool> DeleteProductAsync(Guid productId, CancellationToken userCancellationToken)
         {
             try
             {
                 var deleteProduct = await _context.Products
-                                                .Where(p => p.ProductId == productId)
-                                                .Include(p => p.ProductImages)
-                                                .FirstOrDefaultAsync(userCancellationToken)
-                                                ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Product not found.");
+                                        .Where(p => p.ProductId == productId)
+                                        .Include(p => p.ProductImages)
+                                        .FirstOrDefaultAsync(userCancellationToken)
+                                    ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Product not found.");
 
                 _context.Products.Remove(deleteProduct);
 
@@ -39,37 +43,44 @@ namespace EcommerceApi.Services.ProductService
                 {
                     if (!flag)
                     {
-                        await _cloudflareClient.DeleteObjectAsync($"productImage_{deleteProduct.ProductId}_{deleteProduct.Image}", userCancellationToken);
+                        await _cloudflareClient.DeleteObjectAsync(
+                            $"productImage_{deleteProduct.ProductId}_{deleteProduct.Image}", userCancellationToken);
                         flag = true;
                     }
-                    await _cloudflareClient.DeleteObjectAsync($"productImage_{deleteProduct.ProductId}_{image.Image}", userCancellationToken);
+
+                    await _cloudflareClient.DeleteObjectAsync($"productImage_{deleteProduct.ProductId}_{image.Image}",
+                        userCancellationToken);
                 }
+
                 return true;
             }
-            catch(SqlException ex)
+            catch (SqlException ex)
             {
                 throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
             }
         }
-        public async Task<List<Product>> GetListProductAsync(string sort, string range, string filter, HttpResponse response, CancellationToken userCancellationToken)
+
+        public async Task<List<Product>> GetListProductAsync(string sort, string range, string filter,
+            HttpResponse response, CancellationToken userCancellationToken)
         {
             try
             {
-                List<int> rangeValues = Helpers.ParseString<int>(range);
+                var rangeValues = Helpers.ParseString<int>(range);
 
                 if (rangeValues.Count == 0)
                 {
                     rangeValues.AddRange(new List<int> { 0, 4 });
-                };
+                }
 
-                List<string> sortValues = Helpers.ParseString<string>(sort);
+                ;
+                var sortValues = Helpers.ParseString<string>(sort);
 
                 if (sortValues.Count == 0)
                 {
                     sortValues.AddRange(new List<string> { "", "" });
                 }
 
-                List<string> filterValues = Helpers.ParseString<string>(filter);
+                var filterValues = Helpers.ParseString<string>(filter);
                 if (!filterValues.Contains(ProductFilterType.Search))
                 {
                     filterValues.Insert(0, ProductFilterType.Search);
@@ -81,7 +92,8 @@ namespace EcommerceApi.Services.ProductService
                     filterValues.Insert(0, filterValues[search]);
                     filterValues.Insert(0, ProductFilterType.Search);
 
-                    if (filterValues[^1] == "q") // filterValues[filterValues.Count - 1] == filterValues[^1]
+                    if (filterValues[^1] ==
+                        ProductFilterType.Search) // filterValues[filterValues.Count - 1] == filterValues[^1]
                     {
                         filterValues.RemoveAt(filterValues.LastIndexOf(ProductFilterType.Search) - 1);
                         filterValues.RemoveAt(filterValues.LastIndexOf(ProductFilterType.Search));
@@ -98,7 +110,7 @@ namespace EcommerceApi.Services.ProductService
                     filterValues.Add(ProductFilterType.Category);
                     filterValues.Add("");
                 }
-                
+
                 if (!filterValues.Contains(ProductFilterType.StockRange))
                 {
                     filterValues.Add(ProductFilterType.StockRange);
@@ -117,72 +129,97 @@ namespace EcommerceApi.Services.ProductService
                 }
 
                 var stockRange = filterValues
-                                             .Skip(filterValues.IndexOf(ProductFilterType.StockRange) + 1)
-                                             .Take(2)
-                                             .ToList();
-                
-                
+                    .Skip(filterValues.IndexOf(ProductFilterType.StockRange) + 1)
+                    .Take(2)
+                    .ToList();
+
+
                 var perPage = rangeValues[1] - rangeValues[0] + 1;
                 var currentPage = Convert.ToInt32(Math.Ceiling((double)rangeValues[0] / perPage)) + 1;
                 var sortBy = sortValues[0].ToLower();
                 var sortType = sortValues[1].ToLower();
-                
-                var listProduct = await _context
-                                               .Products
-                                               .Include(p => p.ProductImages)
-                                               .Include(p => p.ProductColors)
-                                               .Include(p => p.ProductRates)
-                                               .AsNoTracking()
-                                               .ToListAsync(userCancellationToken);
-                
-                var totalProduct = listProduct.Count;
-                
+
+                var listProductQuery = _context
+                    .Products
+                    .Include(p => p.ProductImages)
+                    .Include(p => p.ProductColors)
+                    .Include(p => p.ProductRates)
+                    .AsNoTracking();
+
+
                 //conditions filter
                 var minStock = string.IsNullOrEmpty(stockRange[0]) ? -999 : Convert.ToInt32(stockRange[0]);
                 var maxStock = string.IsNullOrEmpty(stockRange[1]) ? -999 : Convert.ToInt32(stockRange[1]);
                 var category = filterValues[filterValues.IndexOf(ProductFilterType.Category) + 1];
                 var searchValue = filterValues[filterValues.IndexOf(ProductFilterType.Search) + 1].ToLower();
-                
+
+                var listProduct = await listProductQuery
+                    .Skip((currentPage - 1) * perPage)
+                    .Take(perPage)
+                    .ToListAsync(userCancellationToken);
+
                 listProduct = listProduct
-                                        .Where(p => ((p.Quantity >= minStock
-                                                    && p.Quantity <= maxStock)
-                                                    || (p.Quantity >= minStock
-                                                    && maxStock < 0)
-                                                    || (minStock < 0
-                                                    && maxStock < 0))
-                                                    && (string.IsNullOrEmpty(category) 
-                                                    || p.CategoryId == Convert.ToInt32(category))
-                                                    && (string.IsNullOrEmpty(searchValue) || p.Title.ToLower().Contains(searchValue.ToLower()))
-                                              )
-                                        .Skip((currentPage - 1) * perPage)
-                                        .Take(perPage)
-                                        .ToList();
-                
+                    .Where(p => ((p.Quantity >= minStock
+                                  && p.Quantity <= maxStock)
+                                 || (p.Quantity >= minStock
+                                     && maxStock < 0)
+                                 || (minStock < 0
+                                     && maxStock < 0))
+                                && (string.IsNullOrEmpty(category)
+                                    || p.CategoryId == Convert.ToInt32(category))
+                                && (string.IsNullOrEmpty(searchValue) ||
+                                    p.Title.ToLower().Contains(searchValue.ToLower()))
+                    ).ToList();
+
+                var totalProduct = listProduct.Count;
+                switch (sortType)
+                {
+                    case "asc":
+                        listProduct = sortBy switch
+                        {
+                            SortOrder.SortById => listProduct.OrderBy(p => p.ProductId).ToList(),
+                            SortOrder.SortByStock => listProduct.OrderBy(p => p.Quantity).ToList(),
+                            _ => listProduct.OrderBy(p => p.Title).ToList()
+                        };
+
+                        break;
+                    case "desc":
+                        listProduct = sortBy switch
+                        {
+                            SortOrder.SortById => listProduct.OrderByDescending(p => p.ProductId).ToList(),
+                            SortOrder.SortByStock => listProduct.OrderByDescending(p => p.Quantity).ToList(),
+                            _ => listProduct.OrderByDescending(p => p.Title).ToList()
+                        };
+
+                        break;
+                }
+
                 response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
                 response.Headers.Append("Content-Range", $"products {rangeValues[0]}-{rangeValues[1]}/{totalProduct}");
-                
+
                 return listProduct;
             }
-            catch(SqlException ex)
+            catch (SqlException ex)
             {
                 throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
             }
         }
 
-        public async Task<List<Product>> GetProductByCategoryAsync(int categoryId, CancellationToken userCancellationToken)
+        public async Task<List<Product>> GetProductByCategoryAsync(int categoryId,
+            CancellationToken userCancellationToken)
         {
             try
             {
                 var productByCate = await _context
-                                                            .Products
-                                                            .Where(p => p.CategoryId == categoryId)
-                                                            .Include(p => p.ProductColors)
-                                                            .Include(p => p.ProductImages)
-                                                            .AsNoTracking()
-                                                            .ToListAsync(userCancellationToken);
+                    .Products
+                    .Where(p => p.CategoryId == categoryId)
+                    .Include(p => p.ProductColors)
+                    .Include(p => p.ProductImages)
+                    .AsNoTracking()
+                    .ToListAsync(userCancellationToken);
                 return productByCate;
             }
-            catch(SqlException ex)
+            catch (SqlException ex)
             {
                 throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
             }
@@ -193,28 +230,31 @@ namespace EcommerceApi.Services.ProductService
             try
             {
                 var productById = await _context.Products
-                                                         .Where(p => p.ProductId == productId)
-                                                         .Include(p => p.ProductImages)
-                                                         .Include(p => p.ProductColors)
-                                                         .Include(p => p.ProductRates)
-                                                         .AsNoTracking()
-                                                         .FirstOrDefaultAsync(userCancellationToken)
-                                                         ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Product not found.");
+                                      .Where(p => p.ProductId == productId)
+                                      .Include(p => p.ProductImages)
+                                      .Include(p => p.ProductColors)
+                                      .Include(p => p.ProductRates)
+                                      .AsNoTracking()
+                                      .FirstOrDefaultAsync(userCancellationToken)
+                                  ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Product not found.");
 
                 return productById;
             }
-            catch(SqlException ex)
+            catch (SqlException ex)
             {
                 throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
             }
         }
 
-        public async Task<Product> PostProductAsync(ProductDto productDto, string userName, HttpRequest request,CancellationToken userCancellationToken)
+        public async Task<Product> PostProductAsync(ProductDto productDto, string userName, HttpRequest request,
+            CancellationToken userCancellationToken)
         {
-
             try
             {
-                var category = await _context.ProductCategories.FindAsync(new object?[] { productDto.CategoryId }, cancellationToken: userCancellationToken) ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Category not found.");
+                var category =
+                    await _context.ProductCategories.FindAsync(new object?[] { productDto.CategoryId },
+                        cancellationToken: userCancellationToken) ??
+                    throw new HttpStatusException(HttpStatusCode.NotFound, "Category not found.");
 
                 var newProduct = new Product()
                 {
@@ -238,7 +278,8 @@ namespace EcommerceApi.Services.ProductService
                 if (productDto.Files.Length > 0)
                 {
                     newProduct.Image = productDto.Files[0].FileName;
-                    newProduct.Url = $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{newProduct.ProductId}_{productDto.Files[0]?.FileName}";
+                    newProduct.Url =
+                        $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{newProduct.ProductId}_{productDto.Files[0]?.FileName}";
                 }
 
                 List<ProductImage> listProductImage = new List<ProductImage>();
@@ -256,11 +297,14 @@ namespace EcommerceApi.Services.ProductService
                     {
                         flag = true;
                         continue;
-                    };
+                    }
+
+                    ;
                     listProductImage.Add(new ProductImage()
                     {
                         Image = file.FileName,
-                        Url = $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{newProduct.ProductId}_{file.FileName}",
+                        Url =
+                            $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{newProduct.ProductId}_{file.FileName}",
                         ProductId = newProduct.ProductId,
                         CreatedAt = DateTime.Now,
                         Product = newProduct,
@@ -282,61 +326,62 @@ namespace EcommerceApi.Services.ProductService
                 }
 
                 await _context
-                            .Products
-                            .AddAsync(newProduct, userCancellationToken);
+                    .Products
+                    .AddAsync(newProduct, userCancellationToken);
 
                 await _context
-                            .ProductImages
-                            .AddRangeAsync(listProductImage, userCancellationToken);
+                    .ProductImages
+                    .AddRangeAsync(listProductImage, userCancellationToken);
                 await _context
-                            .ProductColors
-                            .AddRangeAsync(listColor, userCancellationToken);
+                    .ProductColors
+                    .AddRangeAsync(listColor, userCancellationToken);
 
                 await _context
-                            .SaveChangesAsync(userCancellationToken);
+                    .SaveChangesAsync(userCancellationToken);
 
                 return newProduct;
             }
-            catch(DbUpdateException ex)
+            catch (DbUpdateException ex)
             {
                 throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 
-        public async Task<Product> UpdateProductAsync(ProductDto productDto, Guid productId, string userName, HttpRequest request, CancellationToken userCancellationToken)
+        public async Task<Product> UpdateProductAsync(ProductDto productDto, Guid productId, string userName,
+            HttpRequest request, CancellationToken userCancellationToken)
         {
             try
             {
                 var updateProduct = await _context
-                                            .Products
-                                            .Where(p => p.ProductId == productId)
-                                            .Include(p => p.ProductImages)
-                                            .Include(p => p.ProductColors)
-                                            .FirstOrDefaultAsync(userCancellationToken)
-                                            ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Product not found.");
+                                        .Products
+                                        .Where(p => p.ProductId == productId)
+                                        .Include(p => p.ProductImages)
+                                        .Include(p => p.ProductColors)
+                                        .FirstOrDefaultAsync(userCancellationToken)
+                                    ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Product not found.");
 
                 var listOldImage = updateProduct
-                                            .ProductImages
-                                            .Select(i => i.Image)
-                                            .ToList();
+                    .ProductImages
+                    .Select(i => i.Image)
+                    .ToList();
 
                 var listNewImage = productDto
-                                            .Files
-                                            .Select(f => f.FileName)
-                                            .ToList();
+                    .Files
+                    .Select(f => f.FileName)
+                    .ToList();
                 var listAddImage = productDto
-                                            .Files
-                                            .Where(f => !listOldImage.Contains(f.FileName)
-                                             || f.FileName == updateProduct.Image
-                                             && productId == updateProduct.ProductId)
-                                            .Select(f => f)
-                                            .ToList();
+                    .Files
+                    .Where(f => !listOldImage.Contains(f.FileName)
+                                || f.FileName == updateProduct.Image
+                                && productId == updateProduct.ProductId)
+                    .Select(f => f)
+                    .ToList();
                 var listDeleteImage = updateProduct
-                                            .ProductImages
-                                            .Where(i => !listNewImage.Contains(i.Image)
-                                             && productId == updateProduct.ProductId)
-                                            .Select(i => i)
-                                            .ToList();
+                    .ProductImages
+                    .Where(i => !listNewImage.Contains(i.Image)
+                                && productId == updateProduct.ProductId)
+                    .Select(i => i)
+                    .ToList();
 
                 // [1] [2,3,4] => [2,3,6,1] => thêm 6 và 1 , xóa 4 => [2] [3,6,1]
 
@@ -354,7 +399,8 @@ namespace EcommerceApi.Services.ProductService
                 {
                     foreach (var image in listDeleteImage)
                     {
-                        await _cloudflareClient.DeleteObjectAsync($"productImage_{updateProduct.ProductId}_{image.Image}", userCancellationToken);
+                        await _cloudflareClient.DeleteObjectAsync(
+                            $"productImage_{updateProduct.ProductId}_{image.Image}", userCancellationToken);
                         _context.ProductImages.Remove(image);
                     }
                 }
@@ -376,11 +422,13 @@ namespace EcommerceApi.Services.ProductService
                                 Product = updateProduct,
                                 ProductId = updateProduct.ProductId,
                                 Image = imageFile.FileName,
-                                Url = $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{updateProduct.ProductId}_{imageFile.FileName}",
+                                Url =
+                                    $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{updateProduct.ProductId}_{imageFile.FileName}",
                                 CreatedAt = DateTime.Now,
                                 ModifiedAt = DateTime.Now,
                             }, userCancellationToken);
                         }
+
                         if (imageFile.FileName == updateProduct.Image && imageFile.FileName != listNewImage[0])
                         {
                             await _context.ProductImages.AddAsync(new ProductImage()
@@ -389,7 +437,8 @@ namespace EcommerceApi.Services.ProductService
                                 Product = updateProduct,
                                 ProductId = updateProduct.ProductId,
                                 Image = imageFile.FileName,
-                                Url = $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{updateProduct.ProductId}_{imageFile.FileName}",
+                                Url =
+                                    $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{updateProduct.ProductId}_{imageFile.FileName}",
                                 CreatedAt = DateTime.Now,
                                 ModifiedAt = DateTime.Now,
                             }, userCancellationToken);
@@ -399,18 +448,28 @@ namespace EcommerceApi.Services.ProductService
 
                 if (!listNewImage.Contains(updateProduct.Image))
                 {
-                    await _cloudflareClient.DeleteObjectAsync($"productImage_{updateProduct.ProductId}_{updateProduct.Image}", userCancellationToken);
+                    await _cloudflareClient.DeleteObjectAsync(
+                        $"productImage_{updateProduct.ProductId}_{updateProduct.Image}", userCancellationToken);
                     updateProduct.Image = listNewImage[0];
-                    updateProduct.Url = $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{updateProduct.ProductId}_{listNewImage[0]}";
-                    _context.ProductImages.Remove(updateProduct.ProductImages.Where(pi => pi.Image == updateProduct.Image).FirstOrDefault() ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Can't remove image because product not found."));
+                    updateProduct.Url =
+                        $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{updateProduct.ProductId}_{listNewImage[0]}";
+                    _context.ProductImages.Remove(
+                        updateProduct.ProductImages.Where(pi => pi.Image == updateProduct.Image).FirstOrDefault() ??
+                        throw new HttpStatusException(HttpStatusCode.NotFound,
+                            "Can't remove image because product not found."));
                 }
 
                 if (listNewImage.Contains(updateProduct.Image) && listNewImage[0] != updateProduct.Image)
                 {
                     updateProduct.Image = listNewImage[0];
-                    updateProduct.Url = $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{updateProduct.ProductId}_{listNewImage[0]}";
-                    _context.ProductImages.Remove(updateProduct.ProductImages.Where(pi => pi.Image == updateProduct.Image).FirstOrDefault() ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Can't remove image because product not found."));
+                    updateProduct.Url =
+                        $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{updateProduct.ProductId}_{listNewImage[0]}";
+                    _context.ProductImages.Remove(
+                        updateProduct.ProductImages.Where(pi => pi.Image == updateProduct.Image).FirstOrDefault() ??
+                        throw new HttpStatusException(HttpStatusCode.NotFound,
+                            "Can't remove image because product not found."));
                 }
+
                 updateProduct.Title = productDto.Title;
                 updateProduct.Description = productDto.Description;
                 updateProduct.Quantity = productDto.Quantity;
@@ -425,21 +484,21 @@ namespace EcommerceApi.Services.ProductService
 
                 var listNewColor = Helpers.ParseString<string>(productDto.ColorCode);
                 var listOldColor = updateProduct
-                                               .ProductColors
-                                               .Select(pc => pc.ColorCode)
-                                               .ToList();
+                    .ProductColors
+                    .Select(pc => pc.ColorCode)
+                    .ToList();
                 var listDeleteColor = updateProduct
-                                               .ProductColors
-                                               .Where(pc => !listNewColor.Contains(pc.ColorCode) && productId == updateProduct.ProductId)
-                                               .Select(pc => pc)
-                                               .ToList();
+                    .ProductColors
+                    .Where(pc => !listNewColor.Contains(pc.ColorCode) && productId == updateProduct.ProductId)
+                    .Select(pc => pc)
+                    .ToList();
                 var listAddColor = listNewColor
-                                               .Where(i => !listOldColor.Contains(i) && productId == updateProduct.ProductId)
-                                               .ToList();
+                    .Where(i => !listOldColor.Contains(i) && productId == updateProduct.ProductId)
+                    .ToList();
 
                 _context
-                       .ProductColors
-                       .RemoveRange(listDeleteColor); // được đánh dấu là deteted
+                    .ProductColors
+                    .RemoveRange(listDeleteColor); // được đánh dấu là deteted
 
                 foreach (var color in listAddColor)
                 {
@@ -456,11 +515,12 @@ namespace EcommerceApi.Services.ProductService
 
                 return updateProduct;
             }
-            catch(SqlException ex)
+            catch (SqlException ex)
             {
                 throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
             }
         }
+
         public async Task<FileStreamResult> GetImageAsync(string imageUrl, CancellationToken userCancellationToken)
         {
             var response = await _cloudflareClient.GetObjectAsync(imageUrl, userCancellationToken);
@@ -471,8 +531,8 @@ namespace EcommerceApi.Services.ProductService
                     FileDownloadName = imageUrl
                 };
             }
+
             throw new HttpStatusException(response.HttpStatusCode, "Image not found.");
         }
-
     }
 }

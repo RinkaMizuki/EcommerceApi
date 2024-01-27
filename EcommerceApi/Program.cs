@@ -49,8 +49,8 @@ var configuration = builder.Configuration;
 // Add services to the container.
 builder.Services.AddTransient<JwtMiddleware>();
 //Add NewtonsoftJson Options fix ReferenceLoopHandling is currently not supported in the System.Text.Json serializer.
- //builder.Services.AddControllers().AddNewtonsoftJson(options =>
- //    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+//builder.Services.AddControllers().AddNewtonsoftJson(options =>
+//    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
 builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new ApiVersion(1, 0);
@@ -66,11 +66,9 @@ builder.Services.AddMemoryCache();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHealthChecksUI().AddInMemoryStorage();
 builder.Services.AddHealthChecks()
-                .AddSqlServer(configuration.GetConnectionString("DefaultConnection")!)
-                .AddCheck<MyHealthCheck>("MyHealthCheck");
-builder.Services.AddSwaggerGen(options => { 
-    options.OperationFilter<SwaggerDefaultValues>();
-});
+    .AddSqlServer(configuration.GetConnectionString("DefaultConnection")!)
+    .AddCheck<MyHealthCheck>("MyHealthCheck");
+builder.Services.AddSwaggerGen(options => { options.OperationFilter<SwaggerDefaultValues>(); });
 
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<ICategoryService, CategoryService>();
@@ -125,9 +123,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(IdentityData.AdminPolicyName,
-        policy => { 
-            policy.RequireClaim("Role", IdentityData.AdminPolicyRole);
-        });
+        policy => { policy.RequireClaim("Role", IdentityData.AdminPolicyRole); });
 });
 
 var app = builder.Build();
@@ -160,9 +156,7 @@ app.MapHealthChecks("/health", new HealthCheckOptions()
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
 });
 
-app.MapHealthChecksUI(options => {
-    options.AddCustomStylesheet("dotnet.css");
-});
+app.MapHealthChecksUI(options => { options.AddCustomStylesheet("dotnet.css"); });
 app.MapControllers();
 
 app.Run();

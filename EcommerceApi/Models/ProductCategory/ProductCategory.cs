@@ -24,5 +24,5 @@ public class ProductCategory
     public ProductCategory ParentProductCategory { get; set; } = null;
 
     public List<Product> Products { get; set; } = new();
-    public List<ProductCategory> ListProductCategoryChild { get; set; } = new List<ProductCategory>();
+    public List<ProductCategory> ListProductCategoryChild { get; set; } = new();
 }
