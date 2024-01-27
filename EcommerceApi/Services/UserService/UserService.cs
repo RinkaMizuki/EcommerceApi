@@ -95,14 +95,14 @@ public class UserService : IUserService
 
             ;
 
-            List<string> sortValues = Helpers.ParseString<string>(sort);
+            var sortValues = Helpers.ParseString<string>(sort);
 
             if (sortValues.Count == 0)
             {
                 sortValues.AddRange(new List<string> { "", "" });
             }
 
-            List<string> filterValues = Helpers.ParseString<string>(filter);
+            var filterValues = Helpers.ParseString<string>(filter);
             if (!filterValues.Contains(UserFilterType.Search))
             {
                 filterValues.Insert(0, UserFilterType.Search);
@@ -114,7 +114,7 @@ public class UserService : IUserService
                 filterValues.Insert(0, filterValues[search]);
                 filterValues.Insert(0, "q");
 
-                if (filterValues[filterValues.Count - 1] == "q")
+                if (filterValues[^1] == "q")
                 {
                     filterValues.RemoveAt(filterValues.LastIndexOf(UserFilterType.Search) - 1);
                     filterValues.RemoveAt(filterValues.LastIndexOf(UserFilterType.Search));
@@ -144,6 +144,18 @@ public class UserService : IUserService
                 filterValues.Add(filterValues[indexActive + 1]);
                 filterValues.Remove(UserFilterType.IsActive);
                 filterValues.Remove(filterValues[indexActive]);
+            }
+            
+            var filterRefIds = new List<int>();
+            if (filterValues.Contains(UserFilterType.Id))
+            {
+                var keyStartIndex = filterValues.IndexOf(UserFilterType.Id);
+                var keyEndIndex = filterValues.IndexOf(UserFilterType.Segments);
+                var listId = filterValues
+                    .Skip(keyStartIndex + 1)
+                    .Take(keyEndIndex - keyStartIndex - 1)
+                    .Select(int.Parse).ToList();
+                filterRefIds.AddRange(listId);
             }
 
             var perPage = rangeValues[1] - rangeValues[0] + 1;
@@ -176,6 +188,8 @@ public class UserService : IUserService
                 });
 
             var filterBan = filterValues[filterValues.IndexOf(UserFilterType.IsActive) + 1];
+            var filterSegment = filterValues[filterValues.IndexOf(UserFilterType.Segments) + 1];
+            var filterSearch = filterValues[filterValues.IndexOf(UserFilterType.Search) + 1];
 
             var listUsers = await listUsersQuery
                 .Skip((currentPage - 1) * perPage)
@@ -183,21 +197,21 @@ public class UserService : IUserService
                 .ToListAsync(userCancellationToken);
 
             listUsers = listUsers
-                .Where(u => filterValues[3] != "" && filterValues[1] != "" && filterBan != ""
-                    ? u.UserName.ToLower().Contains(filterValues[1].ToLower()) &&
+                .Where(u => filterSegment != "" && filterSearch != "" && filterBan != ""
+                    ? u.UserName.ToLower().Contains(filterSearch.ToLower()) &&
                       IsExistSegment(u.Segments, filterValues) && u.IsActive.ToString().ToLower() == filterBan.ToLower()
-                    : filterValues[3] == "" && filterValues[1] == "" && filterBan == ""
-                        ? filterValues[3] == "" && filterValues[1] == "" && filterBan == ""
-                        : filterValues[1] != "" && filterValues[3] == "" && filterBan == ""
-                            ? u.UserName.ToLower().Contains(filterValues[1].ToLower())
-                            : filterValues[1] == "" && filterValues[3] != "" && filterBan == ""
+                    : filterSegment == "" && filterSearch == "" && filterBan == "" || filterRefIds.Contains(u.Id)
+                        ? filterSegment == "" && filterSearch == "" && filterBan == ""
+                        : filterSearch != "" && filterSegment == "" && filterBan == ""
+                            ? u.UserName.ToLower().Contains(filterSearch.ToLower())
+                            : filterSearch == "" && filterSegment != "" && filterBan == ""
                                 ? IsExistSegment(u.Segments, filterValues)
-                                : filterValues[1] == "" && filterValues[3] == "" && filterBan != ""
+                                : filterSearch == "" && filterSegment == "" && filterBan != ""
                                     ? u.IsActive.ToString().ToLower() == filterBan.ToLower()
-                                    : filterValues[1] != "" && filterValues[3] != "" && filterBan == ""
-                                        ? u.UserName.ToLower().Contains(filterValues[1].ToLower()) &&
+                                    : filterSearch != "" && filterSegment != "" && filterBan == ""
+                                        ? u.UserName.ToLower().Contains(filterSearch.ToLower()) &&
                                           IsExistSegment(u.Segments, filterValues)
-                                        : filterValues[1] == "" && filterValues[3] != "" && filterBan != ""
+                                        : filterSearch == "" && filterSegment != "" && filterBan != ""
                                             ? IsExistSegment(u.Segments, filterValues) &&
                                               u.IsActive.ToString().ToLower() == filterBan.ToLower()
                                             : u.UserName.ToLower().Contains(filterValues[1].ToLower()) &&
@@ -252,11 +266,11 @@ public class UserService : IUserService
         }
     }
 
-    private bool IsExistSegment(List<Segment> segments, List<string> segmentFitler)
+    private bool IsExistSegment(List<Segment> segments, IList<string> segmentFilter)
     {
-        var filters = segmentFitler
-            .Skip(segmentFitler.IndexOf(UserFilterType.Segments) + 1)
-            .Take(segmentFitler.Count)
+        var filters = segmentFilter
+            .Skip(segmentFilter.IndexOf(UserFilterType.Segments) + 1)
+            .Take(segmentFilter.Count)
             .ToList();
         if (filters.Contains(UserFilterType.IsActive))
         {

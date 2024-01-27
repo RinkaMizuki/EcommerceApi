@@ -1,13 +1,10 @@
-using System.Net;
 using Asp.Versioning;
 using EcommerceApi.Dtos.Admin;
-using EcommerceApi.Models;
 using EcommerceApi.Models.IdentityData;
 using EcommerceApi.Services;
 using EcommerceApi.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace EcommerceApi.Controllers.V1.Admin
 {
@@ -18,10 +15,12 @@ namespace EcommerceApi.Controllers.V1.Admin
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+
         public UserController(IUserService userService)
         {
             _userService = userService;
         }
+
         [AllowAnonymous]
         [HttpPost]
         [Route("users/post")]
@@ -29,18 +28,18 @@ namespace EcommerceApi.Controllers.V1.Admin
         {
             var userResponse = await _userService.PostUserAsync(userAdmin, userCancellationToken);
             return new JsonResult(new UserResponse()
-            {
-                Id = userResponse.UserId,
-                UserName = userResponse.UserName,
-                Email = userResponse.Email,
-                Avatar = userResponse.Avatar,
-                BirthDate = Convert.ToDateTime(userResponse.BirthDate.ToShortDateString()),
-                EmailConfirm = userResponse.EmailConfirm,
-                IsActive = userResponse.IsActive,
-                Phone = userResponse.Phone,
-                Role = userResponse.Role.ToLower(),
-                Url = userResponse.Url,
-            }
+                {
+                    Id = userResponse.UserId,
+                    UserName = userResponse.UserName,
+                    Email = userResponse.Email,
+                    Avatar = userResponse.Avatar,
+                    BirthDate = Convert.ToDateTime(userResponse.BirthDate.ToShortDateString()),
+                    EmailConfirm = userResponse.EmailConfirm,
+                    IsActive = userResponse.IsActive,
+                    Phone = userResponse.Phone,
+                    Role = userResponse.Role.ToLower(),
+                    Url = userResponse.Url,
+                }
             );
         }
 
@@ -68,10 +67,11 @@ namespace EcommerceApi.Controllers.V1.Admin
 
         [HttpPut]
         [Route("users/update/{id:int}")]
-        public async Task<IActionResult> UpdateUser([FromRoute] int id, [FromForm] UserAdminDto userAdmin, CancellationToken userCancellationToken)
+        public async Task<IActionResult> UpdateUser([FromRoute] int id, [FromForm] UserAdminDto userAdmin,
+            CancellationToken userCancellationToken)
         {
             var updatedUser = await _userService.UpdateUserByIdAsync(id, userAdmin, Request, userCancellationToken);
-            
+
             var userResponse = new UserResponse()
             {
                 Id = updatedUser.UserId,
@@ -93,11 +93,11 @@ namespace EcommerceApi.Controllers.V1.Admin
         public async Task<IActionResult> DeleteUser(int id, CancellationToken userCancellationToken)
         {
             var response = await _userService.DeleteUserByIdAsync(id, userCancellationToken);
-                if (!response) throw new Exception("User not found");
-                return Ok(new
-                {
-                    message = "Delete successfully"
-                });
+            if (!response) throw new Exception("User not found");
+            return Ok(new
+            {
+                message = "Delete successfully"
+            });
         }
 
         [HttpGet]
@@ -112,14 +112,14 @@ namespace EcommerceApi.Controllers.V1.Admin
             var listUsers = await _userService.GetListUsersAsync(sort, range, filter, Response, userCancellationToken);
             return new JsonResult(listUsers);
         }
+
         [AllowAnonymous]
         [HttpGet]
         [Route("users/preview")]
         public async Task<IActionResult> GetUserAvatar(string avatar, CancellationToken userCancellationToken)
         {
-            
-           var userAvatar = await _userService.GetAvatarAsync(avatar, userCancellationToken);
-           return File(userAvatar.FileStream, userAvatar.ContentType);
+            var userAvatar = await _userService.GetAvatarAsync(avatar, userCancellationToken);
+            return File(userAvatar.FileStream, userAvatar.ContentType);
         }
     }
 }

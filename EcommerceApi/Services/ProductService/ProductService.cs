@@ -111,6 +111,12 @@ namespace EcommerceApi.Services.ProductService
                     filterValues.Add("");
                 }
 
+                if (!filterValues.Contains(ProductFilterType.Sale))
+                {
+                    filterValues.Add(ProductFilterType.Sale);
+                    filterValues.Add("");
+                }
+
                 if (!filterValues.Contains(ProductFilterType.StockRange))
                 {
                     filterValues.Add(ProductFilterType.StockRange);
@@ -128,6 +134,20 @@ namespace EcommerceApi.Services.ProductService
                     filterValues.Remove(filterValues[indexActive]);
                 }
 
+                var filterRefIds = new List<Guid>();
+                if (filterValues.Contains(UserFilterType.Id))
+                {
+                    var keyStartIndex = filterValues.IndexOf(ProductFilterType.Id);
+                    var keyEndIndex = filterValues.IndexOf(ProductFilterType.Category);
+                    var listId = filterValues
+                        .Skip(keyStartIndex + 1)
+                        .Take(keyEndIndex - keyStartIndex - 1)
+                        .Select(id => new Guid(id))
+                        .ToList();
+                    filterRefIds.AddRange(listId);
+                }
+
+
                 var stockRange = filterValues
                     .Skip(filterValues.IndexOf(ProductFilterType.StockRange) + 1)
                     .Take(2)
@@ -141,6 +161,7 @@ namespace EcommerceApi.Services.ProductService
 
                 var listProductQuery = _context
                     .Products
+                    .Include(p => p.ProductCategory)
                     .Include(p => p.ProductImages)
                     .Include(p => p.ProductColors)
                     .Include(p => p.ProductRates)
@@ -152,6 +173,7 @@ namespace EcommerceApi.Services.ProductService
                 var maxStock = string.IsNullOrEmpty(stockRange[1]) ? -999 : Convert.ToInt32(stockRange[1]);
                 var category = filterValues[filterValues.IndexOf(ProductFilterType.Category) + 1];
                 var searchValue = filterValues[filterValues.IndexOf(ProductFilterType.Search) + 1].ToLower();
+                var sale = filterValues[filterValues.IndexOf(ProductFilterType.Sale) + 1].ToLower();
 
                 var listProduct = await listProductQuery
                     .Skip((currentPage - 1) * perPage)
@@ -165,10 +187,15 @@ namespace EcommerceApi.Services.ProductService
                                      && maxStock < 0)
                                  || (minStock < 0
                                      && maxStock < 0))
-                                && (string.IsNullOrEmpty(category)
-                                    || p.CategoryId == Convert.ToInt32(category))
-                                && (string.IsNullOrEmpty(searchValue) ||
-                                    p.Title.ToLower().Contains(searchValue.ToLower()))
+                        && (string.IsNullOrEmpty(category)
+                            || p.CategoryId == Convert.ToInt32(category) ||
+                            p.ProductCategory.ParentCategoryId == Convert.ToInt32(category))
+                        && (string.IsNullOrEmpty(searchValue) ||
+                            p.Title.ToLower().Contains(searchValue.ToLower()))
+                        && (string.IsNullOrEmpty(sale) || ((sale == "hot" && p.Hot) ||
+                                                           (sale == "flashsale" && p.FlashSale) ||
+                                                           (sale == "upcoming" && p.Upcoming))
+                        ) || filterRefIds.Contains(p.ProductId)
                     ).ToList();
 
                 var totalProduct = listProduct.Count;

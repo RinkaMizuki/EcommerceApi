@@ -14,42 +14,47 @@ namespace EcommerceApi.Controllers.V1.Admin
     [ApiController]
     public class RateController : ControllerBase
     {
-        private readonly IRateService _feedbackService;
-        public RateController(IRateService feedbackService)
+        private readonly IRateService _rateService;
+
+        public RateController(IRateService rateService)
         {
-            _feedbackService = feedbackService;
+            _rateService = rateService;
         }
+
         [HttpGet]
         [Route("rates")]
-        public async Task<IActionResult> GetListFeedback(CancellationToken userCancellationToken)
+        public async Task<IActionResult> GetListRating(string sort, string range, string filter,
+            CancellationToken userCancellationToken)
         {
-
-            var listFeedback = await _feedbackService.GetListRateAsync(userCancellationToken);
-            return Ok(listFeedback);
-
+            var listRating =
+                await _rateService.GetListRateAsync(sort, range, filter, Response, userCancellationToken);
+            return Ok(listRating);
         }
+
         [HttpPost]
         [Route("rates/post")]
-        public async Task<IActionResult> CreateRate(RateDto rateDto,CancellationToken userCancellationToken)
+        public async Task<IActionResult> CreateRating(RateDto rateDto, CancellationToken userCancellationToken)
         {
-            var rate = await _feedbackService.PostRateAsync(rateDto, userCancellationToken);
+            var rate = await _rateService.PostRateAsync(rateDto, userCancellationToken);
             if (rate == null) return BadRequest();
             return new JsonResult(rate);
-
         }
+
         [HttpPut]
         [Route("rates/update/{rateId:int}")]
-        public async Task<IActionResult> UpdateRate(RateDto rateDto, int rateId, CancellationToken userCancellationToken)
+        public async Task<IActionResult> UpdateRate(RateDto rateDto, int rateId,
+            CancellationToken userCancellationToken)
         {
-            var updateRate = await _feedbackService.UpdateRateAsync(rateDto, rateId, userCancellationToken);
+            var updateRate = await _rateService.UpdateRateAsync(rateDto, rateId, userCancellationToken);
             if (updateRate == null) return BadRequest();
             return Ok(updateRate);
         }
+
         [HttpDelete]
         [Route("rates/delete/{rateId:int}")]
         public async Task<IActionResult> DeleteRate(int rateId, CancellationToken userCancellationToken)
         {
-            var result = await _feedbackService.DeleteRateAsync(rateId, userCancellationToken);
+            var result = await _rateService.DeleteRateAsync(rateId, userCancellationToken);
             if (!result) return BadRequest();
             return NoContent();
         }

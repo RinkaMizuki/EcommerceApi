@@ -8,6 +8,7 @@ namespace EcommerceApi.Models.Rate;
 
 public class Rate
 {
+    [JsonPropertyName("id")]
     [Key]public int RateId { get; set; }
     public Guid ProductId { get; set; }
     [ForeignKey("ProductId")]

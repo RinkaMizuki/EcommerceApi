@@ -114,7 +114,6 @@ public class CategoryService : ICategoryService
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
         }
     }
-
     public async Task<ProductCategory> PostCategoryAsync(CategoryDto categoryDto, string userName,
         CancellationToken userCancellationToken)
     {
