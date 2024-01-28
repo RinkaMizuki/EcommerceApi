@@ -22,6 +22,16 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
 
         [HttpGet]
+        [Route("rates/{rateId:int}")]
+        public async Task<IActionResult> GetRatingById(int rateId,
+            CancellationToken userCancellationToken)
+        {
+            var ratingById =
+                await _rateService.GetRateByIdAsync(rateId, userCancellationToken);
+            return Ok(ratingById);
+        }
+
+        [HttpGet]
         [Route("rates")]
         public async Task<IActionResult> GetListRating(string sort, string range, string filter,
             CancellationToken userCancellationToken)

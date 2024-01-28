@@ -3,22 +3,42 @@ using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models;
 using EcommerceApi.Models.Rate;
 using EcommerceApi.Models.Segment;
-using EcommerceApi.Services.SegmentService;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
+using EcommerceApi.Constant;
+using EcommerceApi.FilterBuilder;
+using SortOrder = EcommerceApi.Constant.SortOrder;
 
 namespace EcommerceApi.Services.FeedbackService
 {
     public class RateService : IRateService
     {
         private readonly EcommerceDbContext _context;
-        private readonly ISegmentService _segmentService;
+        private readonly RateFilterBuilder _rateFilterBuilder;
 
-        public RateService(EcommerceDbContext context, ISegmentService segmentService)
+        public RateService(EcommerceDbContext context, RateFilterBuilder rateFilterBuilder)
         {
             _context = context;
-            _segmentService = segmentService;
+            _rateFilterBuilder = rateFilterBuilder;
+        }
+
+        public async Task<Rate> GetRateByIdAsync(int rateId, CancellationToken userCancellationToken)
+        {
+            try
+            {
+                var rateById = await _context
+                                   .Rates
+                                   .Where(r => r.RateId == rateId)
+                                   .FirstOrDefaultAsync(userCancellationToken)
+                               ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Rating not found.");
+
+                return rateById;
+            }
+            catch (Exception ex)
+            {
+                throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
+            }
         }
 
         public async Task<bool> DeleteRateAsync(int rateId, CancellationToken userCancellationToken)
@@ -50,7 +70,8 @@ namespace EcommerceApi.Services.FeedbackService
                 if (rangeValues.Count == 0)
                 {
                     rangeValues.AddRange(new List<int> { 0, 4 });
-                };
+                }
+
                 var sortValues = Helpers.ParseString<string>(sort);
 
                 if (sortValues.Count == 0)
@@ -58,28 +79,114 @@ namespace EcommerceApi.Services.FeedbackService
                     sortValues.AddRange(new List<string> { "", "" });
                 }
 
+                var filterValues = Helpers.ParseString<string>(filter);
+
+                if (!filterValues.Contains(RateFilterType.Search))
+                {
+                    filterValues.Add(RateFilterType.Search);
+                    filterValues.Add("");
+                }
+
+                if (!filterValues.Contains(RateFilterType.Status))
+                {
+                    filterValues.Add(RateFilterType.Status);
+                    filterValues.Add("");
+                }
+
+                if (!filterValues.Contains(RateFilterType.UserId))
+                {
+                    filterValues.Add(RateFilterType.UserId);
+                    filterValues.Add("");
+                }
+
+                if (!filterValues.Contains(RateFilterType.ProductId))
+                {
+                    filterValues.Add(RateFilterType.ProductId);
+                    filterValues.Add("");
+                }
+
+                if (!filterValues.Contains(RateFilterType.Before))
+                {
+                    filterValues.Add(RateFilterType.Before);
+                    filterValues.Add("");
+                }
+
+                if (!filterValues.Contains(RateFilterType.Since))
+                {
+                    filterValues.Add(RateFilterType.Since);
+                    filterValues.Add("");
+                }
+
                 var perPage = rangeValues[1] - rangeValues[0] + 1;
                 var currentPage = Convert.ToInt32(Math.Ceiling((double)rangeValues[0] / perPage)) + 1;
 
+                var sortBy = sortValues[0].ToLower();
+                var sortType = sortValues[1].ToLower();
+
                 var listRateQuery = _context
                     .Rates
-                    .Include(r => r.FeedbackRate)
-                    .AsNoTracking();
+                    .Include(r => r.Product)
+                    .Include(r => r.User);
 
                 var listRate = await listRateQuery
-                    .Skip((currentPage - 1) * perPage)
-                    .Take(perPage)
+                    .AsNoTracking()
                     .ToListAsync(userCancellationToken);
 
-                var totalRate = listRate.Count;
+                var totalRate = await listRateQuery.CountAsync(userCancellationToken);
+
+                //business logic for filter or sort
+                //....
+                var filterSearch = filterValues[filterValues.IndexOf(RateFilterType.Search) + 1];
+                var filterStatus = filterValues[filterValues.IndexOf(RateFilterType.Status) + 1];
+                var filterUser = filterValues[filterValues.IndexOf(RateFilterType.UserId) + 1];
+                var filterProduct = filterValues[filterValues.IndexOf(RateFilterType.ProductId) + 1];
+                var filterBefore = filterValues[filterValues.IndexOf(RateFilterType.Before) + 1];
+                var filterSince = filterValues[filterValues.IndexOf(RateFilterType.Since) + 1];
+
+                var filters = _rateFilterBuilder
+                    .AddSearchFilter(filterSearch)
+                    .AddStatusFilter(filterStatus)
+                    .AddUserFilter(filterUser)
+                    .AddProductFilter(filterProduct)
+                    .AddBeforeDateFilter(filterBefore)
+                    .AddSinceDateFilter(filterSince)
+                    .Build();
+
+                listRate = listRate.Where(filters).ToList();
+
+                listRate = sortType switch
+                {
+                    "asc" => sortBy switch
+                    {
+                        SortOrder.SortByStar => listRate.OrderBy(r => r.Star).ToList(),
+                        SortOrder.SortByUser => listRate.OrderBy(r => r.User.UserName).ToList(),
+                        SortOrder.SortByCreatedAt => listRate.OrderBy(r => r.CreatedAt).ToList(),
+                        SortOrder.SortByProduct => listRate.OrderBy(r => r.Product.Title).ToList(),
+                        _ => listRate
+                    },
+                    "desc" => sortBy switch
+                    {
+                        SortOrder.SortByStar => listRate.OrderByDescending(r => r.Star).ToList(),
+                        SortOrder.SortByUser => listRate.OrderByDescending(r => r.User.UserName).ToList(),
+                        SortOrder.SortByCreatedAt => listRate.OrderByDescending(r => r.CreatedAt).ToList(),
+                        SortOrder.SortByProduct => listRate.OrderByDescending(r => r.Product.Title).ToList(),
+                        _ => listRate
+                    },
+                    _ => listRate.OrderByDescending(r => r.CreatedAt).ToList()
+                };
+
+                listRate = listRate
+                    .Skip((currentPage - 1) * perPage)
+                    .Take(perPage)
+                    .ToList();
 
                 response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
                 response.Headers.Append("Content-Range", $"rates {rangeValues[0]}-{rangeValues[1]}/{totalRate}");
                 return listRate;
             }
-            catch (SqlException ex)
+            catch (Exception ex)
             {
-                throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
+                throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 

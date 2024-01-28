@@ -134,20 +134,6 @@ namespace EcommerceApi.Services.ProductService
                     filterValues.Remove(filterValues[indexActive]);
                 }
 
-                var filterRefIds = new List<Guid>();
-                if (filterValues.Contains(UserFilterType.Id))
-                {
-                    var keyStartIndex = filterValues.IndexOf(ProductFilterType.Id);
-                    var keyEndIndex = filterValues.IndexOf(ProductFilterType.Category);
-                    var listId = filterValues
-                        .Skip(keyStartIndex + 1)
-                        .Take(keyEndIndex - keyStartIndex - 1)
-                        .Select(id => new Guid(id))
-                        .ToList();
-                    filterRefIds.AddRange(listId);
-                }
-
-
                 var stockRange = filterValues
                     .Skip(filterValues.IndexOf(ProductFilterType.StockRange) + 1)
                     .Take(2)
@@ -164,9 +150,7 @@ namespace EcommerceApi.Services.ProductService
                     .Include(p => p.ProductCategory)
                     .Include(p => p.ProductImages)
                     .Include(p => p.ProductColors)
-                    .Include(p => p.ProductRates)
-                    .AsNoTracking();
-
+                    .Include(p => p.ProductRates);
 
                 //conditions filter
                 var minStock = string.IsNullOrEmpty(stockRange[0]) ? -999 : Convert.ToInt32(stockRange[0]);
@@ -176,9 +160,26 @@ namespace EcommerceApi.Services.ProductService
                 var sale = filterValues[filterValues.IndexOf(ProductFilterType.Sale) + 1].ToLower();
 
                 var listProduct = await listProductQuery
-                    .Skip((currentPage - 1) * perPage)
-                    .Take(perPage)
+                    .AsNoTracking()
                     .ToListAsync(userCancellationToken);
+
+                var totalProduct = await listProductQuery.CountAsync(userCancellationToken);
+
+                var filterRefIds = new List<Guid>();
+                if (filterValues.Contains(UserFilterType.Id))
+                {
+                    var keyStartIndex = filterValues.IndexOf(ProductFilterType.Id);
+                    var keyEndIndex = filterValues.IndexOf(ProductFilterType.Category);
+                    var listId = filterValues
+                        .Skip(keyStartIndex + 1)
+                        .Take(keyEndIndex - keyStartIndex - 1)
+                        .Select(id => new Guid(id))
+                        .ToList();
+                    filterRefIds.AddRange(listId);
+                    listProduct = listProduct
+                        .Where(p => filterRefIds.Contains(p.ProductId))
+                        .ToList();
+                }
 
                 listProduct = listProduct
                     .Where(p => ((p.Quantity >= minStock
@@ -187,18 +188,17 @@ namespace EcommerceApi.Services.ProductService
                                      && maxStock < 0)
                                  || (minStock < 0
                                      && maxStock < 0))
-                        && (string.IsNullOrEmpty(category)
-                            || p.CategoryId == Convert.ToInt32(category) ||
-                            p.ProductCategory.ParentCategoryId == Convert.ToInt32(category))
-                        && (string.IsNullOrEmpty(searchValue) ||
-                            p.Title.ToLower().Contains(searchValue.ToLower()))
-                        && (string.IsNullOrEmpty(sale) || ((sale == "hot" && p.Hot) ||
-                                                           (sale == "flashsale" && p.FlashSale) ||
-                                                           (sale == "upcoming" && p.Upcoming))
-                        ) || filterRefIds.Contains(p.ProductId)
+                                && (string.IsNullOrEmpty(category)
+                                    || p.CategoryId == Convert.ToInt32(category) ||
+                                    p.ProductCategory.ParentCategoryId == Convert.ToInt32(category))
+                                && (string.IsNullOrEmpty(searchValue) ||
+                                    p.Title.ToLower().Contains(searchValue.ToLower()))
+                                && (string.IsNullOrEmpty(sale) || ((sale == "hot" && p.Hot) ||
+                                                                   (sale == "flashsale" && p.FlashSale) ||
+                                                                   (sale == "upcoming" && p.Upcoming))
+                                )
                     ).ToList();
 
-                var totalProduct = listProduct.Count;
                 switch (sortType)
                 {
                     case "asc":
@@ -220,6 +220,10 @@ namespace EcommerceApi.Services.ProductService
 
                         break;
                 }
+
+                listProduct = listProduct
+                    .Skip((currentPage - 1) * perPage)
+                    .Take(perPage).ToList();
 
                 response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
                 response.Headers.Append("Content-Range", $"products {rangeValues[0]}-{rangeValues[1]}/{totalProduct}");

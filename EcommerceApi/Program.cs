@@ -2,6 +2,7 @@ using System.Text;
 using Asp.Versioning;
 using EcommerceApi.Config;
 using EcommerceApi.Extensions;
+using EcommerceApi.FilterBuilder;
 using EcommerceApi.Middleware;
 using EcommerceApi.Models;
 using EcommerceApi.Models.IdentityData;
@@ -81,7 +82,7 @@ builder.Services.AddTransient<IContactService, ContactService>();
 builder.Services.AddTransient<ICouponService, CouponService>();
 builder.Services.AddTransient<ISegmentService, SegmentService>();
 builder.Services.AddTransient<IOrderService, OrderService>();
-
+builder.Services.AddScoped<RateFilterBuilder>();
 builder.Services.AddTransient<IConfirmService, ConfirmService>();
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 builder.Services.AddTransient<IMailService, MailService>();

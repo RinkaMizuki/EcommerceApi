@@ -264,11 +264,11 @@ namespace EcommerceApi.Controllers.V1.User
         {
             var claims = new List<Claim>
             {
-                new (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new (JwtRegisteredClaimNames.Email, user.Email, ClaimTypes.Email),
-                new (JwtRegisteredClaimNames.UniqueName, user.UserName, ClaimTypes.Name),
-                new ("UserId", user.UserId.ToString()),
-                new ("Role", user.Role),
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new(JwtRegisteredClaimNames.Email, user.Email, ClaimTypes.Email),
+                new(JwtRegisteredClaimNames.UniqueName, user.UserName, ClaimTypes.Name),
+                new("UserId", user.UserId.ToString()),
+                new("Role", user.Role),
             };
             return claims;
         }
@@ -309,7 +309,7 @@ namespace EcommerceApi.Controllers.V1.User
                 Secure = false,
                 Expires = DateTime.Now.AddDays(7),
             };
-            Console.WriteLine(refreshToken.Token);
+            Response.Cookies.Delete("refreshToken");
             Response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);
         }
     }

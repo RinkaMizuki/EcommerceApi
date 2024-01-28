@@ -145,18 +145,6 @@ public class UserService : IUserService
                 filterValues.Remove(UserFilterType.IsActive);
                 filterValues.Remove(filterValues[indexActive]);
             }
-            
-            var filterRefIds = new List<int>();
-            if (filterValues.Contains(UserFilterType.Id))
-            {
-                var keyStartIndex = filterValues.IndexOf(UserFilterType.Id);
-                var keyEndIndex = filterValues.IndexOf(UserFilterType.Segments);
-                var listId = filterValues
-                    .Skip(keyStartIndex + 1)
-                    .Take(keyEndIndex - keyStartIndex - 1)
-                    .Select(int.Parse).ToList();
-                filterRefIds.AddRange(listId);
-            }
 
             var perPage = rangeValues[1] - rangeValues[0] + 1;
             var currentPage = Convert.ToInt32(Math.Ceiling((double)rangeValues[0] / perPage)) + 1;
@@ -187,20 +175,37 @@ public class UserService : IUserService
                     }).ToList()
                 });
 
+            var listUsers = await listUsersQuery
+                .AsNoTracking()
+                .ToListAsync(userCancellationToken);
+
+            var totalUser = await listUsersQuery.CountAsync(userCancellationToken);
+
             var filterBan = filterValues[filterValues.IndexOf(UserFilterType.IsActive) + 1];
             var filterSegment = filterValues[filterValues.IndexOf(UserFilterType.Segments) + 1];
             var filterSearch = filterValues[filterValues.IndexOf(UserFilterType.Search) + 1];
 
-            var listUsers = await listUsersQuery
-                .Skip((currentPage - 1) * perPage)
-                .Take(perPage)
-                .ToListAsync(userCancellationToken);
+
+            var filterRefIds = new List<int>();
+            if (filterValues.Contains(UserFilterType.Id))
+            {
+                var keyStartIndex = filterValues.IndexOf(UserFilterType.Id);
+                var keyEndIndex = filterValues.IndexOf(UserFilterType.Segments);
+                var listId = filterValues
+                    .Skip(keyStartIndex + 1)
+                    .Take(keyEndIndex - keyStartIndex - 1)
+                    .Select(int.Parse).ToList();
+                filterRefIds.AddRange(listId);
+                listUsers = listUsers
+                    .Where(u => filterRefIds.Contains(u.Id))
+                    .ToList();
+            }
 
             listUsers = listUsers
                 .Where(u => filterSegment != "" && filterSearch != "" && filterBan != ""
                     ? u.UserName.ToLower().Contains(filterSearch.ToLower()) &&
                       IsExistSegment(u.Segments, filterValues) && u.IsActive.ToString().ToLower() == filterBan.ToLower()
-                    : filterSegment == "" && filterSearch == "" && filterBan == "" || filterRefIds.Contains(u.Id)
+                    : filterSegment == "" && filterSearch == "" && filterBan == ""
                         ? filterSegment == "" && filterSearch == "" && filterBan == ""
                         : filterSearch != "" && filterSegment == "" && filterBan == ""
                             ? u.UserName.ToLower().Contains(filterSearch.ToLower())
@@ -214,47 +219,31 @@ public class UserService : IUserService
                                         : filterSearch == "" && filterSegment != "" && filterBan != ""
                                             ? IsExistSegment(u.Segments, filterValues) &&
                                               u.IsActive.ToString().ToLower() == filterBan.ToLower()
-                                            : u.UserName.ToLower().Contains(filterValues[1].ToLower()) &&
+                                            : u.UserName.ToLower().Contains(filterSearch.ToLower()) &&
                                               u.IsActive.ToString().ToLower() == filterBan.ToLower()
                 ).ToList();
 
-            var totalUser = listUsers.Count;
-
-            if (sortType == "desc") listUsers.Reverse();
-
-            switch (sortType)
+            listUsers = sortType switch
             {
-                case "asc":
-                    switch (sortBy)
-                    {
-                        case SortOrder.SortById:
-                            listUsers = listUsers.OrderBy(u => u.Id).ToList();
-                            break;
-                        case SortOrder.SortByBirthDate:
-                            listUsers = listUsers.OrderBy(u => u.BirthDate).ToList();
-                            break;
-                        default:
-                            listUsers = listUsers.OrderBy(u => u.UserName).ToList();
-                            break;
-                    }
+                "asc" => sortBy switch
+                {
+                    SortOrder.SortById => listUsers.OrderBy(u => u.Id).ToList(),
+                    SortOrder.SortByBirthDate => listUsers.OrderBy(u => u.BirthDate).ToList(),
+                    _ => listUsers
+                },
+                "desc" => sortBy switch
+                {
+                    SortOrder.SortById => listUsers.OrderByDescending(u => u.Id).ToList(),
+                    SortOrder.SortByBirthDate => listUsers.OrderByDescending(u => u.BirthDate).ToList(),
+                    _ => listUsers
+                },
+                _ => listUsers
+            };
 
-                    break;
-                case "desc":
-                    switch (sortBy)
-                    {
-                        case SortOrder.SortById:
-                            listUsers = listUsers.OrderByDescending(u => u.Id).ToList();
-                            break;
-                        case SortOrder.SortByBirthDate:
-                            listUsers = listUsers.OrderByDescending(u => u.BirthDate).ToList();
-                            break;
-                        default:
-                            listUsers = listUsers.OrderByDescending(u => u.UserName).ToList();
-                            break;
-                    }
-
-                    break;
-            }
+            listUsers = listUsers
+                .Skip((currentPage - 1) * perPage)
+                .Take(perPage)
+                .ToList();
 
             response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
             response.Headers.Append("Content-Range", $"users {rangeValues[0]}-{rangeValues[1]}/{totalUser}");
