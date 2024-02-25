@@ -90,7 +90,7 @@ public class UserService : IUserService
 
             if (rangeValues.Count == 0)
             {
-                rangeValues.AddRange(new List<int> { 0, 4 });
+                rangeValues.AddRange(new List<int> { 0, 24 });
             }
 
             ;
@@ -179,8 +179,6 @@ public class UserService : IUserService
                 .AsNoTracking()
                 .ToListAsync(userCancellationToken);
 
-            var totalUser = await listUsersQuery.CountAsync(userCancellationToken);
-
             var filterBan = filterValues[filterValues.IndexOf(UserFilterType.IsActive) + 1];
             var filterSegment = filterValues[filterValues.IndexOf(UserFilterType.Segments) + 1];
             var filterSearch = filterValues[filterValues.IndexOf(UserFilterType.Search) + 1];
@@ -239,6 +237,8 @@ public class UserService : IUserService
                 },
                 _ => listUsers
             };
+
+            var totalUser = listUsers.Count;
 
             listUsers = listUsers
                 .Skip((currentPage - 1) * perPage)

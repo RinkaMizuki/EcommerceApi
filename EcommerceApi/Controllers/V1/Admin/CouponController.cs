@@ -1,9 +1,11 @@
 ﻿using Asp.Versioning;
 using EcommerceApi.Dtos.Admin;
+using EcommerceApi.Models.Coupon;
 using EcommerceApi.Models.IdentityData;
 using EcommerceApi.Services.CouponService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace EcommerceApi.Controllers.V1.Admin
 {
@@ -21,10 +23,19 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
         [HttpGet]
         [Route("coupons")]
-        public async Task<IActionResult> GetListCoupon(CancellationToken userCancellationToken)
+        [AllowAnonymous]
+        public async Task<IActionResult> GetListCoupon(string sort, string range, string filter, CancellationToken userCancellationToken)
         {
-           var listCoupon = await _couponService.GetListCouponAsync(userCancellationToken);
+           var listCoupon = await _couponService.GetListCouponAsync(sort, range, filter, Response, userCancellationToken);
            return Ok(listCoupon);
+        }
+        [HttpGet]
+        [Route("coupons/{couponId:Guid}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetCouponById(Guid couponId, CancellationToken userCancellationToken)
+        {
+            var couponById = await _couponService.GetCouponByIdAsync(couponId, userCancellationToken);
+            return StatusCode(Convert.ToInt32(HttpStatusCode.Created), couponById);
         }
         [HttpPost]
         [Route("coupons/post")]
@@ -45,9 +56,9 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
         [HttpPut]
         [Route("coupons/update/{couponId:Guid}")]
-        public async Task<IActionResult> UpdateCoupon([FromQuery]bool isActive,Guid couponId, CancellationToken userCancellationToken)
+        public async Task<IActionResult> UpdateCoupon(Coupon couponDto, Guid couponId, CancellationToken userCancellationToken)
         {
-            var updateCoupon = await _couponService.UpdateCouponAsync(isActive, couponId, userCancellationToken);
+            var updateCoupon = await _couponService.UpdateCouponAsync(couponDto, couponId, userCancellationToken);
             return Ok(updateCoupon);
         }
     }

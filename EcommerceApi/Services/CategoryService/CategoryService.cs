@@ -18,7 +18,8 @@ public class CategoryService : ICategoryService
         _context = context;
     }
 
-    public async Task<List<ProductCategoryResponse>> GetListCategoryAsync(CancellationToken userCancellationToken)
+    public async Task<List<ProductCategory>> GetListCategoryAsync(string filter,
+        CancellationToken userCancellationToken)
     {
         //var listFakeCate = FakeCategory();
         //await _context.ProductCategories.AddRangeAsync(listFakeCate);
@@ -27,23 +28,28 @@ public class CategoryService : ICategoryService
         {
             var listCate = await _context
                 .ProductCategories
-                .Where(pc => pc.ParentProductCategory == null)
-                .Select(pc => new ProductCategoryResponse()
-                {
-                    Id = pc.CategoryId,
-                    Title = pc.Title,
-                    Description = pc.Description,
-                    Status = pc.Status,
-                    Hot = pc.Hot,
-                    Product = pc.Products
-                        .Select(p => new ProductResponse()
-                        {
-                            Image = p.Image,
-                            Url = p.Url,
-                        }).FirstOrDefault()!,
-                })
+                .Include(pc => pc.Products)
+                .Include(pc => pc.ListProductCategoryChild)
+                .ThenInclude(pcc => pcc.Products)
                 .AsNoTracking()
                 .ToListAsync(userCancellationToken);
+
+            listCate = listCate.Where(c => c.ParentCategoryId == null).ToList();
+
+            var filterValues = Helpers.ParseString<string>(filter);
+            var key = "id";
+            if (filterValues.Contains(key))
+            {
+                var keyStartIndex = filterValues.IndexOf(key);
+                var listId = filterValues
+                    .Skip(keyStartIndex + 1)
+                    .Take(filterValues.Count - 1)
+                    .Select(int.Parse).ToList();
+                listCate = listCate
+                    .Where(c => listId.Contains(c.CategoryId))
+                    .ToList();
+            }
+ 
             return listCate;
         }
         catch (SqlException ex)
@@ -114,12 +120,14 @@ public class CategoryService : ICategoryService
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
         }
     }
+
     public async Task<ProductCategory> PostCategoryAsync(CategoryDto categoryDto, string userName,
         CancellationToken userCancellationToken)
     {
         try
         {
-            ProductCategory? parentCate = await _context.ProductCategories.FindAsync(categoryDto.ParentCategoryId);
+            ProductCategory? parentCate =
+                await _context.ProductCategories.FindAsync(categoryDto.ParentCategoryId, userCancellationToken);
             var newCategory = new ProductCategory()
             {
                 Title = categoryDto.Title,

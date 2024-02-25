@@ -39,8 +39,6 @@ namespace EcommerceApi.Services.OrderService
             {
                 var listOrder = await _context
                                               .Orders
-                                              .Include(o => o.OrderDetails)
-                                              .ThenInclude(od => od.Product)
                                               .AsNoTracking()
                                               .ToListAsync(userCancellationToken)
                                               ?? new List<Order>();
@@ -59,7 +57,6 @@ namespace EcommerceApi.Services.OrderService
                 var updateOrder = await  _context
                                                  .Orders
                                                  .Where(o => o.OrderId == orderId)
-                                                 .Include(o => o.OrderDetails)
                                                  .FirstOrDefaultAsync(userCancellationToken)
                                                  ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Order not found.");
                

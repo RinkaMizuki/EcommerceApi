@@ -132,8 +132,6 @@ namespace EcommerceApi.Services.FeedbackService
                     .AsNoTracking()
                     .ToListAsync(userCancellationToken);
 
-                var totalRate = await listRateQuery.CountAsync(userCancellationToken);
-
                 //business logic for filter or sort
                 //....
                 var filterSearch = filterValues[filterValues.IndexOf(RateFilterType.Search) + 1];
@@ -175,10 +173,23 @@ namespace EcommerceApi.Services.FeedbackService
                     _ => listRate.OrderByDescending(r => r.CreatedAt).ToList()
                 };
 
+                var totalRate = listRate.Count();
+
                 listRate = listRate
                     .Skip((currentPage - 1) * perPage)
                     .Take(perPage)
                     .ToList();
+
+                var counter = 0;
+                foreach (var l in filterValues)
+                {
+                    if (l.Equals("")) counter++;
+                }
+
+                if (counter < 6)
+                {
+                    totalRate = listRate.Count;
+                }
 
                 response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
                 response.Headers.Append("Content-Range", $"rates {rangeValues[0]}-{rangeValues[1]}/{totalRate}");

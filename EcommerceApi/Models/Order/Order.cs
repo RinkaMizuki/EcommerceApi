@@ -25,5 +25,4 @@ public class Order
     public bool Returned { get; set; }
     public bool Confirm { get; set; } = false;
     public Guid Token { get; set; }
-    public List<OrderDetail> OrderDetails { get; set; } = new();
 }

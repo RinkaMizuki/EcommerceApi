@@ -7,7 +7,8 @@ namespace EcommerceApi.Services.CouponService
     {
         public Task<Coupon> PostCouponAsync(CouponDto couponDto, CancellationToken userCancellationToken);
         public Task<bool> DeleteCouponAsync(Guid couponId, CancellationToken userCancellationToken);
-        public Task<Coupon> UpdateCouponAsync(bool isActive, Guid couponId, CancellationToken userCancellationToken);
-        public Task<List<Coupon>> GetListCouponAsync(CancellationToken userCancellationToken);
+        public Task<Coupon> UpdateCouponAsync(Coupon couponDto, Guid couponId, CancellationToken userCancellationToken);
+        public Task<List<Coupon>> GetListCouponAsync(string sort, string range, string filter, HttpResponse response, CancellationToken userCancellationToken);
+        public Task<Coupon> GetCouponByIdAsync(Guid couponId, CancellationToken userCancellationToken);
     }
 }

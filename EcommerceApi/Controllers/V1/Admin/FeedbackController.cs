@@ -20,6 +20,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
         [HttpGet]
         [Route("feedbacks")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetListFeedback(CancellationToken userCancellationToken)
         {
             var listFeedbacks = await _feedbackService.GetListFeedbackAsync(userCancellationToken);

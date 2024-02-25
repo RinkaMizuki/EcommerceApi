@@ -1,9 +1,9 @@
 using System.Text;
 using Asp.Versioning;
 using EcommerceApi.Config;
-using EcommerceApi.Extensions;
 using EcommerceApi.FilterBuilder;
 using EcommerceApi.Middleware;
+using EcommerceApi.Middlewares;
 using EcommerceApi.Models;
 using EcommerceApi.Models.IdentityData;
 using EcommerceApi.Services;
@@ -20,9 +20,7 @@ using EcommerceApi.Services.OrderService;
 using EcommerceApi.Services.ProductService;
 using EcommerceApi.Services.SegmentService;
 using EcommerceApi.Swagger;
-using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -48,10 +46,11 @@ builder.Services.AddDbContext<EcommerceDbContext>(options =>
 var configuration = builder.Configuration;
 
 // Add services to the container.
-builder.Services.AddTransient<JwtMiddleware>();
+
 //Add NewtonsoftJson Options fix ReferenceLoopHandling is currently not supported in the System.Text.Json serializer.
 //builder.Services.AddControllers().AddNewtonsoftJson(options =>
 //    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+
 builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new ApiVersion(1, 0);
@@ -65,12 +64,10 @@ builder.Services.AddApiVersioning(options =>
 });
 builder.Services.AddMemoryCache();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddHealthChecksUI().AddInMemoryStorage();
-builder.Services.AddHealthChecks()
-    .AddSqlServer(configuration.GetConnectionString("DefaultConnection")!)
-    .AddCheck<MyHealthCheck>("MyHealthCheck");
-builder.Services.AddSwaggerGen(options => { options.OperationFilter<SwaggerDefaultValues>(); });
+builder.Services.AddDetection();
 
+builder.Services.AddSwaggerGen(options => { options.OperationFilter<SwaggerDefaultValues>(); });
+builder.Services.AddTransient<JwtMiddleware>();
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<ICategoryService, CategoryService>();
 builder.Services.AddTransient<ICloudflareClientService, CloudflareClientService>();
@@ -88,7 +85,6 @@ builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwa
 builder.Services.AddTransient<IMailService, MailService>();
 builder.Services.Configure<CloudflareR2Config>(configuration.GetSection("CloudflareR2Config"));
 builder.Services.Configure<EmailConfig>(configuration.GetSection("EmailConfiguration"));
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("MyAllowSpecificOrigins",
@@ -113,8 +109,8 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuer = true,
         ValidateAudience = true,
-        ValidAudience = "http://localhost:5083",
-        ValidIssuer = "http://localhost:5083",
+        ValidAudience = configuration.GetSection("SecretIssuer").Value,
+        ValidIssuer = configuration.GetSection("SecretIssuer").Value,
         ClockSkew = TimeSpan.Zero,
         IssuerSigningKey =
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configure.GetSection("SecretKeyToken").Value ?? ""))
@@ -147,17 +143,14 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseDetection();
 app.UseCors("MyAllowSpecificOrigins");
-app.UseMiddleware<JwtMiddleware>();
+
+app.UseMiddleware<DeviceMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapHealthChecks("/health", new HealthCheckOptions()
-{
-    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
-});
-
-app.MapHealthChecksUI(options => { options.AddCustomStylesheet("dotnet.css"); });
 app.MapControllers();
 
 app.Run();

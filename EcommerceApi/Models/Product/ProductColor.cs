@@ -8,6 +8,7 @@ public class ProductColor
 {
     [Key] public Guid ColorId { get; set; }
     public string ColorCode { get; set; } = string.Empty;
+    [JsonIgnore]
     public Guid ProductId { get; set; }
     [ForeignKey("ProductId")]
     [JsonIgnore]

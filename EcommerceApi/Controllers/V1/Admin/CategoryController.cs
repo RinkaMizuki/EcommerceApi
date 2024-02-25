@@ -28,14 +28,17 @@ namespace EcommerceApi.Controllers.V1.Admin
 
         [HttpGet]
         [Route("categories")]
-        public async Task<IActionResult> GetListCategory(CancellationToken userCancellationToken)
+        [AllowAnonymous]
+        public async Task<IActionResult> GetListCategory([FromQuery] string filter,
+            CancellationToken userCancellationToken)
         {
-            var listCate = await _categoryService.GetListCategoryAsync(userCancellationToken);
+            var listCate = await _categoryService.GetListCategoryAsync(filter, userCancellationToken);
             return new JsonResult(listCate);
         }
 
         [HttpGet]
         [Route("categories/{categoryId:int}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetListCategoryById(int categoryId, CancellationToken userCancellationToken)
         {
             var cateById = await _categoryService.GetCategoryByIdAsync(categoryId, userCancellationToken);

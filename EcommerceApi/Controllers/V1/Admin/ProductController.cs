@@ -1,14 +1,10 @@
 ﻿using Asp.Versioning;
 using EcommerceApi.Dtos.Admin;
 using EcommerceApi.Models.IdentityData;
-using EcommerceApi.Models.Product;
 using EcommerceApi.Services;
 using EcommerceApi.Services.ProductService;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
-using System.Text.Json;
 
 namespace EcommerceApi.Controllers.V1.Admin
 {
@@ -27,6 +23,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
         [HttpGet]
         [Route("products")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetListProduct(
             [FromQuery] string sort,
             [FromQuery] string range,
@@ -39,7 +36,8 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
         [HttpGet]
         [Route("products/{productId:Guid}")]
-        public async Task<IActionResult> GetListProduct(Guid productId, CancellationToken userCancellationToken)
+        [AllowAnonymous]
+        public async Task<IActionResult> GetProductById(Guid productId, CancellationToken userCancellationToken)
         {
             var productById = await _productService.GetProductByIdAsync(productId, userCancellationToken);
             return new JsonResult(productById);
@@ -69,6 +67,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
         [HttpGet]
         [Route("products/category/{categoryId:int}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetProductByCategory(int categoryId, CancellationToken userCancellationToken)
         {
             var listProductByCate = await _productService.GetProductByCategoryAsync(categoryId, userCancellationToken);

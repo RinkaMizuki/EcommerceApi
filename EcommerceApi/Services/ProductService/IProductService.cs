@@ -1,5 +1,6 @@
 ﻿using EcommerceApi.Dtos.Admin;
 using EcommerceApi.Models.Product;
+using EcommerceApi.Responses;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EcommerceApi.Services.ProductService
@@ -10,7 +11,7 @@ namespace EcommerceApi.Services.ProductService
             CancellationToken userCancellationToken);
 
         public Task<Product> GetProductByIdAsync(Guid productId, CancellationToken userCancellationToken);
-        public Task<Boolean> DeleteProductAsync(Guid productId, CancellationToken userCancellationToken);
+        public Task<bool> DeleteProductAsync(Guid productId, CancellationToken userCancellationToken);
 
         public Task<Product> UpdateProductAsync(ProductDto productDto, Guid productId, string userName,
             HttpRequest request, CancellationToken userCancellationToken);

@@ -1,4 +1,5 @@
-﻿using EcommerceApi.Dtos.Admin;
+﻿using Azure;
+using EcommerceApi.Dtos.Admin;
 using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models;
 using EcommerceApi.Models.Coupon;
@@ -26,6 +27,8 @@ namespace EcommerceApi.Services.CouponService
                                                 .Where(c => c.CouponId == couponId)
                                                 .FirstOrDefaultAsync(userCancellationToken)
                                                 ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Coupon not found.");
+
+                _context.Remove(deleteCoupon);
                 await _context.SaveChangesAsync(userCancellationToken);
                 return true;
             }
@@ -35,17 +38,62 @@ namespace EcommerceApi.Services.CouponService
             }
         }
 
-        public async Task<List<Coupon>> GetListCouponAsync(CancellationToken userCancellationToken)
+        public async Task<Coupon> GetCouponByIdAsync(Guid couponId, CancellationToken userCancellationToken)
         {
             try
             {
-                var listCoupon = await _context
+                var couponById = await _context
+                                            .Coupons
+                                            .Where(c => c.CouponId == couponId)
+                                            .Include(c => c.CouponConditions)
+                                            .ThenInclude(cc => cc.Condition)
+                                            .FirstOrDefaultAsync(userCancellationToken)
+                                            ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Coupon not found.");
+                return couponById;
+            }
+            catch(Exception ex)
+            {
+                throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        public async Task<List<Coupon>> GetListCouponAsync(string sort, string range, string filter,
+            HttpResponse response, CancellationToken userCancellationToken)
+        {
+            try
+            {
+                var rangeValues = Helpers.ParseString<int>(range);
+
+                if (rangeValues.Count == 0)
+                {
+                    rangeValues.AddRange(new List<int> { 0, 5 });
+                }
+
+                var listCouponQuery =  _context
                                                .Coupons
                                                .Include(c => c.CouponConditions)
-                                               .ThenInclude(cc => cc.Condition)
-                                               .AsNoTracking()
-                                               .ToListAsync(userCancellationToken);
+                                               .ThenInclude(cc => cc.Condition);
+                
+                var totalCoupon = await listCouponQuery.CountAsync(userCancellationToken);
+
+                var perPage = rangeValues[1] - rangeValues[0] + 1;
+                var currentPage = Convert.ToInt32(Math.Ceiling((double)rangeValues[0] / perPage)) + 1;
+
+                //logic for filter or sort...
+                var listCoupon = await listCouponQuery
+                   .AsNoTracking()
+                   .ToListAsync(userCancellationToken);
+
+
+                listCoupon = listCoupon
+                    .Skip((currentPage - 1) * perPage)
+                    .Take(perPage).ToList();
+
+                response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
+                response.Headers.Append("Content-Range", $"products {rangeValues[0]}-{rangeValues[1]}/{totalCoupon}");
+
                 return listCoupon;
+
             }
             catch (SqlException ex)
             {
@@ -71,42 +119,29 @@ namespace EcommerceApi.Services.CouponService
 
                 List<CouponCondition> listCouponCondition = new();
                 List<Condition> listCondition = new();
-
-                var newCondition = new Condition() {
-                    ConditionId = Guid.NewGuid(),
-                    Attribute = couponDto.Attribute,
-                    Operator = couponDto.Operator,
-                };
-
-                var newCouponCondition = new CouponCondition()
+                if(couponDto.OtherConditions is not null)
                 {
-                    ConditionId = newCondition.ConditionId,
-                    Condition = newCondition,
-                    CouponId = newCoupon.CouponId,
-                    Coupon = newCoupon,
-                    Value = couponDto.Value,
-                };
-              
-                var otherCondition = new Condition()
-                {
-                    ConditionId = Guid.NewGuid(),
-                    Attribute = couponDto.OtherCondition.OtherAttribute,
-                    Operator = couponDto.OtherCondition.OtherOperator,
-                };
+                    foreach (var item in couponDto.OtherConditions)
+                    {
+                        var newCondition = new Condition()
+                        {
+                            ConditionId = Guid.NewGuid(),
+                            Attribute = item.OtherAttribute,
+                            Operator = item.OtherOperator,
+                        };
 
-                var otherCouponCondition = new CouponCondition()
-                {
-                    ConditionId = otherCondition.ConditionId,
-                    Condition = otherCondition,
-                    CouponId = newCoupon.CouponId,
-                    Coupon = newCoupon,
-                    Value = couponDto.OtherCondition.OtherValue,
-                };
-
-                listCondition.Add(newCondition);
-                listCondition.Add(otherCondition);
-                listCouponCondition.Add(newCouponCondition);
-                listCouponCondition.Add(otherCouponCondition);
+                        var newCouponCondition = new CouponCondition()
+                        {
+                            ConditionId = newCondition.ConditionId,
+                            Condition = newCondition,
+                            CouponId = newCoupon.CouponId,
+                            Coupon = newCoupon,
+                            Value = item.OtherValue,
+                        };
+                        listCondition.Add(newCondition);
+                        listCouponCondition.Add(newCouponCondition);
+                    }
+                }
 
                 await _context.Coupons.AddAsync(newCoupon, userCancellationToken);
                 await _context.Conditions.AddRangeAsync(listCondition, userCancellationToken);
@@ -121,19 +156,29 @@ namespace EcommerceApi.Services.CouponService
             }
         }
 
-        public async Task<Coupon> UpdateCouponAsync(bool isActive, Guid couponId,CancellationToken userCancellationToken)
+        public async Task<Coupon> UpdateCouponAsync(Coupon couponDto, Guid couponId,CancellationToken userCancellationToken)
         {
 
             try
             {
-                var updateCoupon = await _context
+                var coupons = await _context
                                              .Coupons
-                                             .Where(c => c.CouponId == couponId)
                                              .Include(c => c.CouponConditions)
                                              .ThenInclude(cc => cc.Condition)
-                                             .FirstOrDefaultAsync(userCancellationToken)
-                                             ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Coupon not found.");
-                updateCoupon.IsActive = isActive;
+                                             .ToListAsync(userCancellationToken);
+
+                if(coupons.Any(c => c.CouponId != couponDto.CouponId && c.CouponCode == couponDto.CouponCode)) {
+                    throw new HttpStatusException(HttpStatusCode.Conflict, "CouponCode was existed.");
+                }
+
+                var updateCoupon =  coupons
+                                            .Where(c => c.CouponId == couponDto.CouponId)
+                                            .FirstOrDefault()
+                                            ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Coupon not found.");
+                
+                updateCoupon.IsActive = couponDto.IsActive;
+                updateCoupon.DiscountPercent = couponDto.DiscountPercent;
+                updateCoupon.CouponCode = couponDto.CouponCode;
 
                 await _context.SaveChangesAsync(userCancellationToken);
 

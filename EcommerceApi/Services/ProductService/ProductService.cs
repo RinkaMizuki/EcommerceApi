@@ -69,10 +69,9 @@ namespace EcommerceApi.Services.ProductService
 
                 if (rangeValues.Count == 0)
                 {
-                    rangeValues.AddRange(new List<int> { 0, 4 });
+                    rangeValues.AddRange(new List<int> { 0, 11 });
                 }
 
-                ;
                 var sortValues = Helpers.ParseString<string>(sort);
 
                 if (sortValues.Count == 0)
@@ -116,6 +115,16 @@ namespace EcommerceApi.Services.ProductService
                     filterValues.Add(ProductFilterType.Sale);
                     filterValues.Add("");
                 }
+                if(!filterValues.Contains(ProductFilterType.Suggest))
+                {
+                    filterValues.Add(ProductFilterType.Suggest);
+                    filterValues.Add("");
+                }
+                if (!filterValues.Contains(ProductFilterType.Random))
+                {
+                    filterValues.Add(ProductFilterType.Random);
+                    filterValues.Add("8");
+                }
 
                 if (!filterValues.Contains(ProductFilterType.StockRange))
                 {
@@ -158,12 +167,12 @@ namespace EcommerceApi.Services.ProductService
                 var category = filterValues[filterValues.IndexOf(ProductFilterType.Category) + 1];
                 var searchValue = filterValues[filterValues.IndexOf(ProductFilterType.Search) + 1].ToLower();
                 var sale = filterValues[filterValues.IndexOf(ProductFilterType.Sale) + 1].ToLower();
+                var forYou = filterValues[filterValues.IndexOf(ProductFilterType.Suggest) + 1].ToLower();
+                var numberRandom = Convert.ToInt32(filterValues[filterValues.IndexOf(ProductFilterType.Random) + 1].ToLower());
 
                 var listProduct = await listProductQuery
                     .AsNoTracking()
                     .ToListAsync(userCancellationToken);
-
-                var totalProduct = await listProductQuery.CountAsync(userCancellationToken);
 
                 var filterRefIds = new List<Guid>();
                 if (filterValues.Contains(UserFilterType.Id))
@@ -198,6 +207,9 @@ namespace EcommerceApi.Services.ProductService
                                                                    (sale == "upcoming" && p.Upcoming))
                                 )
                     ).ToList();
+                if(!string.IsNullOrEmpty(forYou)) {
+                    listProduct = Helpers.GetRandomElements(listProduct, numberRandom);
+                }
 
                 switch (sortType)
                 {
@@ -220,6 +232,8 @@ namespace EcommerceApi.Services.ProductService
 
                         break;
                 }
+
+                var totalProduct = listProduct.Count;
 
                 listProduct = listProduct
                     .Skip((currentPage - 1) * perPage)
@@ -313,7 +327,7 @@ namespace EcommerceApi.Services.ProductService
                         $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{newProduct.ProductId}_{productDto.Files[0]?.FileName}";
                 }
 
-                List<ProductImage> listProductImage = new List<ProductImage>();
+                List<ProductImage> listProductImage = new ();
 
                 bool flag = false;
 
@@ -344,8 +358,8 @@ namespace EcommerceApi.Services.ProductService
                 }
 
                 var listColor = new List<ProductColor>();
-
-                foreach (var color in Helpers.ParseString<string>(productDto.ColorCode))
+                var listNewColor = productDto.ColorCode.Split(',');
+                foreach (var color in listNewColor)
                 {
                     listColor.Add(new ProductColor()
                     {
@@ -513,19 +527,28 @@ namespace EcommerceApi.Services.ProductService
                 updateProduct.Return = productDto.Return;
                 updateProduct.CategoryId = productDto.CategoryId;
 
-                var listNewColor = Helpers.ParseString<string>(productDto.ColorCode);
-                var listOldColor = updateProduct
-                    .ProductColors
-                    .Select(pc => pc.ColorCode)
-                    .ToList();
-                var listDeleteColor = updateProduct
-                    .ProductColors
-                    .Where(pc => !listNewColor.Contains(pc.ColorCode) && productId == updateProduct.ProductId)
-                    .Select(pc => pc)
-                    .ToList();
-                var listAddColor = listNewColor
-                    .Where(i => !listOldColor.Contains(i) && productId == updateProduct.ProductId)
-                    .ToList();
+                string[] listNewColor = Array.Empty<string>();
+                List<string> listOldColor = new();
+                List<ProductColor> listDeleteColor = new();
+                List<string> listAddColor = new();
+
+                if (productDto.ColorCode is not null)
+                {
+                     listNewColor = productDto.ColorCode.Split(',');
+                     listOldColor = updateProduct
+                                                .ProductColors
+                                                .Select(pc => pc.ColorCode)
+                                                .ToList();
+                     listDeleteColor = updateProduct
+                        .ProductColors
+                        .Where(pc => !listNewColor.Contains(pc.ColorCode) && productId == updateProduct.ProductId)
+                        .Select(pc => pc)
+                        .ToList();
+                     listAddColor = listNewColor
+                        .Where(i => !listOldColor.Contains(i) && productId == updateProduct.ProductId)
+                        .ToList();
+                }
+
 
                 _context
                     .ProductColors

@@ -1,5 +1,3 @@
-using System.Net;
-
 namespace EcommerceApi.Middleware;
 
 public class JwtMiddleware : IMiddleware

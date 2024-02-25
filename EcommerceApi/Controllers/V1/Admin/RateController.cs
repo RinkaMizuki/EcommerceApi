@@ -3,7 +3,6 @@ using EcommerceApi.Dtos.Admin;
 using EcommerceApi.Models.IdentityData;
 using EcommerceApi.Services.FeedbackService;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EcommerceApi.Controllers.V1.Admin
@@ -23,6 +22,7 @@ namespace EcommerceApi.Controllers.V1.Admin
 
         [HttpGet]
         [Route("rates/{rateId:int}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetRatingById(int rateId,
             CancellationToken userCancellationToken)
         {
@@ -33,6 +33,7 @@ namespace EcommerceApi.Controllers.V1.Admin
 
         [HttpGet]
         [Route("rates")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetListRating(string sort, string range, string filter,
             CancellationToken userCancellationToken)
         {

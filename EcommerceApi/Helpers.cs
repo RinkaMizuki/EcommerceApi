@@ -7,7 +7,8 @@ namespace EcommerceApi
         public static List<T> ParseString<T>(string list)
         {
             if (string.IsNullOrEmpty(list)) return new List<T>();
-            if ((list.StartsWith("[") && list.EndsWith("]")) || (list.StartsWith("{") && list.EndsWith("}")))
+            if ((list.StartsWith("[") && list.EndsWith("]")) || (list.StartsWith("{") && list.EndsWith("}")) ||
+                list.StartsWith("#"))
             {
                 if (list == "{}" || list == "[]") return new List<T>();
                 if (list.StartsWith("['") && list.EndsWith("']"))
@@ -63,6 +64,11 @@ namespace EcommerceApi
             }
 
             return userName!;
+        }
+        public static List<T> GetRandomElements<T>(List<T> list, int count)
+        {
+            Random random = new ();
+            return list.OrderBy(item => random.Next()).Take(count).ToList();
         }
     }
 }

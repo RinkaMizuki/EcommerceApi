@@ -7,4 +7,6 @@ public static class ProductFilterType
     public const string Search = "q";
     public const string Sale = "sale";
     public const string Id = "id";
+    public const string Suggest = "suggest";
+    public const string Random = "random";
 }

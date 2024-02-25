@@ -198,22 +198,22 @@ namespace EcommerceApi.Controllers.V1.User
 
         [HttpPost]
         [Route("refresh-token")]
-        public async Task<IActionResult> RefreshToken()
+        public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken)
         {
             var refreshToken = Request.Cookies["refreshToken"];
             if (string.IsNullOrEmpty(refreshToken))
             {
-                return Unauthorized();
+                return Forbid();
             }
 
             var currentRt = await _context.RefreshTokens.Where(rt => rt.Token == refreshToken)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
             if (currentRt == null)
             {
                 return Unauthorized();
             }
 
-            var user = await _context.Users.Where(u => u.UserId == currentRt.UserId).FirstOrDefaultAsync();
+            var user = await _context.Users.Where(u => u.UserId == currentRt.UserId).FirstOrDefaultAsync(cancellationToken);
             if (user == null) return Unauthorized();
             if (currentRt.Expries < DateTime.Now)
             {
@@ -223,11 +223,12 @@ namespace EcommerceApi.Controllers.V1.User
             var at = GenerateAccessToken(GetListClaim(user));
             var rt = GenerateRefreshToken();
             SetCookieRefreshToken(rt);
+
             currentRt.Expries = rt.Expries;
             currentRt.Token = rt.Token;
             currentRt.CreatedAt = rt.CreatedAt;
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return Ok(new
             {
                 statusCode = HttpStatusCode.OK,
@@ -279,8 +280,8 @@ namespace EcommerceApi.Controllers.V1.User
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetSection("SecretKeyToken").Value ?? ""));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var token = new JwtSecurityToken(
-                issuer: "http://localhost:5083",
-                audience: "http://localhost:5083",
+                issuer: _config.GetSection("SecretIssuer").Value,
+                audience: _config.GetSection("SecretIssuer").Value,
                 expires: DateTime.Now.AddMinutes(10),
                 signingCredentials: credentials,
                 claims: claims
@@ -305,11 +306,9 @@ namespace EcommerceApi.Controllers.V1.User
             var cookieOptions = new CookieOptions()
             {
                 HttpOnly = true,
-                SameSite = SameSiteMode.Strict,
                 Secure = false,
                 Expires = DateTime.Now.AddDays(7),
             };
-            Response.Cookies.Delete("refreshToken");
             Response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);
         }
     }

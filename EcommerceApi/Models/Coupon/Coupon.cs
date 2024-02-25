@@ -5,6 +5,7 @@ namespace EcommerceApi.Models.Coupon;
 
 public class Coupon
 {
+    [JsonPropertyName("id")]
     [Key]public Guid CouponId { get; set; }
     public string CouponCode { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
