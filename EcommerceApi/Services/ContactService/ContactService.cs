@@ -3,7 +3,6 @@ using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models;
 using EcommerceApi.Models.Contact;
 using EcommerceApi.Models.Segment;
-using EcommerceApi.Services.SegmentService;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
@@ -13,12 +12,9 @@ namespace EcommerceApi.Services.ContactService
     public class ContactService : IContactService
     {
         private readonly EcommerceDbContext _context;
-        private readonly ISegmentService _segmentService;
-
-        public ContactService(EcommerceDbContext context, ISegmentService segmentService)
+        public ContactService(EcommerceDbContext context)
         {
             _context = context;
-            _segmentService = segmentService;
         }
 
         public async Task<Contact> PostContactAsync(ContactDto contactDto, CancellationToken userCancellationToken)

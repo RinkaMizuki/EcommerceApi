@@ -16,6 +16,7 @@ using EcommerceApi.Services.EmailService;
 using EcommerceApi.Services.FeedbackRateService;
 using EcommerceApi.Services.FeedbackService;
 using EcommerceApi.Services.MailService;
+using EcommerceApi.Services.OpenaiService;
 using EcommerceApi.Services.OrderService;
 using EcommerceApi.Services.ProductService;
 using EcommerceApi.Services.SegmentService;
@@ -83,6 +84,7 @@ builder.Services.AddScoped<RateFilterBuilder>();
 builder.Services.AddTransient<IConfirmService, ConfirmService>();
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 builder.Services.AddTransient<IMailService, MailService>();
+builder.Services.AddTransient<IOpenaiService, OpenaiService>();
 builder.Services.Configure<CloudflareR2Config>(configuration.GetSection("CloudflareR2Config"));
 builder.Services.Configure<EmailConfig>(configuration.GetSection("EmailConfiguration"));
 builder.Services.AddCors(options =>

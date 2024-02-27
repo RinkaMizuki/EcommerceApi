@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace EcommerceApi.Dtos.Admin
+﻿namespace EcommerceApi.Dtos.Admin
 {
     public class ContactDto
     {

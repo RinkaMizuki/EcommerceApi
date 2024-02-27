@@ -1,10 +1,8 @@
 ﻿using Asp.Versioning;
 using EcommerceApi.Dtos.Admin;
-using EcommerceApi.Models.Contact;
 using EcommerceApi.Models.IdentityData;
 using EcommerceApi.Services.ContactService;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
@@ -48,7 +46,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
         [HttpPost]
         [Route("contacts/post")]
-        public async Task<IActionResult> CreateContact(ContactDto contactDto, CancellationToken userCancellationToken)
+        public async Task<IActionResult> CreateContact([FromForm]ContactDto contactDto, CancellationToken userCancellationToken)
         {
             var newContact = await _contactService.PostContactAsync(contactDto, userCancellationToken);
             return StatusCode(201, newContact);
