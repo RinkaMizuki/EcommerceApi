@@ -1,14 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
-using System.Threading.Tasks;
 using Asp.Versioning;
 using EcommerceApi.Dtos.Admin;
 using EcommerceApi.Models.IdentityData;
 using EcommerceApi.Services.CategoryService;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EcommerceApi.Controllers.V1.Admin

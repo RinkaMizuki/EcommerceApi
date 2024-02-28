@@ -234,7 +234,7 @@ namespace EcommerceApi.Services.ProductService
                                                                    (sale == "flashsale" && p.FlashSale) ||
                                                                    (sale == "upcoming" && p.Upcoming))
                                 )
-                                && (!string.IsNullOrEmpty(forYou) || !string.IsNullOrEmpty(sale) || !string.IsNullOrEmpty(sale) || favorites.Contains(p.ProductId))
+                                && ((favorites.Count > 0 ? false : true) || favorites.Contains(p.ProductId))
                     ).ToList();
 
                 if(!string.IsNullOrEmpty(forYou)) {

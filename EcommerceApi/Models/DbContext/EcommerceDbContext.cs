@@ -3,6 +3,7 @@ using EcommerceApi.Models.Feedback;
 using EcommerceApi.Models.Order;
 using EcommerceApi.Models.Product;
 using EcommerceApi.Models.Segment;
+using EcommerceApi.Models.Slider;
 using Microsoft.EntityFrameworkCore;
 
 namespace EcommerceApi.Models;
@@ -25,6 +26,7 @@ public class EcommerceDbContext : DbContext
     public DbSet<FeedbackRate> Feedbacks { get; set; }
     public DbSet<UserSegment> UserSegments { get; set; }
     public DbSet<Segment.Segment> Segments { get; set; }
+    public DbSet<Slider.Slider> Sliders { get; set; }
 
     public EcommerceDbContext(DbContextOptions<EcommerceDbContext> dbContextOptions) : base(dbContextOptions)
     {
