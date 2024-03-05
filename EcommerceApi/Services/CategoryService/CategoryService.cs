@@ -6,6 +6,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using EcommerceApi.Responses;
+using EcommerceApi.Constant;
 
 namespace EcommerceApi.Services.CategoryService;
 
@@ -34,13 +35,11 @@ public class CategoryService : ICategoryService
                 .AsNoTracking()
                 .ToListAsync(userCancellationToken);
 
-            listCate = listCate.Where(c => c.ParentCategoryId == null).ToList();
-
             var filterValues = Helpers.ParseString<string>(filter);
-            var key = "id";
-            if (filterValues.Contains(key))
+
+            if (filterValues.Contains(CategoryFilterType.Key))
             {
-                var keyStartIndex = filterValues.IndexOf(key);
+                var keyStartIndex = filterValues.IndexOf(CategoryFilterType.Key);
                 var listId = filterValues
                     .Skip(keyStartIndex + 1)
                     .Take(filterValues.Count - 1)
@@ -48,6 +47,14 @@ public class CategoryService : ICategoryService
                 listCate = listCate
                     .Where(c => listId.Contains(c.CategoryId))
                     .ToList();
+            }
+            else if(filterValues.Contains(CategoryFilterType.All))
+            {
+                return listCate;
+            }
+            else
+            {
+                listCate = listCate.Where(c => c.ParentCategoryId == null).ToList();
             }
  
             return listCate;

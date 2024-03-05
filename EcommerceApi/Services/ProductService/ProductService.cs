@@ -131,7 +131,7 @@ namespace EcommerceApi.Services.ProductService
                 if(!filterValues.Contains(ProductFilterType.Total))
                 {
                     filterValues.Add(ProductFilterType.Total);
-                    filterValues.Add("0");
+                    filterValues.Add("-1");
                 }
 
                 if (!filterValues.Contains(ProductFilterType.Favorite))
@@ -184,12 +184,15 @@ namespace EcommerceApi.Services.ProductService
                 var numberRandom = Convert.ToInt32(filterValues[filterValues.IndexOf(ProductFilterType.Random) + 1].ToLower());
                 var favorites = new List<Guid>();
 
-                if(!string.IsNullOrEmpty(filterValues[filterValues.IndexOf(ProductFilterType.Favorite) + 1])
+
+                var skipElm = filterValues
+                    .IndexOf(ProductFilterType.Favorite) + 1;
+                var takeElm = Convert.ToInt32(filterValues[filterValues.IndexOf(ProductFilterType.Total) + 1]);
+
+                if (!string.IsNullOrEmpty(filterValues[filterValues.IndexOf(ProductFilterType.Favorite) + 1])
                     && filterValues[filterValues.IndexOf(ProductFilterType.Total) + 1] != "0")
                 {
-                    var skipElm = filterValues
-                    .IndexOf(ProductFilterType.Favorite) + 1;
-                    var takeElm = Convert.ToInt32(filterValues[filterValues.IndexOf(ProductFilterType.Total) + 1]);
+                    
 
                     favorites = filterValues
                     .Skip(skipElm)
@@ -234,10 +237,20 @@ namespace EcommerceApi.Services.ProductService
                                                                    (sale == "flashsale" && p.FlashSale) ||
                                                                    (sale == "upcoming" && p.Upcoming))
                                 )
-                                && ((favorites.Count > 0 ? false : true) || favorites.Contains(p.ProductId))
                     ).ToList();
 
-                if(!string.IsNullOrEmpty(forYou)) {
+                if(favorites.Count > 0)
+                {
+                    listProduct = listProduct
+                                            .Where(p => favorites.Contains(p.ProductId))
+                                            .ToList();
+                }
+                else if(takeElm == 0)
+                {
+                    listProduct = new();
+                }
+
+                if (!string.IsNullOrEmpty(forYou)) {
                     listProduct = Helpers.GetRandomElements(listProduct, numberRandom);
                 }
 

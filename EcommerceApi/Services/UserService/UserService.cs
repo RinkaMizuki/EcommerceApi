@@ -57,9 +57,21 @@ public class UserService : IUserService
                 .FirstOrDefaultAsync(userCancellationToken);
             return userResponse!;
         }
-        catch (SqlException ex)
+        catch (Exception ex)
         {
-            throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
+            throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
+        }
+    }
+
+    public async Task<bool> GetUserByUserNameAync(string userName, CancellationToken userCancellationToken)
+    {
+        try
+        {
+            var isExist = await _context.Users.AnyAsync(u => u.UserName.ToLower().Equals(userName.ToLower()), userCancellationToken);
+            return isExist;
+        }
+        catch(Exception ex) {
+            throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
         }
     }
 
@@ -303,7 +315,7 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<User> UpdateUserByIdAsync(int userId, UserAdminDto userAdminDto, HttpRequest request,
+    public async Task<User> UpdateUserByIdAsync(int userId, UserAdminDto userAdminDto, HttpContext httpContext, HttpRequest request,
         CancellationToken userCancellationToken)
     {
         try
@@ -360,14 +372,17 @@ public class UserService : IUserService
                 updateUser.Url = string.Empty;
             }
 
+            var currentUserRole = Helpers.GetUserRoleLogin(httpContext);
+            if (currentUserRole == "admin") { 
+                updateUser.Role = userAdminDto.Role;
+            }
 
             updateUser.UserName = userAdminDto.UserName;
             updateUser.Email = userAdminDto.Email;
-            updateUser.Role = userAdminDto.Role;
             updateUser.Phone = userAdminDto.Phone ?? "";
             updateUser.BirthDate = Convert.ToDateTime(userAdminDto.BirthDate.ToLongDateString());
             updateUser.ModifiedAt = DateTime.Now;
-            if (!string.IsNullOrEmpty(userAdminDto.Password))
+            if (!string.IsNullOrEmpty(userAdminDto.Password) && currentUserRole == "admin")
             {
                 updateUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(userAdminDto.Password);
             }

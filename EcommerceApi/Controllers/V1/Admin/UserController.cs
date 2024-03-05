@@ -65,12 +65,25 @@ namespace EcommerceApi.Controllers.V1.Admin
             return new JsonResult(userResponse);
         }
 
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("users/{userName}")]
+        public async Task<IActionResult> GetUserByUserName(string userName, CancellationToken userCancellationToken)
+        {
+            var isExisted = await _userService.GetUserByUserNameAync(userName, userCancellationToken);
+            return StatusCode(200, new
+            {
+                isExisted,
+                statusCode = 200
+            });
+        }
+
         [HttpPut]
         [Route("users/update/{id:int}")]
         public async Task<IActionResult> UpdateUser([FromRoute] int id, [FromForm] UserAdminDto userAdmin,
             CancellationToken userCancellationToken)
         {
-            var updatedUser = await _userService.UpdateUserByIdAsync(id, userAdmin, Request, userCancellationToken);
+            var updatedUser = await _userService.UpdateUserByIdAsync(id, userAdmin, HttpContext, Request, userCancellationToken);
 
             var userResponse = new UserResponse()
             {

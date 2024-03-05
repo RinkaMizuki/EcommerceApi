@@ -124,7 +124,9 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(IdentityData.AdminPolicyName,
-        policy => { policy.RequireClaim("Role", IdentityData.AdminPolicyRole); });
+        policy => {
+            policy.RequireClaim("Role", IdentityData.AdminPolicyRole); 
+        });
 });
 
 var app = builder.Build();

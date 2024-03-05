@@ -20,10 +20,19 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
         [HttpGet]
         [Route("sliders")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetListSlider(CancellationToken cancellationToken)
         {
-            var listSlider = await _sliderService.GetListCouponAsync(cancellationToken);
+            var listSlider = await _sliderService.GetListSliderAsync(cancellationToken);
             return Ok(listSlider);
+        }
+
+        [HttpGet]
+        [Route("sliders/{silderId:Guid}")]
+        public async Task<IActionResult> GetSliderById(Guid silderId, CancellationToken cancellationToken)
+        {
+            var slider = await _sliderService.GetSliderByIdAsync(silderId, cancellationToken);
+            return Ok(slider);
         }
 
         [HttpPost]

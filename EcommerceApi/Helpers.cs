@@ -65,6 +65,20 @@ namespace EcommerceApi
 
             return userName!;
         }
+        public static string GetUserRoleLogin(HttpContext httpContext)
+        {
+            var jwt = httpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            var role = string.Empty;
+            if (jwt != null)
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var jsonToken = handler.ReadToken(jwt) as JwtSecurityToken;
+                role = jsonToken?.Claims
+                    .FirstOrDefault(claim => claim.Type == "Role")?.Value;
+            }
+
+            return role!;
+        }
         public static List<T> GetRandomElements<T>(List<T> list, int count)
         {
             Random random = new ();

@@ -1,4 +1,5 @@
-﻿using OpenAI_API;
+﻿using EcommerceApi.ExtensionExceptions;
+using OpenAI_API;
 
 namespace EcommerceApi.Services.OpenaiService
 {
@@ -22,8 +23,8 @@ namespace EcommerceApi.Services.OpenaiService
 
                 return response ?? "No response";
             }
-            catch(Exception ex) { 
-                throw new Exception(ex.Message);
+            catch(Exception ex) {
+                throw new HttpStatusException(System.Net.HttpStatusCode.BadRequest, ex.Message);
             }
         }
     }

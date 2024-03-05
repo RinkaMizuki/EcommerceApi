@@ -9,7 +9,8 @@ namespace EcommerceApi.Services.SliderService
         public Task<Slider> PostSliderAsync(SliderDto sliderDto, HttpRequest request, CancellationToken cancellationToken);
         public Task<Slider> UpdateSliderAsync(SliderDto sliderDto, Guid sliderId, HttpRequest request, string userName, CancellationToken cancellationToken);
         public Task<bool> DeleteSliderAsync(Guid sliderId, CancellationToken userCancellationToken);
-        public Task<List<Slider>> GetListCouponAsync(CancellationToken userCancellationToken);
+        public Task<List<Slider>> GetListSliderAsync(CancellationToken userCancellationToken);
+        public Task<Slider> GetSliderByIdAsync(Guid sliderId, CancellationToken userCancellationToken);
         public Task<FileStreamResult> GetImageAsync(string imageUrl, CancellationToken userCancellationToken);
     }
 }

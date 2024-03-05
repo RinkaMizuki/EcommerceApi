@@ -1,2 +1,2 @@
 # EcommerceApi
-This is Api for project Ecommerce 
+This is Apis for project Ecommerce 

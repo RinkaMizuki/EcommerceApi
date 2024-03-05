@@ -250,7 +250,7 @@ namespace EcommerceApi.Controllers.V1.User
             var refreshToken = Request.Cookies["refreshToken"];
             var token = await _context.RefreshTokens.Where(rt => rt.UserId == userId || refreshToken == rt.Token)
                 .FirstOrDefaultAsync();
-            if (token == null) return BadRequest();
+            if (token == null) return NotFound();
             _context.RefreshTokens.Remove(token);
             await _context.SaveChangesAsync();
             Response.Cookies.Delete("refreshToken");
@@ -305,7 +305,7 @@ namespace EcommerceApi.Controllers.V1.User
         {
             var cookieOptions = new CookieOptions()
             {
-                HttpOnly = true,
+                HttpOnly = false,
                 Secure = false,
                 Expires = DateTime.Now.AddDays(7),
             };

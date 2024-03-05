@@ -38,7 +38,7 @@ namespace EcommerceApi.Services.SliderService
             }
         }
 
-        public async Task<List<Slider>> GetListCouponAsync(CancellationToken userCancellationToken)
+        public async Task<List<Slider>> GetListSliderAsync(CancellationToken userCancellationToken)
         {
             try
             {
@@ -49,6 +49,25 @@ namespace EcommerceApi.Services.SliderService
                 return listSlider;
             }
             catch(Exception ex)
+            {
+                throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+
+        public async Task<Slider> GetSliderByIdAsync(Guid sliderId, CancellationToken userCancellationToken)
+        {
+            try
+            {
+                var slider = await _context
+                                                .Sliders
+                                                .Where(s => s.SilderId == sliderId)
+                                                .AsNoTracking()
+                                                .FirstOrDefaultAsync(userCancellationToken)
+                                                ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Slider not found.");
+                return slider;
+            }
+            catch (Exception ex)
             {
                 throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
             }
@@ -101,19 +120,21 @@ namespace EcommerceApi.Services.SliderService
                 sliderUpdate.Description = sliderDto.Description;
                 sliderUpdate.ModifiedBy = userName;
                 sliderUpdate.ModifiedAt = DateTime.Now;
-                sliderUpdate.Image = sliderDto.FormFile.FileName;
-                sliderUpdate.Url = $"{request.Scheme}://{request.Host}/api/v1/Admin/slider/preview?sliderImage=sliderImage_{sliderUpdate.SilderId}_{sliderUpdate.Image}";
+               
 
-                if(sliderDto.FormFile.FileName != oldImage)
+                if(sliderDto.FormFile?.FileName != oldImage && sliderDto.FormFile is not null)
                 {
                     await _cloudflareClient.DeleteObjectAsync(
-                            $"productImage_{sliderId}_{sliderUpdate.Image}", cancellationToken);
+                            $"sliderImage_{sliderId}_{sliderUpdate.Image}", cancellationToken);
 
                     await _cloudflareClient.UploadImageAsync(new UploadDto()
                     {
                         Id = sliderUpdate.SilderId,
                         File = sliderDto.FormFile,
                     }, prefix: "sliderImage", cancellationToken);
+
+                    sliderUpdate.Image = sliderDto.FormFile.FileName;
+                    sliderUpdate.Url = $"{request.Scheme}://{request.Host}/api/v1/Admin/slider/preview?sliderImage=sliderImage_{sliderUpdate.SilderId}_{sliderUpdate.Image}";
                 }
 
                 await _context.SaveChangesAsync(cancellationToken);
