@@ -1,6 +1,3 @@
-using EcommerceApi.Models.Coupon;
-using EcommerceApi.Models.Order;
-using EcommerceApi.Models.Rate;
 using EcommerceApi.Models.Segment;
 
 namespace EcommerceApi.Responses;

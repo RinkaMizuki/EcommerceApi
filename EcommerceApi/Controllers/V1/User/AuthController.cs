@@ -177,7 +177,6 @@ namespace EcommerceApi.Controllers.V1.User
             await _context.SaveChangesAsync();
             return Ok(new
             {
-                message = "login successfully",
                 statusCode = HttpStatusCode.OK,
                 user = new UserResponse()
                 {

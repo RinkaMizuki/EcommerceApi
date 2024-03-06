@@ -1,7 +1,9 @@
 using System.Net;
+using BCrypt.Net;
 using EcommerceApi.Constant;
 using EcommerceApi.Dtos.Admin;
 using EcommerceApi.Dtos.Upload;
+using EcommerceApi.Dtos.User;
 using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models;
 using EcommerceApi.Models.Segment;
@@ -312,6 +314,78 @@ public class UserService : IUserService
         catch (SqlException ex)
         {
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
+        }
+    }
+    public async Task<UserResponse> UpdateUserProfile(int userId, HttpRequest request, UserProfileDto userProfileDto, CancellationToken userCancellationToken)
+    {
+        try
+        {
+            var userProfile = await _context
+                                            .Users
+                                            .Where(u => u.UserId.Equals(userId))
+                                            .FirstOrDefaultAsync(userCancellationToken)
+                                            ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User profile not found.");
+            if(!string.IsNullOrEmpty(userProfileDto.Password))
+            {
+                var currentPasswordHash = BCrypt.Net.BCrypt.Verify(userProfileDto.Password, userProfile.PasswordHash);
+                if (!currentPasswordHash)
+                {
+                    throw new HttpStatusException(HttpStatusCode.BadRequest, "Current password incorrect !");
+                }
+            }
+            
+            if(!string.IsNullOrEmpty(userProfileDto.NewPassword))
+            {
+                var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(userProfileDto.NewPassword);
+                userProfile.PasswordHash = newPasswordHash;
+            }
+
+            if (userProfileDto?.Avatar?.FileName != userProfile.Avatar && userProfileDto?.Avatar is not null)
+            {
+                var res = await _cloudflareClient.DeleteObjectAsync(
+                       $"avatar_{userProfile.UserId}_{userProfile.Avatar}", userCancellationToken);
+                if (res.HttpStatusCode == HttpStatusCode.NoContent)
+                {
+                    await _cloudflareClient.UploadImageAsync(new UploadDto()
+                    {
+                        Id = userId,
+                        File = userProfileDto!.Avatar,
+                    }, "avatar", userCancellationToken);
+                }
+                userProfile.Url = $"{request.Scheme}://{request.Host}/api/v1/Admin/users/preview?avatar=avatar_{userId}_{userProfileDto!.Avatar.FileName}";
+                userProfile.Avatar = userProfileDto.Avatar.FileName;
+            }
+
+            if(!string.IsNullOrEmpty(userProfileDto.Email) && userProfileDto.Email != userProfile.Email)
+            {
+                userProfile.EmailConfirm = false;
+                userProfile.Email = userProfileDto.Email;
+            }
+
+            userProfile.UserName = userProfileDto.UserName;
+            userProfile.Phone = userProfileDto.Phone;
+            userProfile.BirthDate = Convert.ToDateTime(userProfileDto.BirthDate.ToLongDateString());
+
+            await _context.SaveChangesAsync(userCancellationToken);
+
+            return new UserResponse()
+            {
+                Id = userProfile.UserId,
+                UserName = userProfile.UserName,
+                Email = userProfile.Email,
+                Avatar = userProfile.Avatar,
+                BirthDate = userProfile.BirthDate,
+                EmailConfirm = userProfile.EmailConfirm,
+                IsActive = userProfile.IsActive,
+                Phone = userProfile.Phone,
+                Role = userProfile.Role.ToLower(),
+                Url = userProfile.Url,
+            };
+
+        }
+        catch(Exception ex)
+        {
+            throw new HttpStatusException(HttpStatusCode.BadRequest, ex.Message);
         }
     }
 

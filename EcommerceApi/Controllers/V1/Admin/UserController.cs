@@ -5,6 +5,9 @@ using EcommerceApi.Services;
 using EcommerceApi.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using EcommerceApi.Dtos.User;
+using System.Net;
+using Azure.Core;
 
 namespace EcommerceApi.Controllers.V1.Admin
 {
@@ -110,6 +113,18 @@ namespace EcommerceApi.Controllers.V1.Admin
             return Ok(new
             {
                 message = "Delete successfully"
+            });
+        }
+
+        [HttpPut]
+        [AllowAnonymous]
+        [Route("users/update/profile/{id:int}")]
+        public async Task<IActionResult> UpdateProfile(int id,[FromForm]UserProfileDto userProfileDto, CancellationToken cancellationToken) { 
+            var response = await _userService.UpdateUserProfile(id, Request, userProfileDto, cancellationToken);
+            return StatusCode((int)HttpStatusCode.OK, new
+            {
+                user = response,
+                statusCode = HttpStatusCode.OK,
             });
         }
 
