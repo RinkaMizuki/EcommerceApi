@@ -322,6 +322,7 @@ namespace EcommerceApi.Services.ProductService
                                       .Include(p => p.ProductImages)
                                       .Include(p => p.ProductColors)
                                       .Include(p => p.ProductRates)
+                                      .ThenInclude(pr => pr.FeedbackRate)
                                       .AsNoTracking()
                                       .FirstOrDefaultAsync(userCancellationToken)
                                   ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Product not found.");

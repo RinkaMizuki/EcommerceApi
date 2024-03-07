@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using EcommerceApi.ExtensionExceptions;
+using k8s.KubeConfigModels;
 
 namespace EcommerceApi.Controllers.V1.User
 {
@@ -82,49 +83,93 @@ namespace EcommerceApi.Controllers.V1.User
             await _context.SaveChangesAsync(cancellationToken);
 
             var token = _confirmService.GenerateEmailConfirmToken(newUser, 1);
+            var domain = HttpContext.Request.Headers["origin"];
 
             var message =
-                $"{Request.Scheme}://{Request.Host}/api/v1/Auth/confirm-email?email={newUser.Email}&token={token}";
+                $"{domain}/confirm-email?email={newUser.Email}&token={token}";
 
             await _mailService.SendEmailAsync(new MessageModel(
                 newUser.Email,
                 newUser.UserName,
-                "Please confirm your email",
-                message
+                "Please confirm your email.",
+                $"Click here to confirm your email. <a href=\"{message}\">Click here!</a>"
             ), cancellationToken);
 
             return StatusCode(201, new
             {
-                message = "register successfully",
+                message = "Register successfully.",
                 statusCode = HttpStatusCode.Created,
             });
         }
 
         [HttpGet]
+        [Route("resend-confirm-email/{id:int}")]
+        public async Task<IActionResult> ResendConfirmEmail(int id, CancellationToken cancellationToken)
+        {
+            var userReconfirm = await _context
+                                              .Users
+                                              .Where(u => u.UserId == id)
+                                              .FirstOrDefaultAsync(cancellationToken)
+                                              ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
+
+            var token = _confirmService.GenerateEmailConfirmToken(userReconfirm, 1);
+
+            var domain = HttpContext.Request.Headers["origin"];
+            
+            var message =
+                $"{domain}/confirm-email?userId={userReconfirm.UserId}&token={token}";
+
+            await _mailService.SendEmailAsync(new MessageModel(
+                userReconfirm.Email,
+                userReconfirm.UserName,
+                "Please confirm your email.",
+                $"Click here to confirm your email. <a href=\"{message}\">Click here!</a>"
+            ), cancellationToken);
+            return StatusCode(200, new
+            {
+                message = "Resend email confirm successfully. Please check your email !",
+                statusCode = HttpStatusCode.OK,
+            });
+        }
+
+        [HttpGet]
         [Route("confirm-email")]
-        public async Task<IActionResult> ConfirmEmail([FromQuery] string email, [FromQuery] string token,
+        public async Task<IActionResult> ConfirmEmail([FromQuery] int userId, [FromQuery] string token,
             CancellationToken cancellationToken)
         {
             var userConfirm = await _context
                                   .Users
-                                  .Where(u => u.Email == email)
+                                  .Where(u => u.UserId == userId)
                                   .FirstOrDefaultAsync(cancellationToken)
-                              ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
+                                   ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
             if (_confirmService.ValidateEmailConfirmationToken(token, out ClaimsPrincipal claimsPrincipal))
             {
                 userConfirm.EmailConfirm = true;
                 await _context.SaveChangesAsync(cancellationToken);
                 return StatusCode(200, new
                 {
-                    message = "confirm email successfully",
+                    message = "Confirm email successfully",
                     statusCode = 200,
+                    user = new UserResponse()
+                    {
+                        Id = userConfirm.UserId,
+                        UserName = userConfirm.UserName,
+                        Email = userConfirm.Email,
+                        Avatar = userConfirm.Avatar,
+                        BirthDate = userConfirm.BirthDate,
+                        EmailConfirm = userConfirm.EmailConfirm,
+                        IsActive = userConfirm.IsActive,
+                        Phone = userConfirm.Phone,
+                        Role = userConfirm.Role.ToLower(),
+                        Url = userConfirm.Url,
+                    }
                 });
             }
             else
             {
                 return StatusCode(400, new
                 {
-                    message = "confirm email failed",
+                    message = "Confirm email failed",
                     statusCode = 400,
                 });
             }

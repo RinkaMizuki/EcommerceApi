@@ -28,7 +28,11 @@ namespace EcommerceApi.Services.EmailService
             emailMessage.From.Add(new MailboxAddress(_emailConfig.UserName, _emailConfig.From));
             emailMessage.To.Add(message.To);
             emailMessage.Subject = message.Subject;
-            emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = message.Content};
+            var builder = new BodyBuilder
+            {
+                HtmlBody = message.Content
+            };
+            emailMessage.Body = builder.ToMessageBody();
             return emailMessage;
         }
         private async Task Send(MimeMessage mailMessage, CancellationToken userCancellationToken)

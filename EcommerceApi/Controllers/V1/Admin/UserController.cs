@@ -47,6 +47,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
 
         [HttpGet]
+        [AllowAnonymous]
         [Route("users/{id:int}")]
         public async Task<IActionResult> GetUser(int id, CancellationToken userCancellationToken)
         {
