@@ -7,6 +7,7 @@ using EcommerceApi.Dtos.User;
 using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models;
 using EcommerceApi.Models.Segment;
+using EcommerceApi.Models.UserAddress;
 using EcommerceApi.Responses;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;

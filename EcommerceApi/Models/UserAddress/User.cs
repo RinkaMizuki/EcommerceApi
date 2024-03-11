@@ -1,8 +1,9 @@
 using EcommerceApi.Models.Order;
+using EcommerceApi.Models.Segment;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace EcommerceApi.Models.Segment;
+namespace EcommerceApi.Models.UserAddress;
 
 public class User
 {

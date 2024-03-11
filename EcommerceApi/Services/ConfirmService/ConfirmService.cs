@@ -1,5 +1,5 @@
 ﻿using EcommerceApi.ExtensionExceptions;
-using EcommerceApi.Models.Segment;
+using EcommerceApi.Models.UserAddress;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using EcommerceApi.Models.Segment;
+using EcommerceApi.Models.UserAddress;
 
 namespace EcommerceApi.Models;
 

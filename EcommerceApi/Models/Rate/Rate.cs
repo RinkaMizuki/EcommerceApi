@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using EcommerceApi.Models.Feedback;
-using EcommerceApi.Models.Segment;
+using EcommerceApi.Models.UserAddress;
 
 namespace EcommerceApi.Models.Rate;
 

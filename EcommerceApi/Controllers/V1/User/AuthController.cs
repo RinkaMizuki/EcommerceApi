@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Asp.Versioning;
 using EcommerceApi.Dtos.User;
-using UserModel = EcommerceApi.Models.Segment.User;
+using UserModel = EcommerceApi.Models.UserAddress.User;
 using MessageModel = EcommerceApi.Models.Message.Message;
 using EcommerceApi.Models;
 using EcommerceApi.Responses;

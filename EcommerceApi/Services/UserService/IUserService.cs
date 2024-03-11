@@ -1,6 +1,6 @@
 using EcommerceApi.Dtos.Admin;
 using EcommerceApi.Dtos.User;
-using EcommerceApi.Models.Segment;
+using EcommerceApi.Models.UserAddress;
 using EcommerceApi.Responses;
 using Microsoft.AspNetCore.Mvc;
 

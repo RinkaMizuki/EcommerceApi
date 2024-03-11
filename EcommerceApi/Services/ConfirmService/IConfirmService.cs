@@ -1,4 +1,4 @@
-﻿using EcommerceApi.Models.Segment;
+﻿using EcommerceApi.Models.UserAddress;
 using System.Security.Claims;
 
 namespace EcommerceApi.Services.ConfirmService
