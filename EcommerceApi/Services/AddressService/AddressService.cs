@@ -41,6 +41,7 @@ namespace EcommerceApi.Services.AddressService
                 var listAddress = await _context
                                             .UserAddresses
                                             .Where(a => a.User.UserId.Equals(userId))
+                                            .OrderByDescending(a => a.IsDeliveryAddress)
                                             .AsNoTracking()
                                             .ToListAsync(cancellationToken);
                 return listAddress;
@@ -92,10 +93,21 @@ namespace EcommerceApi.Services.AddressService
         {
             try
             {
-                var updateAddress = await  _context
+                var updateAddress = await _context
                                                    .UserAddresses
                                                    .FirstOrDefaultAsync(a => a.Id.Equals(addressId), cancellationToken)
                                                    ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Address not found.");
+
+                if (userAddressDto.IsDeliveryAddress)
+                {
+                    var changeDefaultAddress = await _context
+                                                             .UserAddresses
+                                                             .FirstOrDefaultAsync(ua => ua.IsDeliveryAddress == true && ua.Id != addressId, cancellationToken);
+                    if (changeDefaultAddress is not null)
+                    {
+                        changeDefaultAddress.IsDeliveryAddress = false;
+                    }
+                }
 
                 updateAddress.Name = userAddressDto.Name;
                 updateAddress.Phone = userAddressDto.Phone;

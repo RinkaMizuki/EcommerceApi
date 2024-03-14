@@ -37,7 +37,7 @@ namespace EcommerceApi.Controllers.V1.User
         [HttpDelete]
         public async Task<IActionResult> DeleteAddress(Guid addressId, CancellationToken cancellationToken)
         {
-            var deleteAddress = await _addressService.DeleteUserAddressAsync(addressId, cancellationToken);
+            await _addressService.DeleteUserAddressAsync(addressId, cancellationToken);
             return StatusCode((int)HttpStatusCode.NoContent, new
             {
                 message = "Delete successfully",

@@ -95,9 +95,9 @@ namespace EcommerceApi.Services.CouponService
                 return listCoupon;
 
             }
-            catch (SqlException ex)
+            catch (Exception ex)
             {
-                throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
+                throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 
