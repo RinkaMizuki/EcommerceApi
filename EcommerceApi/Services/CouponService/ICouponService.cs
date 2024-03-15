@@ -1,4 +1,5 @@
 ﻿using EcommerceApi.Dtos.Admin;
+using EcommerceApi.Dtos.User;
 using EcommerceApi.Models.Coupon;
 
 namespace EcommerceApi.Services.CouponService
@@ -10,6 +11,6 @@ namespace EcommerceApi.Services.CouponService
         public Task<Coupon> UpdateCouponAsync(Coupon couponDto, Guid couponId, CancellationToken userCancellationToken);
         public Task<List<Coupon>> GetListCouponAsync(string sort, string range, string filter, HttpResponse response, CancellationToken userCancellationToken);
         public Task<Coupon> GetCouponByIdAsync(Guid couponId, CancellationToken userCancellationToken);
-        public Task<decimal> ApplyCouponProduct( CancellationToken userCancellationToken); 
+        public Task<int> ApplyCouponProductAsync(CouponProductDto couponProductDto, CancellationToken userCancellationToken);
     }
 }

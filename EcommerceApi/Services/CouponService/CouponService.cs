@@ -1,5 +1,6 @@
 ﻿using Azure;
 using EcommerceApi.Dtos.Admin;
+using EcommerceApi.Dtos.User;
 using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models;
 using EcommerceApi.Models.Coupon;
@@ -16,6 +17,60 @@ namespace EcommerceApi.Services.CouponService
         public CouponService(EcommerceDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<int> ApplyCouponProductAsync(CouponProductDto couponProductDto, CancellationToken userCancellationToken)
+        {
+            var coupon = await _context
+                                       .Coupons
+                                       .Where(c => c.CouponCode.ToUpper().Equals(couponProductDto.CouponCode))
+                                       .Include(c => c.CouponConditions)
+                                       .ThenInclude(cc => cc.Condition)
+                                       .FirstOrDefaultAsync(userCancellationToken)
+                                       ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Coupon not found.");
+            try
+            {
+
+                var productIds = couponProductDto.ListProductInfo.Select(x => x.ProductId).ToList();
+
+                var listProduct = await _context
+                                        .Products
+                                        .AsNoTracking()
+                                        .Where(p => productIds.Contains(p.ProductId))
+                                        .ToListAsync(userCancellationToken);
+
+                var total = Convert.ToInt32(listProduct.Sum(p =>
+                    Convert.ToInt32(p.Price) * couponProductDto.ListProductInfo.FirstOrDefault(x => x.ProductId.Equals(p.ProductId))!.Quantity * (1 - (float)p.Discount / 100)
+                ));
+
+                var minAmount = Convert.ToInt32(coupon.CouponConditions.Where(cc => cc.Condition.Attribute == "min_amount").FirstOrDefault()?.Value ?? 0);
+                var maxAmount = Convert.ToInt32(coupon.CouponConditions.Where(cc => cc.Condition.Attribute == "max_amount").FirstOrDefault()?.Value ?? 0);
+                var maxDiscount = Convert.ToInt32(coupon.CouponConditions.Where(cc => cc.Condition.Attribute == "max_discount").FirstOrDefault()?.Value ?? 0);
+                var amountPercent = coupon.DiscountPercent;
+
+                if (minAmount > 0 && total < minAmount)
+                {
+                    throw new HttpStatusException(HttpStatusCode.BadRequest, "Not enough conditions.");
+                }
+                if(maxAmount > 0 && total > maxAmount)
+                {
+                    throw new HttpStatusException(HttpStatusCode.BadRequest, "Not enough conditions.");
+                }
+
+                var amountDiscount = total * (1 - (amountPercent / 100));
+                if(amountDiscount >= maxDiscount) amountDiscount = maxDiscount;
+
+                total -= amountDiscount;
+                if (total < 0) throw new HttpStatusException(HttpStatusCode.BadRequest, "Applied coupon failure.");
+
+                return total;
+
+            }
+            catch (Exception ex)
+            {
+                throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
+
+            }
         }
 
         public async Task<bool> DeleteCouponAsync(Guid couponId, CancellationToken userCancellationToken)
