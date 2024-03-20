@@ -79,10 +79,16 @@ namespace EcommerceApi
 
             return role!;
         }
+        
         public static List<T> GetRandomElements<T>(List<T> list, int count)
         {
             Random random = new ();
             return list.OrderBy(item => random.Next()).Take(count).ToList();
+        }
+
+        public static int CalcPriceSale(decimal price, int percent)
+        {
+            return Convert.ToInt32(Convert.ToInt32(price) * (1 - (float)percent / 100));
         }
     }
 }

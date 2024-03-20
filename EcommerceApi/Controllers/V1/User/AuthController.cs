@@ -15,7 +15,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using EcommerceApi.ExtensionExceptions;
-using k8s.KubeConfigModels;
 
 namespace EcommerceApi.Controllers.V1.User
 {
@@ -326,7 +325,7 @@ namespace EcommerceApi.Controllers.V1.User
             var token = new JwtSecurityToken(
                 issuer: _config.GetSection("SecretIssuer").Value,
                 audience: _config.GetSection("SecretIssuer").Value,
-                expires: DateTime.Now.AddMinutes(10),
+                expires: DateTime.Now.AddMinutes(1),
                 signingCredentials: credentials,
                 claims: claims
             );
@@ -349,7 +348,7 @@ namespace EcommerceApi.Controllers.V1.User
         {
             var cookieOptions = new CookieOptions()
             {
-                HttpOnly = false,
+                HttpOnly = true,
                 Secure = false,
                 Expires = DateTime.Now.AddDays(7),
             };

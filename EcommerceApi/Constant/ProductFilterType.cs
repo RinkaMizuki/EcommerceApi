@@ -11,4 +11,5 @@ public static class ProductFilterType
     public const string Random = "random";
     public const string Favorite = "idFavorites";
     public const string Total = "total";
+    public const string PriceRange = "priceRange";
 }

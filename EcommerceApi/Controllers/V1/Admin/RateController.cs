@@ -44,7 +44,8 @@ namespace EcommerceApi.Controllers.V1.Admin
 
         [HttpPost]
         [Route("rates/post")]
-        public async Task<IActionResult> CreateRating(RateDto rateDto, CancellationToken userCancellationToken)
+        [AllowAnonymous]
+        public async Task<IActionResult> CreateRating([FromBody]RateDto rateDto, CancellationToken userCancellationToken)
         {
             var rate = await _rateService.PostRateAsync(rateDto, userCancellationToken);
             if (rate == null) return BadRequest();

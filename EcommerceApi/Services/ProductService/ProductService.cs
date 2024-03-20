@@ -139,6 +139,13 @@ namespace EcommerceApi.Services.ProductService
                     filterValues.Add(ProductFilterType.Favorite);
                     filterValues.Add("");
                 }
+                
+                if(!filterValues.Contains(ProductFilterType.PriceRange))
+                {
+                    filterValues.Add(ProductFilterType.PriceRange);
+                    filterValues.Add("");
+                    filterValues.Add("");
+                }
 
                 if (!filterValues.Contains(ProductFilterType.StockRange))
                 {
@@ -161,6 +168,10 @@ namespace EcommerceApi.Services.ProductService
                     .Skip(filterValues.IndexOf(ProductFilterType.StockRange) + 1)
                     .Take(2)
                     .ToList();
+                var priceRange = filterValues
+                    .Skip(filterValues.IndexOf(ProductFilterType.PriceRange) + 1)
+                    .Take(2)
+                    .ToList();
 
                 var perPage = rangeValues[1] - rangeValues[0] + 1;
                 var currentPage = Convert.ToInt32(Math.Ceiling((double)rangeValues[0] / perPage)) + 1;
@@ -174,9 +185,13 @@ namespace EcommerceApi.Services.ProductService
                     .Include(p => p.ProductColors)
                     .Include(p => p.ProductRates);
 
+                var priceMaxDefault = Convert.ToInt32(listProductQuery.Max(p => p.Price));
                 //conditions filter
                 var minStock = string.IsNullOrEmpty(stockRange[0]) ? -999 : Convert.ToInt32(stockRange[0]);
                 var maxStock = string.IsNullOrEmpty(stockRange[1]) ? -999 : Convert.ToInt32(stockRange[1]);
+                var minPrice = string.IsNullOrEmpty(priceRange[0]) ? 0 : Convert.ToInt32(priceRange[0]);
+                var maxPrice = string.IsNullOrEmpty(priceRange[1]) ? priceMaxDefault : Convert.ToInt32(priceRange[1]);
+
                 var category = filterValues[filterValues.IndexOf(ProductFilterType.Category) + 1];
                 var searchValue = filterValues[filterValues.IndexOf(ProductFilterType.Search) + 1].ToLower();
                 var sale = filterValues[filterValues.IndexOf(ProductFilterType.Sale) + 1].ToLower();
@@ -192,8 +207,6 @@ namespace EcommerceApi.Services.ProductService
                 if (!string.IsNullOrEmpty(filterValues[filterValues.IndexOf(ProductFilterType.Favorite) + 1])
                     && filterValues[filterValues.IndexOf(ProductFilterType.Total) + 1] != "0")
                 {
-                    
-
                     favorites = filterValues
                     .Skip(skipElm)
                     .Take(takeElm)
@@ -210,6 +223,7 @@ namespace EcommerceApi.Services.ProductService
                 {
                     var keyStartIndex = filterValues.IndexOf(ProductFilterType.Id);
                     var keyEndIndex = filterValues.IndexOf(ProductFilterType.Category);
+
                     var listId = filterValues
                         .Skip(keyStartIndex + 1)
                         .Take(keyEndIndex - keyStartIndex - 1)
@@ -236,7 +250,8 @@ namespace EcommerceApi.Services.ProductService
                                 && (string.IsNullOrEmpty(sale) || ((sale == "hot" && p.Hot) ||
                                                                    (sale == "flashsale" && p.FlashSale) ||
                                                                    (sale == "upcoming" && p.Upcoming))
-                                )
+                                ) 
+                                && ((Helpers.CalcPriceSale(p.Price, p.Discount) >= minPrice && Helpers.CalcPriceSale(p.Price, p.Discount) <= maxPrice))
                     ).ToList();
 
                 if(favorites.Count > 0)
@@ -261,7 +276,9 @@ namespace EcommerceApi.Services.ProductService
                         {
                             SortOrder.SortById => listProduct.OrderBy(p => p.ProductId).ToList(),
                             SortOrder.SortByStock => listProduct.OrderBy(p => p.Quantity).ToList(),
-                            _ => listProduct.OrderBy(p => p.Title).ToList()
+                            SortOrder.SortByTitle => listProduct.OrderBy(p => p.Title).ToList(),
+                            SortOrder.SortByPrice => listProduct.OrderBy(p => Helpers.CalcPriceSale(p.Price, p.Discount)).ToList(),
+                            _ => listProduct
                         };
 
                         break;
@@ -270,7 +287,9 @@ namespace EcommerceApi.Services.ProductService
                         {
                             SortOrder.SortById => listProduct.OrderByDescending(p => p.ProductId).ToList(),
                             SortOrder.SortByStock => listProduct.OrderByDescending(p => p.Quantity).ToList(),
-                            _ => listProduct.OrderByDescending(p => p.Title).ToList()
+                            SortOrder.SortByTitle => listProduct.OrderByDescending(p => p.Title).ToList(),
+                            SortOrder.SortByPrice => listProduct.OrderByDescending(p => Helpers.CalcPriceSale(p.Price, p.Discount)\).ToList(),
+                            _ => listProduct
                         };
 
                         break;
