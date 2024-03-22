@@ -96,7 +96,7 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<List<UserResponse>> GetListUsersAsync(string sort, string range, string filter,
+    public async Task<List<UserResponse>> GetListUsersAsync(string? sort, string? range, string? filter,
         HttpResponse response, CancellationToken userCancellationToken)
     {
         try

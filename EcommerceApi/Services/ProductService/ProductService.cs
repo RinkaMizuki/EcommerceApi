@@ -288,7 +288,7 @@ namespace EcommerceApi.Services.ProductService
                             SortOrder.SortById => listProduct.OrderByDescending(p => p.ProductId).ToList(),
                             SortOrder.SortByStock => listProduct.OrderByDescending(p => p.Quantity).ToList(),
                             SortOrder.SortByTitle => listProduct.OrderByDescending(p => p.Title).ToList(),
-                            SortOrder.SortByPrice => listProduct.OrderByDescending(p => Helpers.CalcPriceSale(p.Price, p.Discount)\).ToList(),
+                            SortOrder.SortByPrice => listProduct.OrderByDescending(p => Helpers.CalcPriceSale(p.Price, p.Discount)).ToList(),
                             _ => listProduct
                         };
 

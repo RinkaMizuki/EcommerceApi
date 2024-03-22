@@ -17,8 +17,10 @@ using EcommerceApi.Services.EmailService;
 using EcommerceApi.Services.FeedbackRateService;
 using EcommerceApi.Services.FeedbackService;
 using EcommerceApi.Services.MailService;
+using EcommerceApi.Services.MerchantService;
 using EcommerceApi.Services.OpenaiService;
 using EcommerceApi.Services.OrderService;
+using EcommerceApi.Services.PaymentService;
 using EcommerceApi.Services.ProductService;
 using EcommerceApi.Services.SegmentService;
 using EcommerceApi.Services.SliderService;
@@ -46,6 +48,9 @@ builder.Services.AddDbContext<EcommerceDbContext>(options =>
     }
 });
 
+//config response xml
+//builder.Services.AddControllers().AddXmlDataContractSerializerFormatters();
+
 var configuration = builder.Configuration;
 
 // Add services to the container.
@@ -69,7 +74,9 @@ builder.Services.AddMemoryCache();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDetection();
 
-builder.Services.AddSwaggerGen(options => { options.OperationFilter<SwaggerDefaultValues>(); });
+builder.Services.AddSwaggerGen(options => {
+    options.OperationFilter<SwaggerDefaultValues>();
+});
 builder.Services.AddTransient<JwtMiddleware>();
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<ICategoryService, CategoryService>();
@@ -84,13 +91,18 @@ builder.Services.AddTransient<ISegmentService, SegmentService>();
 builder.Services.AddTransient<IOrderService, OrderService>();
 builder.Services.AddTransient<ISliderService, SliderService>();
 builder.Services.AddTransient<IAddressService, AddressService>();
+builder.Services.AddTransient<IPaymentService, PaymentService>();
+builder.Services.AddTransient<IMerchantService, MerchantService>();
 builder.Services.AddScoped<RateFilterBuilder>();
 builder.Services.AddTransient<IConfirmService, ConfirmService>();
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 builder.Services.AddTransient<IMailService, MailService>();
 builder.Services.AddTransient<IOpenaiService, OpenaiService>();
+
+//binding config appsettings.json
 builder.Services.Configure<CloudflareR2Config>(configuration.GetSection("CloudflareR2Config"));
 builder.Services.Configure<EmailConfig>(configuration.GetSection("EmailConfiguration"));
+builder.Services.Configure<VnPayConfig>(configuration.GetSection("VnPayConfiguration"));
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("MyAllowSpecificOrigins",

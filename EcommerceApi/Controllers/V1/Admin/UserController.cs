@@ -132,9 +132,9 @@ namespace EcommerceApi.Controllers.V1.Admin
         [HttpGet]
         [Route("users")]
         public async Task<IActionResult> GetListUsers(
-            [FromQuery(Name = "sort")] string sort,
-            [FromQuery(Name = "range")] string range,
-            [FromQuery(Name = "filter")] string filter,
+            [FromQuery(Name = "sort")] string? sort,
+            [FromQuery(Name = "range")] string? range,
+            [FromQuery(Name = "filter")] string? filter,
             CancellationToken userCancellationToken
         )
         {

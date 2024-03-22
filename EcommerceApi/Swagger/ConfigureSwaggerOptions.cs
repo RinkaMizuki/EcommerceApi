@@ -12,10 +12,18 @@ public class ConfigureSwaggerOptions : IConfigureOptions<SwaggerGenOptions>
     public ConfigureSwaggerOptions(IApiVersionDescriptionProvider apiVersionDescriptionProvider) => _apiVersionDescriptionProvider = apiVersionDescriptionProvider;
     private static OpenApiInfo CreateOpenApiInfo(ApiVersionDescription description)
     {
+
         var info = new OpenApiInfo()
         {
-            Title = "LSE.Stocks.API",
-            Version = description.ApiVersion.ToString()
+            Title = "Ecommerce Api",
+            Version = description.ApiVersion.ToString(),
+            Description = "ASP.NET CORE API For Ecommerce Web App",
+            Contact = new OpenApiContact()
+            {
+                Name = "Rin Dev",
+                Url = new Uri("https://www.facebook.com/ducdzpro.ak/"),
+                Email = "nguyenduc09012003@gmail.com"
+            }
         };
 
         if (description.IsDeprecated)

@@ -1,6 +1,7 @@
 using EcommerceApi.Models.Coupon;
 using EcommerceApi.Models.Feedback;
 using EcommerceApi.Models.Order;
+using EcommerceApi.Models.Payment;
 using EcommerceApi.Models.Product;
 using EcommerceApi.Models.Segment;
 using EcommerceApi.Models.Slider;
@@ -29,6 +30,12 @@ public class EcommerceDbContext : DbContext
     public DbSet<Segment.Segment> Segments { get; set; }
     public DbSet<Slider.Slider> Sliders { get; set; }
     public DbSet<UserAddress.UserAddress> UserAddresses { get; set; }
+    public DbSet<Merchant> Merchants { get; set; }
+    public DbSet<Payment.Payment> Payments { get; set; }
+    public DbSet<PaymentDestination> PaymentDestinations { get; set; }
+    public DbSet<PaymentNotification> PaymentNotifications { get; set; }
+    public DbSet<PaymentSignature> PaymentSignatures { get; set; }
+    public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
 
     public EcommerceDbContext(DbContextOptions<EcommerceDbContext> dbContextOptions) : base(dbContextOptions)
     {

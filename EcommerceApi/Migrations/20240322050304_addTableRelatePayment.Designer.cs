@@ -4,6 +4,7 @@ using EcommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EcommerceApi.Migrations
 {
     [DbContext(typeof(EcommerceDbContext))]
-    partial class EcommerceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240322050304_addTableRelatePayment")]
+    partial class addTableRelatePayment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -364,12 +367,14 @@ namespace EcommerceApi.Migrations
 
             modelBuilder.Entity("EcommerceApi.Models.Payment.PaymentNotification", b =>
                 {
-                    b.Property<Guid>("NotificationId")
-                        .ValueGeneratedOnAdd()
+                    b.Property<Guid>("PaymentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid>("MerchantId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("NotiAmount")
                         .IsRequired()
@@ -390,12 +395,17 @@ namespace EcommerceApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("PaymentId")
+                    b.Property<Guid>("NotificationId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("NotificationId");
+                    b.Property<Guid>("PaymentOrderId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.HasIndex("PaymentId");
+                    b.HasKey("PaymentId");
+
+                    b.HasIndex("MerchantId");
+
+                    b.HasIndex("PaymentOrderId");
 
                     b.ToTable("PaymentNotifications");
                 });
@@ -975,13 +985,13 @@ namespace EcommerceApi.Migrations
             modelBuilder.Entity("EcommerceApi.Models.Payment.Payment", b =>
                 {
                     b.HasOne("EcommerceApi.Models.Payment.Merchant", "Merchant")
-                        .WithMany("Payments")
+                        .WithMany()
                         .HasForeignKey("MerchantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("EcommerceApi.Models.Payment.PaymentDestination", "PaymentDestination")
-                        .WithMany("Payments")
+                        .WithMany()
                         .HasForeignKey("PaymentDestinationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1010,11 +1020,26 @@ namespace EcommerceApi.Migrations
 
             modelBuilder.Entity("EcommerceApi.Models.Payment.PaymentNotification", b =>
                 {
+                    b.HasOne("EcommerceApi.Models.Payment.Merchant", "Merchant")
+                        .WithMany()
+                        .HasForeignKey("MerchantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("EcommerceApi.Models.Payment.Payment", "Payment")
                         .WithMany("PaymentNotifications")
                         .HasForeignKey("PaymentId")
+                        .IsRequired();
+
+                    b.HasOne("EcommerceApi.Models.Order.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("PaymentOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Merchant");
+
+                    b.Navigation("Order");
 
                     b.Navigation("Payment");
                 });
@@ -1022,7 +1047,7 @@ namespace EcommerceApi.Migrations
             modelBuilder.Entity("EcommerceApi.Models.Payment.PaymentSignature", b =>
                 {
                     b.HasOne("EcommerceApi.Models.Payment.Payment", "Payment")
-                        .WithMany("PaymentSignatures")
+                        .WithMany()
                         .HasForeignKey("PaymentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1033,7 +1058,7 @@ namespace EcommerceApi.Migrations
             modelBuilder.Entity("EcommerceApi.Models.Payment.PaymentTransaction", b =>
                 {
                     b.HasOne("EcommerceApi.Models.Payment.Payment", "Payment")
-                        .WithMany("PaymentTransactions")
+                        .WithMany()
                         .HasForeignKey("PaymentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1148,25 +1173,14 @@ namespace EcommerceApi.Migrations
                     b.Navigation("CouponConditions");
                 });
 
-            modelBuilder.Entity("EcommerceApi.Models.Payment.Merchant", b =>
-                {
-                    b.Navigation("Payments");
-                });
-
             modelBuilder.Entity("EcommerceApi.Models.Payment.Payment", b =>
                 {
                     b.Navigation("PaymentNotifications");
-
-                    b.Navigation("PaymentSignatures");
-
-                    b.Navigation("PaymentTransactions");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Payment.PaymentDestination", b =>
                 {
                     b.Navigation("PaymentDestinationsChild");
-
-                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Product.Product", b =>

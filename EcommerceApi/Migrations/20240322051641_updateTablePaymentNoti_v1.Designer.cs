@@ -4,6 +4,7 @@ using EcommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EcommerceApi.Migrations
 {
     [DbContext(typeof(EcommerceDbContext))]
-    partial class EcommerceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240322051641_updateTablePaymentNoti_v1")]
+    partial class updateTablePaymentNoti_v1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -981,7 +984,7 @@ namespace EcommerceApi.Migrations
                         .IsRequired();
 
                     b.HasOne("EcommerceApi.Models.Payment.PaymentDestination", "PaymentDestination")
-                        .WithMany("Payments")
+                        .WithMany()
                         .HasForeignKey("PaymentDestinationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1022,7 +1025,7 @@ namespace EcommerceApi.Migrations
             modelBuilder.Entity("EcommerceApi.Models.Payment.PaymentSignature", b =>
                 {
                     b.HasOne("EcommerceApi.Models.Payment.Payment", "Payment")
-                        .WithMany("PaymentSignatures")
+                        .WithMany()
                         .HasForeignKey("PaymentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1033,7 +1036,7 @@ namespace EcommerceApi.Migrations
             modelBuilder.Entity("EcommerceApi.Models.Payment.PaymentTransaction", b =>
                 {
                     b.HasOne("EcommerceApi.Models.Payment.Payment", "Payment")
-                        .WithMany("PaymentTransactions")
+                        .WithMany()
                         .HasForeignKey("PaymentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1156,17 +1159,11 @@ namespace EcommerceApi.Migrations
             modelBuilder.Entity("EcommerceApi.Models.Payment.Payment", b =>
                 {
                     b.Navigation("PaymentNotifications");
-
-                    b.Navigation("PaymentSignatures");
-
-                    b.Navigation("PaymentTransactions");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Payment.PaymentDestination", b =>
                 {
                     b.Navigation("PaymentDestinationsChild");
-
-                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Product.Product", b =>

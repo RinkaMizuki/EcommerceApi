@@ -24,7 +24,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         [HttpGet]
         [Route("coupons")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetListCoupon(string sort, string range, string filter, CancellationToken userCancellationToken)
+        public async Task<IActionResult> GetListCoupon(string? sort, string? range, string? filter, CancellationToken userCancellationToken)
         {
            var listCoupon = await _couponService.GetListCouponAsync(sort, range, filter, Response, userCancellationToken);
            return Ok(listCoupon);

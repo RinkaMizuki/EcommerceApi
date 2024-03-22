@@ -112,7 +112,7 @@ namespace EcommerceApi.Services.CouponService
             }
         }
 
-        public async Task<List<Coupon>> GetListCouponAsync(string sort, string range, string filter,
+        public async Task<List<Coupon>> GetListCouponAsync(string? sort, string? range, string? filter,
             HttpResponse response, CancellationToken userCancellationToken)
         {
             try
@@ -145,7 +145,7 @@ namespace EcommerceApi.Services.CouponService
                     .Take(perPage).ToList();
 
                 response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
-                response.Headers.Append("Content-Range", $"products {rangeValues[0]}-{rangeValues[1]}/{totalCoupon}");
+                response.Headers.Append("Content-Range", $"coupons {rangeValues[0]}-{rangeValues[1]}/{totalCoupon}");
 
                 return listCoupon;
 
