@@ -29,7 +29,5 @@ namespace EcommerceApi.Models.Payment
         public List<PaymentNotification> PaymentNotifications { get; set; } = new();
         public List<PaymentSignature> PaymentSignatures { get; set; } = new();
         public List<PaymentTransaction> PaymentTransactions { get; set; } = new();
-
-
     }
 }

@@ -325,7 +325,7 @@ namespace EcommerceApi.Controllers.V1.User
             var token = new JwtSecurityToken(
                 issuer: _config.GetSection("SecretIssuer").Value,
                 audience: _config.GetSection("SecretIssuer").Value,
-                expires: DateTime.Now.AddMinutes(1),
+                expires: DateTime.Now.AddMinutes(30),
                 signingCredentials: credentials,
                 claims: claims
             );

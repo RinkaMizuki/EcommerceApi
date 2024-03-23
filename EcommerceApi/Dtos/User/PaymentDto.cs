@@ -6,20 +6,12 @@
         public string PaymentContent { get; set; } = string.Empty;
         public string PaymentCurrency { get; set; } = string.Empty;
         public int RequiredAmount { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public DateTime ExpiredAt { get; set; } = DateTime.Now.AddMinutes(15);
         public string PaymentLanguage { get; set; } = string.Empty;
-        public string PaymentUrl { get; set; } = string.Empty;
-        public string SignValue { get; set; } = string.Empty;
-        public string SignAlgorithm { get; set; } = string.Empty;
         //merchant
-        public string MerchantName { get; set; } = string.Empty;
-        public string MerchantWebUrl { get; set; } = string.Empty;
-        public string MerchantIpnUrl { get; set; } = string.Empty;
-        public string MerchantReturnUrl { get; set; } = string.Empty;
+        public Guid MerchantId { get; set; }
+        
         //destination
-        public string DestinationName { get; set; } = string.Empty;
-
+        public Guid DestinationId { get; set; }
         //order
         public string Email { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;

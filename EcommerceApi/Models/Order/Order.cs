@@ -24,5 +24,4 @@ public class Order
     public decimal TotalPrice { get; set; }
     public bool Returned { get; set; }
     public bool Confirm { get; set; } = false;
-    public Guid Token { get; set; }
 }

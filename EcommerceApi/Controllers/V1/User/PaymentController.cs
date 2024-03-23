@@ -1,9 +1,8 @@
 ﻿using Asp.Versioning;
-using EcommerceApi.Config;
+using EcommerceApi.Dtos.User;
 using EcommerceApi.Services.PaymentService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 
 namespace EcommerceApi.Controllers.V1.User
 {
@@ -17,12 +16,12 @@ namespace EcommerceApi.Controllers.V1.User
         public PaymentController(IPaymentService paymentService) {
             _paymentService = paymentService;
         }
-        [HttpGet]
-        [Route("redirect")]
-        public IActionResult RedirectToPayment(CancellationToken cancellationToken)
+        [HttpPost]
+        [Route("post")]
+        public async Task<IActionResult> RedirectToPayment(PaymentDto paymentDto,CancellationToken cancellationToken)
         {
-            var redirectUrl = _paymentService.GetPaymentOrder(Request ,cancellationToken);
-            return Ok(redirectUrl);
+            var newPayment = await _paymentService.PostPaymentOrderAsync(paymentDto, Request, cancellationToken);
+            return Ok(newPayment);
         }
     }
 }
