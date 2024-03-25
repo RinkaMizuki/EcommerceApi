@@ -357,13 +357,12 @@ namespace EcommerceApi.Services.ProductService
         public async Task<Product> PostProductAsync(ProductDto productDto, string userName, HttpRequest request,
             CancellationToken userCancellationToken)
         {
-            try
-            {
-                var category =
+            var category =
                     await _context.ProductCategories.FindAsync(new object?[] { productDto.CategoryId },
                         cancellationToken: userCancellationToken) ??
                     throw new HttpStatusException(HttpStatusCode.NotFound, "Category not found.");
-
+            try
+            {
                 var newProduct = new Product()
                 {
                     ProductId = Guid.NewGuid(),
@@ -405,9 +404,7 @@ namespace EcommerceApi.Services.ProductService
                     {
                         flag = true;
                         continue;
-                    }
-
-                    ;
+                    };
                     listProductImage.Add(new ProductImage()
                     {
                         Image = file.FileName,

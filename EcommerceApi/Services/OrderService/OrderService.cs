@@ -61,7 +61,6 @@ namespace EcommerceApi.Services.OrderService
                                                  ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Order not found.");
                
                 updateOrder.Status = orderDto.Status;
-                updateOrder.Returned = orderDto.Returned;
 
                 await _context.SaveChangesAsync(userCancellationToken);
                 return updateOrder;

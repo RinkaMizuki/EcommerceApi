@@ -37,7 +37,12 @@ namespace EcommerceApi.Services.DestinateService
         {
             try
             {
-                var listDes = await _context.PaymentDestinations.AsNoTracking().ToListAsync(cancellationToken);
+                var listDes = await _context
+                    .PaymentDestinations
+                    .AsNoTracking()
+                    .Where(dp => dp.ParentDestinationId == null)
+                    .Include(dp => dp.PaymentDestinationsChild)
+                    .ToListAsync(cancellationToken);
                 return listDes;
             }
             catch (Exception ex)

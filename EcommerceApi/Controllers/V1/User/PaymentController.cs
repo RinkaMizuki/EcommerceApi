@@ -18,9 +18,16 @@ namespace EcommerceApi.Controllers.V1.User
         }
         [HttpPost]
         [Route("post")]
-        public async Task<IActionResult> RedirectToPayment(PaymentDto paymentDto,CancellationToken cancellationToken)
+        public async Task<IActionResult> RedirectPayment(PaymentDto paymentDto,CancellationToken cancellationToken)
         {
             var newPayment = await _paymentService.PostPaymentOrderAsync(paymentDto, Request, cancellationToken);
+            return Ok(newPayment);
+        }
+        [HttpGet]
+        public async Task<IActionResult> ReturnPayment(CancellationToken cancellationToken)
+        {
+
+            var newPayment = await _paymentService.GetPaymentReturnAsync(Request, cancellationToken);
             return Ok(newPayment);
         }
     }

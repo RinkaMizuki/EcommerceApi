@@ -8,6 +8,7 @@ public class OrderDetail
 {
     [Key]
     public Guid OrderId { get; set; }
+    [Key]
     public Guid ProductId { get; set; }
     [ForeignKey("ProductId")]
     public Product.Product Product { get; set; }
@@ -16,8 +17,5 @@ public class OrderDetail
     public Order Order { get; set; }
     public int DiscountProduct { get; set; }
     public int PriceProduct { get; set; }
-    public string Note { get; set; } = string.Empty;
-    public string FullName { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; } = string.Empty;
-    public string DeliveryAddress {  get; set; } = string.Empty;
+    public int QuantityProduct { get; set; }
 }
