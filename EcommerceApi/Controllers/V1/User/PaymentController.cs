@@ -23,12 +23,21 @@ namespace EcommerceApi.Controllers.V1.User
             var newPayment = await _paymentService.PostPaymentOrderAsync(paymentDto, Request, cancellationToken);
             return Ok(newPayment);
         }
-        [HttpGet]
-        public async Task<IActionResult> ReturnPayment(CancellationToken cancellationToken)
+        [HttpPost]
+        [Route("return")]
+        public async Task<IActionResult> ReturnPayment(TranDto tranDto, CancellationToken cancellationToken)
         {
 
-            var newPayment = await _paymentService.GetPaymentReturnAsync(Request, cancellationToken);
+            var newPayment = await _paymentService.PostPaymentReturnAsync(tranDto, Request, cancellationToken);
             return Ok(newPayment);
+        }
+        [HttpGet]
+        [Route("ipn")]
+        [AllowAnonymous]
+        public async Task<IActionResult> IpnPayment(CancellationToken cancellationToken)
+        {
+            var ipnResponse = await _paymentService.GetPaymentIpnAsync(Request, cancellationToken);
+            return Ok(ipnResponse);
         }
     }
 }

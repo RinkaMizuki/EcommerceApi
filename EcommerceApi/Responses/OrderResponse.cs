@@ -16,5 +16,6 @@ namespace EcommerceApi.Responses
         public string InvoiceAddress { get; set; } = string.Empty;
         public List<OrderDetail> OrderDetails { get; set; } = new();
         public DateTime InvoiceDate { get; set; }
+        public Guid? TranId { get; set; }
     }
 }

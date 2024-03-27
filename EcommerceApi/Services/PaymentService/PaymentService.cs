@@ -1,4 +1,5 @@
 ﻿using EcommerceApi.Config;
+using EcommerceApi.Constant;
 using EcommerceApi.Dtos.User;
 using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Lib;
@@ -22,10 +23,21 @@ namespace EcommerceApi.Services.PaymentService
             _context = context;
         }
 
-        public async Task<InvoiceResponse> GetPaymentReturnAsync(HttpRequest httpRequest, CancellationToken cancellationToken)
+        public async Task<InvoiceResponse> PostPaymentReturnAsync(TranDto tranDto, HttpRequest httpRequest, CancellationToken cancellationToken)
         {
             var invoiceResponse = new InvoiceResponse();
-            var transaction = new PaymentTransaction();
+            var newTransaction = new PaymentTransaction();
+            var tranId = tranDto.TranId;
+
+            PaymentTransaction? currTran = null;
+            if(!string.IsNullOrEmpty(tranId))
+            {
+                currTran = await _context
+                                          .PaymentTransactions
+                                          .Where(pt => pt.TranscationId.ToString().ToLower().Equals(tranId))
+                                          .FirstOrDefaultAsync(cancellationToken);
+            }
+
             if (httpRequest.Query.Count > 0)
             {
                 string vnp_HashSecret = _config.vnp_HashSecret;//Chuoi bi mat
@@ -41,7 +53,7 @@ namespace EcommerceApi.Services.PaymentService
                     }
                 }
                 //vnp_TxnRef: Ma don hang merchant gui VNPAY tai command=pay    
-                //vnp_TransactionNo: Ma GD tai he thong VNPAY
+                //vnp_newTransactionNo: Ma GD tai he thong VNPAY
                 //vnp_ResponseCode:Response code from VNPAY: 00: Thanh cong, Khac 00: Xem tai lieu
                 //vnp_SecureHash: HmacSHA512 cua du lieu tra ve
 
@@ -51,25 +63,26 @@ namespace EcommerceApi.Services.PaymentService
                 string vnp_TransactionStatus = vnpay.GetResponseData("vnp_TransactionStatus");
                 string vnp_SecureHash = httpRequest.Query["vnp_SecureHash"]!;
                 int vnp_Amount = Convert.ToInt32(vnpay.GetResponseData("vnp_Amount")) / 100;
-
+                Payment payment = new();
+                Order order = new();
                 bool checkSignature = vnpay.ValidateSignature(vnp_SecureHash, vnp_HashSecret);
                 if (checkSignature)
                 {
                     if (vnp_ResponseCode == "00" && vnp_TransactionStatus == "00")
                     {
-                        var order = await _context
+                            order = await _context
                                                   .Orders
                                                   .Where(o => o.OrderId.ToString().ToLower().Equals(orderId.ToString().ToLower()))
                                                   .Include(o => o.OrderDetails)
                                                   .ThenInclude(od => od.Product)
                                                   .FirstOrDefaultAsync(cancellationToken)
                                                   ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Order not found.");
-                        var payment = await _context
+                            payment = await _context
                                                     .Payments
                                                     .Where(p => p.PaymentOrderId.ToString().ToLower().Equals(orderId.ToString().ToLower()))
                                                     .FirstOrDefaultAsync(cancellationToken)
                                                     ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Payment not found.");
-                        //Thanh toan thanh cong
+                        //thanh toan thanh cong
                         invoiceResponse.Message = "Giao dịch được thực hiện thành công. Cảm ơn quý khách đã sử dụng dịch vụ";
                         invoiceResponse.OrderId = Guid.Parse(orderId);
                         invoiceResponse.Amount = vnp_Amount;
@@ -81,31 +94,85 @@ namespace EcommerceApi.Services.PaymentService
                         invoiceResponse.InvoiceAddress = order.DeliveryAddress;
                         invoiceResponse.InvoiceDate = order.OrderDate;
                         invoiceResponse.OrderDetails = order.OrderDetails;
+                        if (currTran is null)
+                        {
+                            //tao transac
+                            newTransaction.TranscationId = Guid.NewGuid();
+                            newTransaction.TranPayload = vnpayTranId;
+                            newTransaction.TranStatus = vnp_TransactionStatus;
+                            newTransaction.TranMessage = invoiceResponse.Message;
+                            newTransaction.TranAmount = vnp_Amount;
+                            newTransaction.CreatedAt = DateTime.Now;
+                            newTransaction.PaymentId = payment.PaymentId;
 
-                        //tao transac
-                        transaction.TranscationId = Guid.NewGuid();
-                        transaction.TranPayload = vnpayTranId;
-                        transaction.TranStatus = vnp_TransactionStatus;
-                        transaction.TranMessage = invoiceResponse.Message;
-                        transaction.TranAmount = vnp_Amount;
-                        transaction.CreatedAt = DateTime.Now;
-                        transaction.PaymentId = payment.PaymentId;
+                            //cap nhat payment message
+                            payment.PaidAmout = vnp_Amount;
+                            payment.PaymentStatus = PaymentStatus.Succeed;
+                            payment.PaymentLastMessage = "Order payment successful";
+                            invoiceResponse.TranId = newTransaction?.TranscationId;
+
+                            //update trang thai order
+                            order.Status = PaymentStatus.Succeed;
+                        }
+                        else
+                        {
+                            invoiceResponse.TranId = currTran?.TranscationId;
+                        }
                     }
                     else
                     {
                         //Thanh toan khong thanh cong. Ma loi: vnp_ResponseCode
-                        var errorMessage = "Có lỗi xảy ra trong quá trình xử lý.Mã lỗi: " + vnp_ResponseCode;
+                        var errorMessage = "An error occurred during processing. Error code: " + vnp_ResponseCode;
+                        if(currTran is null)
+                        {
+                            payment.PaymentLastMessage = errorMessage;
+                            payment.PaymentStatus = PaymentStatus.Failed;
+                            order.Status = PaymentStatus.Failed;
+                            newTransaction.TranscationId = Guid.NewGuid();
+                            newTransaction.TranPayload = vnpayTranId;
+                            newTransaction.TranStatus = vnp_TransactionStatus;
+                            newTransaction.TranMessage = errorMessage;
+                            newTransaction.TranAmount = vnp_Amount;
+                            newTransaction.CreatedAt = DateTime.Now;
+                            newTransaction.PaymentId = payment.PaymentId;
+                            invoiceResponse.TranId = newTransaction?.TranscationId;
+                        }
+                        else
+                        {
+                            invoiceResponse.TranId = currTran?.TranscationId;
+                        }
                         throw new HttpStatusException(HttpStatusCode.InternalServerError, errorMessage);
                     }
                 }
                 else
                 {
-                    var errorMessage = "Có lỗi xảy ra trong quá trình xử lý.";
+                    var errorMessage = "An error occurred during processing.";
+                    if (currTran is null)
+                    {
+                        payment.PaymentLastMessage = errorMessage;
+                        payment.PaymentStatus = PaymentStatus.Failed;
+                        order.Status = PaymentStatus.Failed;
+                        newTransaction.TranscationId = Guid.NewGuid();
+                        newTransaction.TranPayload = vnpayTranId;
+                        newTransaction.TranStatus = vnp_TransactionStatus;
+                        newTransaction.TranMessage = errorMessage;
+                        newTransaction.TranAmount = vnp_Amount;
+                        newTransaction.CreatedAt = DateTime.Now;
+                        newTransaction.PaymentId = payment.PaymentId;
+                        invoiceResponse.TranId = newTransaction?.TranscationId;
+                    }
+                    else
+                    {
+                        invoiceResponse.TranId = currTran?.TranscationId;
+                    }
                     throw new HttpStatusException(HttpStatusCode.InternalServerError, errorMessage);
                 }
             }
-            await _context.PaymentTransactions.AddAsync(transaction, cancellationToken);
-            await _context.SaveChangesAsync(cancellationToken);
+            if(currTran is null)
+            {
+                await _context.PaymentTransactions.AddAsync(newTransaction, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
             return invoiceResponse;
         }
 
@@ -121,7 +188,7 @@ namespace EcommerceApi.Services.PaymentService
                                                             .Where(pd => pd.DestinationId == paymentDto.DestinationId)
                                                             .FirstOrDefaultAsync(cancellationToken)
                                                             ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Destinate not found.");
-            using (var transaction = await _context.Database.BeginTransactionAsync(cancellationToken))
+            using (var newTransaction = await _context.Database.BeginTransactionAsync(cancellationToken))
             {
                 try
                 {
@@ -169,6 +236,7 @@ namespace EcommerceApi.Services.PaymentService
                         PaymentDestinationId = paymentDto.DestinationId,
                         CreatedAt = DateTime.Now,
                         ExpiredAt = DateTime.Now.AddMinutes(15),
+                        PaymentStatus = "pending"
                     };
 
                     var newSign = new PaymentSignature()
@@ -238,7 +306,7 @@ namespace EcommerceApi.Services.PaymentService
 
                     await _context.SaveChangesAsync(cancellationToken);            
 
-                    await transaction.CommitAsync(cancellationToken);
+                    await newTransaction.CommitAsync(cancellationToken);
                     
                     return new PaymentResponse()
                     {
@@ -251,6 +319,108 @@ namespace EcommerceApi.Services.PaymentService
                     throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
                 }
             }
+        }
+
+        public async Task<IpnResponse> GetPaymentIpnAsync(HttpRequest httpRequest, CancellationToken cancellationToken)
+        {
+            IpnResponse ipnResponse = new();
+            if (httpRequest.Query.Count > 0)
+            {
+                string vnp_HashSecret = _config.vnp_HashSecret; //Secret key
+                var vnpayData = httpRequest.Query;
+                VnPayLibrary vnpay = new();
+                foreach (var s in vnpayData)
+                {
+                    //get all querystring data
+                    if (!string.IsNullOrEmpty(s.Key) && s.Key.StartsWith("vnp_"))
+                    {
+                        vnpay.AddResponseData(s.Key, s.Value!);
+                    }
+                }
+                //Lay danh sach tham so tra ve tu VNPAY
+                //vnp_TxnRef: Ma don hang merchant gui VNPAY tai command=pay    
+                //vnp_TransactionNo: Ma GD tai he thong VNPAY
+                //vnp_ResponseCode:Response code from VNPAY: 00: Thanh cong, Khac 00: Xem tai lieu
+                //vnp_SecureHash: HmacSHA512 cua du lieu tra ve
+
+                var orderId = vnpay.GetResponseData("vnp_TxnRef");
+                var vnp_Amount = Convert.ToDecimal(vnpay.GetResponseData("vnp_Amount")) / 100;
+                var vnpayTranId = vnpay.GetResponseData("vnp_TransactionNo");
+                string vnp_ResponseCode = vnpay.GetResponseData("vnp_ResponseCode");
+                string vnp_TransactionStatus = vnpay.GetResponseData("vnp_TransactionStatus");
+                string vnp_SecureHash = httpRequest.Query["vnp_SecureHash"]!;
+                bool checkSignature = vnpay.ValidateSignature(vnp_SecureHash, vnp_HashSecret);
+                Order? order = new();
+                if (checkSignature)
+                {
+                    //Cap nhat ket qua GD
+                    //Yeu cau: Truy van vao CSDL cua  Merchant => lay ra duoc OrderInfo
+                    //Giả sử OrderInfo lấy ra được như giả lập bên dưới
+                    order = await _context
+                                          .Orders
+                                          .Where(o => o.OrderId.ToString().ToLower().Equals(orderId.ToString().ToLower()))
+                                          .Include(o => o.OrderDetails)
+                                          .ThenInclude(od => od.Product)
+                                          .FirstOrDefaultAsync(cancellationToken);//get from DB
+                    //0: Cho thanh toan,1: da thanh toan,2: GD loi
+                    //Kiem tra tinh trang Order
+                    if (order != null)
+                    {
+                        if (order.TotalPrice == vnp_Amount)
+                        {
+                            if (order.Status == "pending")
+                            {
+                                if (vnp_ResponseCode == "00" && vnp_TransactionStatus == "00")
+                                {
+                                    //Thanh toan thanh cong
+                                    // => thực hiện cập nhật trạng thái order
+                                }
+                                else
+                                {
+                                    //Thanh toan khong thanh cong. Ma loi: vnp_ResponseCode
+                                    //  displayMsg.InnerText = "Có lỗi xảy ra trong quá trình xử lý.Mã lỗi: " + vnp_ResponseCode;
+                                    //log.InfoFormat("Thanh toan loi, OrderId={0}, VNPAY TranId={1},ResponseCode={2}",
+                                    //    orderId,
+                                    //    vnpayTranId, vnp_ResponseCode);
+                                }
+
+                                //Thêm code Thực hiện cập nhật vào Database 
+                                //Update Database
+                                ipnResponse.RspCode = "00";
+                                ipnResponse.Message = "Confirm Success";
+                            }
+                            else
+                            {
+                                ipnResponse.RspCode = "02";
+                                ipnResponse.Message = "Order already confirmed";
+                            }
+                        }
+                        else
+                        {
+                            ipnResponse.RspCode = "04";
+                            ipnResponse.Message = "invalid amount";                       
+                        }
+                    }
+                    else
+                    {
+                        ipnResponse.RspCode = "01";
+                        ipnResponse.Message = "Order not found";
+                    }
+                }
+                else
+                {
+
+                    ipnResponse.RspCode = "97";
+                    ipnResponse.Message = "Invalid signature";
+                    //log.InfoFormat("Invalid signature, InputData={0}", Request.RawUrl);
+                }
+            }
+            else
+            {
+                ipnResponse.RspCode = "99";
+                ipnResponse.Message = "Input data required";
+            }
+            return ipnResponse;
         }
     }
 }
