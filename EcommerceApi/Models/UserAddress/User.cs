@@ -1,4 +1,5 @@
 using EcommerceApi.Models.Order;
+using EcommerceApi.Models.Provider;
 using EcommerceApi.Models.Segment;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
@@ -26,4 +27,5 @@ public class User
     public List<Rate.Rate> Rates { get; set; } = new();
     public List<Order.Order> Orders { get; set; } = new();
     public List<UserSegment> UserSegments { get; set; } = new();
+    public List<UserLogins> UserLogins { get; set; } = new();
 }

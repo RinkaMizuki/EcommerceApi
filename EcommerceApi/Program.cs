@@ -1,5 +1,6 @@
 using System.Text;
 using Asp.Versioning;
+using EcommerceApi;
 using EcommerceApi.Config;
 using EcommerceApi.FilterBuilder;
 using EcommerceApi.Middleware;
@@ -27,9 +28,12 @@ using EcommerceApi.Services.SegmentService;
 using EcommerceApi.Services.SliderService;
 using EcommerceApi.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Org.BouncyCastle.Tls;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -122,27 +126,57 @@ builder.Services.AddAuthentication(options =>
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
+}).AddJwtBearer("Default", options =>
 {
     options.IncludeErrorDetails = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
         ValidateAudience = true,
-        ValidAudience = configuration.GetSection("SecretIssuer").Value,
-        ValidIssuer = configuration.GetSection("SecretIssuer").Value,
+        ValidAudience = configuration.GetSection("JwtConfiguration:ValidAudience").Value,
+        ValidIssuer = configuration.GetSection("JwtConfiguration:ValidIssuer").Value,
         ClockSkew = TimeSpan.Zero,
         IssuerSigningKey =
-            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configure.GetSection("SecretKeyToken").Value ?? ""))
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configure.GetSection("JwtConfiguration:Secret").Value ?? ""))
+    };
+}).AddJwtBearer("Google", options => 
+{
+    var certificates = Helpers.Certificates.Value;
+    options.IncludeErrorDetails = true;
+    options.TokenValidationParameters = new TokenValidationParameters()
+    {
+        ValidateIssuerSigningKey = true,
+        RequireSignedTokens = true,
+        ValidateIssuer = true,
+        ValidateActor = false,
+        ValidateAudience = true,
+        ValidAudience = configuration.GetSection("GoogleConfiguration:ClientId").Value,
+        ValidIssuer = configuration.GetSection("GoogleConfiguration:GoogleIssuer").Value,
+        IssuerSigningKeyResolver = (token, securityToken, kid, validationParameters) =>
+        {
+            return certificates
+            .Where(x => x.Key?.ToUpper() == kid?.ToUpper())
+            .Select(x => new X509SecurityKey(x.Value));
+        },
+        IssuerSigningKeys = certificates.Values.Select(x => new X509SecurityKey(x)),
+        ValidateLifetime = true,
+        RequireExpirationTime = true,
     };
 });
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy(IdentityData.AdminPolicyName,
-        policy => {
-            policy.RequireClaim("Role", IdentityData.AdminPolicyRole); 
-        });
+    options.DefaultPolicy = new AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .AddAuthenticationSchemes("Default", "Google")
+            .Build();
+
+    options.AddPolicy(IdentityData.AdminPolicyName, new AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .AddAuthenticationSchemes("Default")
+            .RequireClaim("Role", IdentityData.AdminPolicyRole)
+            .Build()
+    );
 });
 
 var app = builder.Build();

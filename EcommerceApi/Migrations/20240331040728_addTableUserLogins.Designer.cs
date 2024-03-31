@@ -4,6 +4,7 @@ using EcommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EcommerceApi.Migrations
 {
     [DbContext(typeof(EcommerceDbContext))]
-    partial class EcommerceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240331040728_addTableUserLogins")]
+    partial class addTableUserLogins
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -628,28 +631,6 @@ namespace EcommerceApi.Migrations
                     b.ToTable("ProductImages");
                 });
 
-            modelBuilder.Entity("EcommerceApi.Models.Provider.UserLogins", b =>
-                {
-                    b.Property<string>("ProviderKey")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("LoginProvider")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ProviderDisplayName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("ProviderKey", "LoginProvider");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserLogins");
-                });
-
             modelBuilder.Entity("EcommerceApi.Models.Rate.Rate", b =>
                 {
                     b.Property<int>("RateId")
@@ -1096,17 +1077,6 @@ namespace EcommerceApi.Migrations
                         .IsRequired();
 
                     b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("EcommerceApi.Models.Provider.UserLogins", b =>
-                {
-                    b.HasOne("EcommerceApi.Models.UserAddress.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Rate.Rate", b =>

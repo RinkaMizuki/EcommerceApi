@@ -3,6 +3,7 @@ using EcommerceApi.Models.Feedback;
 using EcommerceApi.Models.Order;
 using EcommerceApi.Models.Payment;
 using EcommerceApi.Models.Product;
+using EcommerceApi.Models.Provider;
 using EcommerceApi.Models.Segment;
 using EcommerceApi.Models.Slider;
 using EcommerceApi.Models.UserAddress;
@@ -36,6 +37,7 @@ public class EcommerceDbContext : DbContext
     public DbSet<PaymentNotification> PaymentNotifications { get; set; }
     public DbSet<PaymentSignature> PaymentSignatures { get; set; }
     public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+    public DbSet<UserLogins> UserLogins { get; set; }
 
     public EcommerceDbContext(DbContextOptions<EcommerceDbContext> dbContextOptions) : base(dbContextOptions)
     {
@@ -53,5 +55,6 @@ public class EcommerceDbContext : DbContext
         modelBuilder.Entity<OrderDetail>().HasKey(od => new { od.OrderId, od.ProductId });
         modelBuilder.Entity<UserSegment>().HasKey(us => new { us.SegmentId, us.UserId });
         modelBuilder.Entity<CouponCondition>().HasKey(cc => new { cc.ConditionId, cc.CouponId });
+        modelBuilder.Entity<UserLogins>().HasKey(ul => new { ul.ProviderKey, ul.LoginProvider });
     }
 }

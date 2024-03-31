@@ -1,4 +1,7 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using Newtonsoft.Json;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace EcommerceApi
 {
@@ -89,6 +92,17 @@ namespace EcommerceApi
         public static int CalcPriceSale(decimal price, int percent)
         {
             return Convert.ToInt32(Convert.ToInt32(price) * (1 - (float)percent / 100));
+        }
+        public static Lazy<Dictionary<string, X509Certificate2>> Certificates = new Lazy<Dictionary<string, X509Certificate2>>(FetchGoogleCertificates);
+        public static Dictionary<string, X509Certificate2> FetchGoogleCertificates()
+        {
+            using (var http = new HttpClient())
+            {
+                var json = http.GetStringAsync("https://www.googleapis.com/oauth2/v1/certs").Result;
+
+                var dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+                return dictionary.ToDictionary(x => x.Key, x => new X509Certificate2(Encoding.UTF8.GetBytes(x.Value)));
+            }
         }
     }
 }

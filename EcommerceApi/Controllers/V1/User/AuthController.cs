@@ -15,6 +15,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using EcommerceApi.ExtensionExceptions;
+using EcommerceApi.Models.Provider;
+using Azure.Core;
 
 namespace EcommerceApi.Controllers.V1.User
 {
@@ -173,7 +175,129 @@ namespace EcommerceApi.Controllers.V1.User
                 });
             }
         }
+        [HttpPost]
+        [Route("link-account")]
+        public async Task<IActionResult> LinkAccount([FromBody]ProviderDto providerDto, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var userLink = await _context
+                                        .Users
+                                        .Where(u => u.Email == providerDto.Email)
+                                        .Include(u => u.UserLogins)
+                                        .AsNoTracking()
+                                        .FirstOrDefaultAsync(cancellationToken);
 
+                var userLogins = await _context
+                                               .UserLogins
+                                               .Where(ul => ul.ProviderKey == providerDto.ProviderId)
+                                               .FirstOrDefaultAsync(cancellationToken);
+
+                if (userLogins != null)
+                {
+                    var user = await _context
+                                            .Users
+                                            .Where(u => u.UserId == userLogins.UserId)
+                                            .FirstOrDefaultAsync(cancellationToken);
+                    return Ok(new
+                    {
+                        statusCode = HttpStatusCode.OK,
+                        user = new UserResponse()
+                        {
+                            Id = user.UserId,
+                            UserName = user.UserName,
+                            Email = user.Email,
+                            Avatar = user.Avatar,
+                            BirthDate = user.BirthDate,
+                            EmailConfirm = user.EmailConfirm,
+                            IsActive = user.IsActive,
+                            Phone = user.Phone,
+                            Role = user.Role.ToLower(),
+                            Url = user.Url,
+                        },
+                    });
+                }
+
+                if (userLink != null && userLogins is null)
+                {
+                    var newProvider = new UserLogins()
+                    {
+                        UserId = userLink.UserId,
+                        LoginProvider = providerDto.ProviderName,
+                        ProviderDisplayName = providerDto.ProviderDisplayName,
+                        ProviderKey = providerDto.ProviderId,
+                    };
+                    await _context.UserLogins.AddAsync(newProvider, cancellationToken);
+                    await _context.SaveChangesAsync(cancellationToken);
+                    return Ok(new
+                    {
+                        statusCode = HttpStatusCode.OK,
+                        user = new UserResponse()
+                        {
+                            Id = userLink.UserId,
+                            UserName = userLink.UserName,
+                            Email = userLink.Email,
+                            Avatar = userLink.Avatar,
+                            BirthDate = userLink.BirthDate,
+                            EmailConfirm = userLink.EmailConfirm,
+                            IsActive = userLink.IsActive,
+                            Phone = userLink.Phone,
+                            Role = userLink.Role.ToLower(),
+                            Url = userLink.Url,
+                        },
+                    });
+                }
+                else
+                {
+                    var newUserWithProvider = new UserModel()
+                    {
+                        UserName = providerDto.Email,
+                        Email = providerDto.Email,
+                        BirthDate = DateTime.Now,
+                        CreatedAt = DateTime.Now,
+                        ModifiedAt = DateTime.Now,
+                        EmailConfirm = true,
+                        Url = providerDto.Picture,
+                        Avatar = "Provider Avatar",
+                    };
+                    var newProvider = new UserLogins()
+                    {
+                        User = newUserWithProvider,
+                        LoginProvider = providerDto.ProviderName,
+                        ProviderDisplayName = providerDto.ProviderDisplayName,
+                        ProviderKey = providerDto.ProviderId,
+                    };
+                    await _context.UserLogins.AddAsync(newProvider, cancellationToken);
+                    await _context.Users.AddAsync(newUserWithProvider, cancellationToken);
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                    var newUser = await _context
+                                                .Users
+                                                .Where(u => u.Email == providerDto.Email)
+                                                .FirstOrDefaultAsync(cancellationToken);
+                    return Ok(new
+                    {
+                        statusCode = HttpStatusCode.OK,
+                        user = new UserResponse()
+                        {
+                            Id = newUser.UserId,
+                            UserName = newUser.UserName,
+                            Email = newUser.Email,
+                            Avatar = newUser.Avatar,
+                            BirthDate = newUser.BirthDate,
+                            EmailConfirm = newUser.EmailConfirm,
+                            IsActive = newUser.IsActive,
+                            Phone = newUser.Phone,
+                            Role = newUser.Role.ToLower(),
+                            Url = newUser.Url,
+                        },
+                    });
+                }
+            }catch(Exception ex)
+            {
+                throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
         [HttpPost]
         [Route("login")]
         public async Task<IActionResult> Login(LoginDto loginDto)
@@ -299,7 +423,7 @@ namespace EcommerceApi.Controllers.V1.User
             Response.Cookies.Delete("refreshToken");
             return Ok(new
             {
-                message = "logout successfully",
+                message = "Logout successfully.",
                 statusCode = HttpStatusCode.OK
             });
         }
@@ -320,11 +444,11 @@ namespace EcommerceApi.Controllers.V1.User
         private string GenerateAccessToken(List<Claim> claims)
         {
             var securityKey =
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetSection("SecretKeyToken").Value ?? ""));
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetSection("JwtConfiguration:Secret").Value ?? ""));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var token = new JwtSecurityToken(
-                issuer: _config.GetSection("SecretIssuer").Value,
-                audience: _config.GetSection("SecretIssuer").Value,
+                issuer: _config.GetSection("JwtConfiguration:ValidIssuer").Value,
+                audience: _config.GetSection("JwtConfiguration:ValidAudience").Value,
                 expires: DateTime.Now.AddMinutes(30),
                 signingCredentials: credentials,
                 claims: claims
