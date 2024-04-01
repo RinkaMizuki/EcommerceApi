@@ -180,10 +180,11 @@ namespace EcommerceApi.Services.ProductService
 
                 var listProductQuery = _context
                     .Products
-                    .Include(p => p.ProductCategory)
                     .Include(p => p.ProductImages)
                     .Include(p => p.ProductColors)
-                    .Include(p => p.ProductRates);
+                    .Include(p => p.ProductRates)
+                    .Include(p => p.ProductCategory)
+                    .ThenInclude(pc => pc.ParentProductCategory);
 
                 var priceMaxDefault = Convert.ToInt32(listProductQuery.Max(p => p.Price));
                 //conditions filter
@@ -192,7 +193,7 @@ namespace EcommerceApi.Services.ProductService
                 var minPrice = string.IsNullOrEmpty(priceRange[0]) ? 0 : Convert.ToInt32(priceRange[0]);
                 var maxPrice = string.IsNullOrEmpty(priceRange[1]) ? priceMaxDefault : Convert.ToInt32(priceRange[1]);
 
-                var category = filterValues[filterValues.IndexOf(ProductFilterType.Category) + 1];
+                var category = filterValues[filterValues.IndexOf(ProductFilterType.Category) + 1].ToString().ToLower();
                 var searchValue = filterValues[filterValues.IndexOf(ProductFilterType.Search) + 1].ToLower();
                 var sale = filterValues[filterValues.IndexOf(ProductFilterType.Sale) + 1].ToLower();
                 var forYou = filterValues[filterValues.IndexOf(ProductFilterType.Suggest) + 1].ToLower();
@@ -243,8 +244,10 @@ namespace EcommerceApi.Services.ProductService
                                  || (minStock < 0
                                      && maxStock < 0))
                                 && (string.IsNullOrEmpty(category)
-                                    || p.CategoryId == Convert.ToInt32(category) ||
-                                    p.ProductCategory.ParentCategoryId == Convert.ToInt32(category))
+                                    || p.CategoryId.ToString().Equals(category) || p.ProductCategory.Title.ToLower().Equals(category) ||
+                                    p.ProductCategory.ParentCategoryId.ToString().Equals(category) 
+                                    || (p.ProductCategory.ParentProductCategory != null && p.ProductCategory.ParentProductCategory.Title.ToLower().Equals(category))
+                                   )
                                 && (string.IsNullOrEmpty(searchValue) ||
                                     p.Title.ToLower().Contains(searchValue.ToLower()))
                                 && (string.IsNullOrEmpty(sale) || ((sale == "hot" && p.Hot) ||
