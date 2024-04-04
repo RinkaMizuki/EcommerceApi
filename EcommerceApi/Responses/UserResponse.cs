@@ -1,3 +1,4 @@
+using EcommerceApi.Models.Provider;
 using EcommerceApi.Models.Segment;
 
 namespace EcommerceApi.Responses;
@@ -15,4 +16,5 @@ public class UserResponse
     public string Avatar { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
     public List<Segment> Segments { get; set; } = new List<Segment>();
+    public List<UserLogins> UserLogins { get; set; } = new();
 }

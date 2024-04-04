@@ -139,7 +139,7 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey =
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configure.GetSection("JwtConfiguration:Secret").Value ?? ""))
     };
-}).AddJwtBearer("Google", options => 
+}).AddJwtBearer("Google", options =>
 {
     var certificates = Helpers.Certificates.Value;
     options.IncludeErrorDetails = true;
@@ -162,13 +162,25 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         RequireExpirationTime = true,
     };
+}).AddJwtBearer("Facebook", options =>
+{
+    options.IncludeErrorDetails = true;
+    options.TokenValidationParameters = new TokenValidationParameters()
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidAudience = configuration.GetSection("FacebookConfiguration:AppId").Value,
+        ValidIssuer = configuration.GetSection("FacebookConfiguration:FacebookIssuer").Value,
+        IssuerSigningKey =
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configure.GetSection("FacebookConfiguration:AppSecret").Value ?? ""))
+    };
 });
 
 builder.Services.AddAuthorization(options =>
 {
     options.DefaultPolicy = new AuthorizationPolicyBuilder()
             .RequireAuthenticatedUser()
-            .AddAuthenticationSchemes("Default", "Google")
+            .AddAuthenticationSchemes("Default", "Google", "Facebook")
             .Build();
 
     options.AddPolicy(IdentityData.AdminPolicyName, new AuthorizationPolicyBuilder()

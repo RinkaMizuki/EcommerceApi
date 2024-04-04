@@ -17,6 +17,7 @@ using Microsoft.IdentityModel.Tokens;
 using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models.Provider;
 using Azure.Core;
+using System.Text.Json;
 
 namespace EcommerceApi.Controllers.V1.User
 {
@@ -176,8 +177,8 @@ namespace EcommerceApi.Controllers.V1.User
             }
         }
         [HttpPost]
-        [Route("link-account")]
-        public async Task<IActionResult> LinkAccount([FromBody]ProviderDto providerDto, CancellationToken cancellationToken)
+        [Route("link-google-account")]
+        public async Task<IActionResult> LinkGoogleAccount([FromBody]ProviderDto providerDto, CancellationToken cancellationToken)
         {
             try
             {
@@ -220,12 +221,15 @@ namespace EcommerceApi.Controllers.V1.User
 
                 if (userLink != null && userLogins is null)
                 {
+                    //nếu type login
                     var newProvider = new UserLogins()
                     {
                         UserId = userLink.UserId,
                         LoginProvider = providerDto.ProviderName,
                         ProviderDisplayName = providerDto.ProviderDisplayName,
                         ProviderKey = providerDto.ProviderId,
+                        AccountAvatar = providerDto.Picture,
+                        AccountName = providerDto.Email,
                     };
                     await _context.UserLogins.AddAsync(newProvider, cancellationToken);
                     await _context.SaveChangesAsync(cancellationToken);
@@ -246,9 +250,12 @@ namespace EcommerceApi.Controllers.V1.User
                             Url = userLink.Url,
                         },
                     });
+                    //nếu type link 
+                    //...
                 }
                 else
                 {
+                    //nếu type login
                     var newUserWithProvider = new UserModel()
                     {
                         UserName = providerDto.Email,
@@ -266,6 +273,8 @@ namespace EcommerceApi.Controllers.V1.User
                         LoginProvider = providerDto.ProviderName,
                         ProviderDisplayName = providerDto.ProviderDisplayName,
                         ProviderKey = providerDto.ProviderId,
+                        AccountAvatar = providerDto.Picture,
+                        AccountName = providerDto.Email,
                     };
                     await _context.UserLogins.AddAsync(newProvider, cancellationToken);
                     await _context.Users.AddAsync(newUserWithProvider, cancellationToken);
@@ -292,15 +301,135 @@ namespace EcommerceApi.Controllers.V1.User
                             Url = newUser.Url,
                         },
                     });
+                    //nếu type link  => lấy userId đang login
+                    //...
                 }
             }catch(Exception ex)
             {
                 throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
+
+        [HttpPost]
+        [Route("link-facebook-account")]
+        public async Task<IActionResult> LinkFacebookAccount([FromQuery]int? userId, [FromQuery]string facebookAccessToken, CancellationToken cancellationToken)
+        {
+            var userProfile  = await GetFacebookUserProfileAsync(facebookAccessToken);
+            if(userProfile is null)
+            {
+                return Unauthorized();
+            }
+            var userLogins = await _context.UserLogins.Where(ul => ul.ProviderKey == userProfile.Id).FirstOrDefaultAsync(cancellationToken);
+            if(userLogins != null)
+            {
+                //nếu type login
+                var user = await _context
+                                            .Users
+                                            .Where(u => u.UserId == userLogins.UserId)
+                                            .Include(u => u.UserLogins)
+                                            .FirstOrDefaultAsync(cancellationToken);
+                var accessToken = GenerateFacebookToken(userProfile);
+                var refreshToken = GenerateRefreshToken();
+                SetCookieRefreshToken(refreshToken);
+                refreshToken.User = user;
+                refreshToken.UserId = userLogins.UserId;
+                await _context.RefreshTokens.AddAsync(refreshToken,cancellationToken);
+                return Ok(new
+                {
+                    statusCode = HttpStatusCode.OK,
+                    user = new UserResponse()
+                    {
+                        Id = user.UserId,
+                        UserName = user.UserName,
+                        Email = user.Email,
+                        Avatar = user.Avatar,
+                        BirthDate = user.BirthDate,
+                        EmailConfirm = user.EmailConfirm,
+                        IsActive = user.IsActive,
+                        Phone = user.Phone,
+                        Role = user.Role.ToLower(),
+                        Url = user.Url,
+                        UserLogins = user.UserLogins
+                    },
+                    accessToken,
+                });
+                //nếu type link
+                //...
+            }
+            else
+            {
+                //nếu type login
+
+                var newUser = new UserModel()
+                {
+                    UserName = userProfile.Name,
+                    Email = userProfile.Email,
+                    BirthDate = DateTime.Now,
+                    CreatedAt = DateTime.Now,
+                    ModifiedAt = DateTime.Now,
+                    EmailConfirm = true,
+                    Url = userProfile.Picture.Data.Url,
+                    Avatar = "Provider Avatar",
+                };
+
+                var newProvider = new UserLogins()
+                {
+                    User = newUser,
+                    LoginProvider = "Facebook",
+                    ProviderDisplayName = "Facebook",
+                    ProviderKey = userProfile.Id,
+                    AccountAvatar = userProfile.Picture.Data.Url,
+                    AccountName = userProfile.Name,
+                };
+
+                var accessToken = GenerateFacebookToken(userProfile);
+                var refreshToken = GenerateRefreshToken();
+                SetCookieRefreshToken(refreshToken);
+                refreshToken.User = newUser;
+
+                await _context
+                              .UserLogins
+                              .AddAsync(newProvider, cancellationToken);
+                await _context
+                              .RefreshTokens
+                              .AddAsync(refreshToken, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                var currentUser = await _context
+                                                .Users
+                                                .Where(u => u.UserId == newUser.UserId)
+                                                .Include(u => u.UserLogins)
+                                                .FirstOrDefaultAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    statusCode = HttpStatusCode.OK,
+                    user = new UserResponse()
+                    {
+                        Id = currentUser.UserId,
+                        UserName = newUser.UserName,
+                        Email = newUser.Email,
+                        Avatar = newUser.Avatar,
+                        BirthDate = newUser.BirthDate,
+                        EmailConfirm = newUser.EmailConfirm,
+                        IsActive = newUser.IsActive,
+                        Phone = newUser.Phone,
+                        Role = newUser.Role.ToLower(),
+                        Url = newUser.Url,
+                        UserLogins = currentUser.UserLogins,
+                    },
+                    accessToken,
+                });
+
+                //nếu type link => lấy userId đang login
+                //...
+            }
+
+        }
+
         [HttpPost]
         [Route("login")]
-        public async Task<IActionResult> Login(LoginDto loginDto)
+        public async Task<IActionResult> Login(LoginDto loginDto, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(loginDto.UserNameOrEmail)
                 || string.IsNullOrEmpty(loginDto.Password))
@@ -314,7 +443,7 @@ namespace EcommerceApi.Controllers.V1.User
 
             var userLogin = await _context.Users
                 .Where(u => u.UserName == loginDto.UserNameOrEmail || u.Email == loginDto.UserNameOrEmail)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
             if (userLogin == null)
             {
                 return BadRequest(new
@@ -340,7 +469,7 @@ namespace EcommerceApi.Controllers.V1.User
             SetCookieRefreshToken(refreshToken);
             refreshToken.User = userLogin;
             refreshToken.UserId = userLogin.UserId;
-            await _context.RefreshTokens.AddAsync(refreshToken);
+            await _context.RefreshTokens.AddAsync(refreshToken, cancellationToken);
 
             await _context.SaveChangesAsync();
             return Ok(new
@@ -439,6 +568,42 @@ namespace EcommerceApi.Controllers.V1.User
                 new("Role", user.Role),
             };
             return claims;
+        }
+        private async Task<FacebookUser?> GetFacebookUserProfileAsync(string accessToken)
+        {
+            var httpClient = new HttpClient();
+            var response = await httpClient.GetAsync($"https://graph.facebook.com/v19.0/me?fields=id,name,email,picture&access_token={accessToken}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var userJson = await response.Content.ReadAsStringAsync();
+                var facebookUser = JsonSerializer.Deserialize<FacebookUser>(userJson);
+                return facebookUser;
+            }
+
+            return null;
+        }
+        private string GenerateFacebookToken(FacebookUser facebookUser)
+        {
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, facebookUser.Id),
+                new Claim(JwtRegisteredClaimNames.Name, facebookUser.Name),
+                new Claim(JwtRegisteredClaimNames.Email, facebookUser.Email),
+                new Claim("Picture", JsonSerializer.Serialize(facebookUser.Picture)),
+            };
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetSection("FacebookConfiguration:AppSecret").Value ?? ""));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _config.GetSection("FacebookConfiguration:FacebookIssuer").Value,
+                audience: _config.GetSection("FacebookConfiguration:AppId").Value,
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(30),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         private string GenerateAccessToken(List<Claim> claims)

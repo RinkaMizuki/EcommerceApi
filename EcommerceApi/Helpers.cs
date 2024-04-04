@@ -7,6 +7,7 @@ namespace EcommerceApi
 {
     public static class Helpers
     {
+        public static Lazy<Dictionary<string, X509Certificate2>> Certificates = new Lazy<Dictionary<string, X509Certificate2>>(FetchGoogleCertificates);
         public static List<T> ParseString<T>(string list)
         {
             if (string.IsNullOrEmpty(list)) return new List<T>();
@@ -93,7 +94,6 @@ namespace EcommerceApi
         {
             return Convert.ToInt32(Convert.ToInt32(price) * (1 - (float)percent / 100));
         }
-        public static Lazy<Dictionary<string, X509Certificate2>> Certificates = new Lazy<Dictionary<string, X509Certificate2>>(FetchGoogleCertificates);
         public static Dictionary<string, X509Certificate2> FetchGoogleCertificates()
         {
             using (var http = new HttpClient())
