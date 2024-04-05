@@ -171,6 +171,7 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = configuration.GetSection("FacebookConfiguration:AppId").Value,
         ValidIssuer = configuration.GetSection("FacebookConfiguration:FacebookIssuer").Value,
+        ClockSkew = TimeSpan.Zero, //apply when validate time of token
         IssuerSigningKey =
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configure.GetSection("FacebookConfiguration:AppSecret").Value ?? ""))
     };
@@ -180,7 +181,7 @@ builder.Services.AddAuthorization(options =>
 {
     options.DefaultPolicy = new AuthorizationPolicyBuilder()
             .RequireAuthenticatedUser()
-            .AddAuthenticationSchemes("Default", "Google", "Facebook")
+            .AddAuthenticationSchemes("Default", "Facebook", "Google")
             .Build();
 
     options.AddPolicy(IdentityData.AdminPolicyName, new AuthorizationPolicyBuilder()

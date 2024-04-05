@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace EcommerceApi.Models.UserAddress
 {
@@ -8,6 +9,7 @@ namespace EcommerceApi.Models.UserAddress
         [Key]
         public Guid Id { get; set; }
         [ForeignKey("UserId")]
+        [JsonIgnore]
         public User User { get; set; }
         public int UserId { get; set; }
         public string Name { get ; set; } = string.Empty;
