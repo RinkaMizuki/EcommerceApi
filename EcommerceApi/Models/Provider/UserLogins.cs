@@ -15,5 +15,6 @@ namespace EcommerceApi.Models.Provider
         [ForeignKey("UserId")]
         [JsonIgnore]
         public User User { get; set; }
+        public bool IsUnlink { get; set; } = true;
     }
 }

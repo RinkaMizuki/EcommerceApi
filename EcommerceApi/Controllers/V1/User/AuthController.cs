@@ -282,6 +282,7 @@ namespace EcommerceApi.Controllers.V1.User
                         ProviderKey = providerDto.ProviderId,
                         AccountAvatar = providerDto.Picture,
                         AccountName = providerDto.Email,
+                        IsUnlink = false,
                     };
                     await _context.UserLogins.AddAsync(newProvider, cancellationToken);
                     await _context.Users.AddAsync(newUserWithProvider, cancellationToken);
@@ -382,7 +383,7 @@ namespace EcommerceApi.Controllers.V1.User
             await _context.SaveChangesAsync(cancellationToken);
             return StatusCode(204, new
             {
-                message = "Delete provider success",
+                message = "Delete provider successfully",
                 statusCode = 204,
             });
         }
@@ -589,19 +590,19 @@ namespace EcommerceApi.Controllers.V1.User
             {
                 return BadRequest(new
                 {
-                    message = "login failed",
+                    message = "Login failed.",
                     statusCode = HttpStatusCode.BadRequest,
                 });
             }
-
+            //check confirm email and username, email, password
             var userLogin = await _context.Users
-                .Where(u => u.UserName == loginDto.UserNameOrEmail || u.Email == loginDto.UserNameOrEmail)
+                .Where(u => (u.UserName == loginDto.UserNameOrEmail || u.Email == loginDto.UserNameOrEmail) && u.EmailConfirm)
                 .FirstOrDefaultAsync(cancellationToken);
             if (userLogin == null)
             {
                 return BadRequest(new
                 {
-                    message = "login failed",
+                    message = "Login failed.",
                     statusCode = HttpStatusCode.BadRequest,
                 });
             }
@@ -612,7 +613,7 @@ namespace EcommerceApi.Controllers.V1.User
             {
                 return BadRequest(new
                 {
-                    message = "login failed",
+                    message = "Login failed.",
                     statusCode = HttpStatusCode.BadRequest,
                 });
             }
@@ -622,7 +623,10 @@ namespace EcommerceApi.Controllers.V1.User
             SetCookieRefreshToken(refreshToken);
             refreshToken.User = userLogin;
             refreshToken.UserId = userLogin.UserId;
-            await _context.RefreshTokens.AddAsync(refreshToken, cancellationToken);
+
+            await _context
+                          .RefreshTokens
+                          .AddAsync(refreshToken, cancellationToken);
 
             await _context.SaveChangesAsync(cancellationToken);
             return Ok(new
