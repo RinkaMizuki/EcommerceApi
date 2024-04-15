@@ -142,13 +142,13 @@ namespace EcommerceApi.Services.FeedbackService
                 var filterSince = filterValues[filterValues.IndexOf(RateFilterType.Since) + 1];
 
                 var filters = _rateFilterBuilder
-                    .AddSearchFilter(filterSearch)
-                    .AddStatusFilter(filterStatus)
-                    .AddUserFilter(filterUser)
-                    .AddProductFilter(filterProduct)
-                    .AddBeforeDateFilter(filterBefore)
-                    .AddSinceDateFilter(filterSince)
-                    .Build();
+                                                .AddSearchFilter(filterSearch)
+                                                .AddStatusFilter(filterStatus)
+                                                .AddUserFilter(filterUser)
+                                                .AddProductFilter(filterProduct)
+                                                .AddBeforeDateFilter(filterBefore)
+                                                .AddSinceDateFilter(filterSince)
+                                                .Build();
 
                 listRate = listRate.Where(filters).ToList();
 

@@ -1,6 +1,8 @@
 using System.Text;
 using Asp.Versioning;
 using EcommerceApi;
+using EcommerceApi.Attributes;
+using EcommerceApi.Authentication;
 using EcommerceApi.Config;
 using EcommerceApi.FilterBuilder;
 using EcommerceApi.Middleware;
@@ -26,6 +28,7 @@ using EcommerceApi.Services.PaymentService;
 using EcommerceApi.Services.ProductService;
 using EcommerceApi.Services.SegmentService;
 using EcommerceApi.Services.SliderService;
+using EcommerceApi.Services.SsoService;
 using EcommerceApi.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -80,29 +83,32 @@ builder.Services.AddDetection();
 builder.Services.AddSwaggerGen(options => {
     options.OperationFilter<SwaggerDefaultValues>();
 });
-builder.Services.AddTransient<JwtMiddleware>();
-builder.Services.AddTransient<IUserService, UserService>();
-builder.Services.AddTransient<ICategoryService, CategoryService>();
-builder.Services.AddTransient<ICloudflareClientService, CloudflareClientService>();
+builder.Services.AddScoped<JwtMiddleware>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ICloudflareClientService, CloudflareClientService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.Decorate<IProductService, CacheProductService>(); // ensure receives the expected ProductService
-builder.Services.AddTransient<IRateService, RateService>();
-builder.Services.AddTransient<IFeedbackService, FeedbackService>();
-builder.Services.AddTransient<IContactService, ContactService>();
-builder.Services.AddTransient<ICouponService, CouponService>();
-builder.Services.AddTransient<ISegmentService, SegmentService>();
-builder.Services.AddTransient<IOrderService, OrderService>();
-builder.Services.AddTransient<ISliderService, SliderService>();
-builder.Services.AddTransient<IAddressService, AddressService>();
-builder.Services.AddTransient<IPaymentService, PaymentService>();
-builder.Services.AddTransient<IMerchantService, MerchantService>();
-builder.Services.AddTransient<IDestinateService, DestinateService>();
+builder.Services.AddScoped<IRateService, RateService>();
+builder.Services.AddScoped<IFeedbackService, FeedbackService>();
+builder.Services.AddScoped<IContactService, ContactService>();
+builder.Services.AddScoped<ICouponService, CouponService>();
+builder.Services.AddScoped<ISegmentService, SegmentService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<ISliderService, SliderService>();
+builder.Services.AddScoped<IAddressService, AddressService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IMerchantService, MerchantService>();
+builder.Services.AddScoped<IDestinateService, DestinateService>();
 builder.Services.AddScoped<RateFilterBuilder>();
-builder.Services.AddTransient<IConfirmService, ConfirmService>();
+builder.Services.AddScoped<ProductFilterBuilder>();
+builder.Services.AddScoped<IConfirmService, ConfirmService>();
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
-builder.Services.AddTransient<IMailService, MailService>();
-builder.Services.AddTransient<IOpenaiService, OpenaiService>();
-
+builder.Services.AddScoped<IMailService, MailService>();
+builder.Services.AddScoped<IOpenaiService, OpenaiService>();
+builder.Services.AddScoped<ISsoService, SsoService>();
+builder.Services.AddScoped<IAuthorizationHandler, AuthorizationPermissionHandler>();
+builder.Services.AddHostedService<ExpiredUserCleanupService>();
 //binding config appsettings.json
 builder.Services.Configure<CloudflareR2Config>(configuration.GetSection("CloudflareR2Config"));
 builder.Services.Configure<EmailConfig>(configuration.GetSection("EmailConfiguration"));
@@ -173,11 +179,15 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey =
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configure.GetSection("FacebookConfiguration:AppSecret").Value ?? ""))
     };
-});
+})
+.AddScheme<TokenAuthSchemeOptions, AuthenticationUserHandler>(
+    "SsoSchema",
+    opts => { }
+);
 
 builder.Services.AddAuthorization(options =>
 {
-    options.DefaultPolicy = new AuthorizationPolicyBuilder()
+    options.DefaultPolicy = new AuthorizationPolicyBuilder() //default [Authorize]
             .RequireAuthenticatedUser()
             .AddAuthenticationSchemes("Default", "Facebook", "Google")
             .Build();
@@ -187,6 +197,12 @@ builder.Services.AddAuthorization(options =>
             .AddAuthenticationSchemes("Default")
             .RequireClaim("Role", IdentityData.AdminPolicyRole)
             .Build()
+    );
+    options.AddPolicy("SsoAdmin", new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .AddAuthenticationSchemes("SsoSchema")
+        .AddRequirements(new AdminAccessApiRequirement(configuration))
+        .Build()
     );
 });
 

@@ -54,7 +54,7 @@ namespace EcommerceApi.Controllers.V1.User
             {
                 return BadRequest(new
                 {
-                    message = "register failed",
+                    message = "Register failed",
                     statusCode = HttpStatusCode.BadRequest,
                 });
             }
@@ -668,7 +668,7 @@ namespace EcommerceApi.Controllers.V1.User
 
             var user = await _context.Users.Where(u => u.UserId == currentRt.UserId).FirstOrDefaultAsync(cancellationToken);
             if (user == null) return Unauthorized();
-            if (currentRt.Expries < DateTime.Now)
+            if (currentRt.Expires < DateTime.Now)
             {
                 return Unauthorized();
             }
@@ -677,7 +677,7 @@ namespace EcommerceApi.Controllers.V1.User
             var rt = GenerateRefreshToken();
             SetCookieRefreshToken(rt);
 
-            currentRt.Expries = rt.Expries;
+            currentRt.Expires = rt.Expires;
             currentRt.Token = rt.Token;
             currentRt.CreatedAt = rt.CreatedAt;
 
@@ -784,7 +784,7 @@ namespace EcommerceApi.Controllers.V1.User
             var refreshToken = new RefreshToken()
             {
                 Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
-                Expries = DateTime.Now.AddDays(7),
+                Expires = DateTime.Now.AddDays(7),
                 CreatedAt = DateTime.Now
             };
             return refreshToken;

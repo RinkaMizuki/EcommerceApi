@@ -11,6 +11,7 @@ using EcommerceApi.Constant;
 //using SortOrder = EcommerceApi.Constant.SortOrder;
 //using System.Collections.Generic;
 using System.Linq.Dynamic.Core;
+using EcommerceApi.FilterBuilder;
 
 namespace EcommerceApi.Services.ProductService
 {
@@ -18,11 +19,12 @@ namespace EcommerceApi.Services.ProductService
     {
         private readonly EcommerceDbContext _context;
         private readonly ICloudflareClientService _cloudflareClient;
-
-        public ProductService(EcommerceDbContext context, ICloudflareClientService cloudflareClient)
+        private readonly ProductFilterBuilder _productFilter;
+        public ProductService(EcommerceDbContext context, ICloudflareClientService cloudflareClient, ProductFilterBuilder productFilterBuilder)
         {
             _context = context;
             _cloudflareClient = cloudflareClient;
+            _productFilter = productFilterBuilder;
         }
 
         public async Task<bool> DeleteProductAsync(Guid productId, CancellationToken userCancellationToken)
@@ -180,8 +182,6 @@ namespace EcommerceApi.Services.ProductService
 
                 var perPage = rangeValues[1] - rangeValues[0] + 1;
                 var currentPage = Convert.ToInt32(Math.Ceiling((double)rangeValues[0] / perPage)) + 1;
-                //var sortBy = sortValues[0].ToLower();
-                //var sortType = sortValues[1].ToLower();
 
                 var listProductQuery = _context
                     .Products
@@ -241,26 +241,16 @@ namespace EcommerceApi.Services.ProductService
                         .ToList();
                 }
 
+                var filters = _productFilter
+                                            .AddPriceSaleFilter(minPrice, maxPrice)
+                                            .AddSearchFilter(searchValue)
+                                            .AddSaleFilter(sale)
+                                            .AddCategoryFilter(category)
+                                            .AddQuantityFilter(minStock, maxStock)
+                                            .Build();
+
                 listProduct = listProduct
-                    .Where(p => ((p.Quantity >= minStock
-                                  && p.Quantity <= maxStock)
-                                 || (p.Quantity >= minStock
-                                     && maxStock < 0)
-                                 || (minStock < 0
-                                     && maxStock < 0))
-                                && (string.IsNullOrEmpty(category)
-                                    || p.CategoryId.ToString().Equals(category) || p.ProductCategory.Title.ToLower().Equals(category) ||
-                                    p.ProductCategory.ParentCategoryId.ToString().Equals(category) 
-                                    || (p.ProductCategory.ParentProductCategory != null && p.ProductCategory.ParentProductCategory.Title.ToLower().Equals(category))
-                                   )
-                                && (string.IsNullOrEmpty(searchValue) ||
-                                    p.Title.ToLower().Contains(searchValue.ToLower()))
-                                && (string.IsNullOrEmpty(sale) || ((sale == "hot" && p.Hot) ||
-                                                                   (sale == "flashsale" && p.FlashSale) ||
-                                                                   (sale == "upcoming" && p.Upcoming))
-                                ) 
-                                && ((Helpers.CalcPriceSale(p.Price, p.Discount) >= minPrice && Helpers.CalcPriceSale(p.Price, p.Discount) <= maxPrice))
-                    ).ToList();
+                    .Where(filters).ToList();
 
                 if(favorites.Count > 0)
                 {
@@ -280,29 +270,6 @@ namespace EcommerceApi.Services.ProductService
                 {
                     listProduct = listProduct.AsQueryable().OrderBy(sortString).ToList();
                 }
-                //switch (sortType)
-                //{
-                //    case "asc":
-                //        listProduct = sortBy switch
-                //        {
-                //            SortOrder.SortById => listProduct.OrderBy(p => p.ProductId).ToList(),
-                //            SortOrder.SortByStock => listProduct.OrderBy(p => p.Quantity).ToList(),
-                //            SortOrder.SortByTitle => listProduct.OrderBy(p => p.Title).ToList(),
-                //            SortOrder.SortByPrice => listProduct.OrderBy(p => Helpers.CalcPriceSale(p.Price, p.Discount)).ToList(),
-                //            _ => listProduct
-                //        };
-                //        break;
-                //    case "desc":
-                //        listProduct = sortBy switch
-                //        {
-                //            SortOrder.SortById => listProduct.OrderByDescending(p => p.ProductId).ToList(),
-                //            SortOrder.SortByStock => listProduct.OrderByDescending(p => p.Quantity).ToList(),
-                //            SortOrder.SortByTitle => listProduct.OrderByDescending(p => p.Title).ToList(),
-                //            SortOrder.SortByPrice => listProduct.OrderByDescending(p => Helpers.CalcPriceSale(p.Price, p.Discount)).ToList(),
-                //            _ => listProduct
-                //        };
-                //        break;
-                //}
 
                 var totalProduct = listProduct.Count;
 

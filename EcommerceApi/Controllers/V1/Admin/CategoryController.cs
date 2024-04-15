@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using EcommerceApi.Dtos.Admin;
 using EcommerceApi.Models.IdentityData;
+using EcommerceApi.Services;
 using EcommerceApi.Services.CategoryService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,6 @@ namespace EcommerceApi.Controllers.V1.Admin
     public class CategoryController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
-
         public CategoryController(ICategoryService categoryService)
         {
             _categoryService = categoryService;
