@@ -42,14 +42,16 @@ public class UserService : IUserService
             {
                 UserName = userAdmin.UserName,
                 Email = userAdmin.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(userAdmin.Password),
+                PasswordHash = userAdmin.Password,
                 CreatedAt = DateTime.Now,
                 ModifiedAt = DateTime.Now,
-                Role = userAdmin.Role,
+                Role = userAdmin.Role.ToLower(),
                 Phone = userAdmin.Phone!,
                 BirthDate = userAdmin.BirthDate,
                 IsActive = userAdmin.IsActive,
                 EmailConfirm = userAdmin.EmailConfirm,
+                Avatar = userAdmin.Avatar,
+                Url = userAdmin.Url,
             };
             await _context.Users.AddAsync(newUser, userCancellationToken);
             await _context.SaveChangesAsync(userCancellationToken);
@@ -328,18 +330,18 @@ public class UserService : IUserService
                                             ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User profile not found.");
             if(!string.IsNullOrEmpty(userProfileDto.Password))
             {
-                var currentPasswordHash = BCrypt.Net.BCrypt.Verify(userProfileDto.Password, userProfile.PasswordHash);
-                if (!currentPasswordHash)
-                {
-                    throw new HttpStatusException(HttpStatusCode.BadRequest, "Current password incorrect !");
-                }
+                //var currentPasswordHash = BCrypt.Net.BCrypt.Verify(userProfileDto.Password, userProfile.PasswordHash);
+                //if (!currentPasswordHash)
+                //{
+                //    throw new HttpStatusException(HttpStatusCode.BadRequest, "Current password incorrect !");
+                //}
             }
             
-            if(!string.IsNullOrEmpty(userProfileDto.NewPassword))
-            {
-                var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(userProfileDto.NewPassword);
-                userProfile.PasswordHash = newPasswordHash;
-            }
+            //if(!string.IsNullOrEmpty(userProfileDto.NewPassword))
+            //{
+            //    var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(userProfileDto.NewPassword);
+            //    userProfile.PasswordHash = newPasswordHash;
+            //}
 
             if (userProfileDto?.Avatar?.FileName != userProfile.Avatar && userProfileDto?.Avatar is not null)
             {
@@ -457,10 +459,10 @@ public class UserService : IUserService
             updateUser.Phone = userAdminDto.Phone ?? "";
             updateUser.BirthDate = Convert.ToDateTime(userAdminDto.BirthDate.ToLongDateString());
             updateUser.ModifiedAt = DateTime.Now;
-            if (!string.IsNullOrEmpty(userAdminDto.Password) && currentUserRole == "admin")
-            {
-                updateUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(userAdminDto.Password);
-            }
+            //if (!string.IsNullOrEmpty(userAdminDto.Password) && currentUserRole == "admin")
+            //{
+            //    updateUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(userAdminDto.Password);
+            //}
 
             updateUser.EmailConfirm = userAdminDto.EmailConfirm;
             updateUser.IsActive = userAdminDto.IsActive;

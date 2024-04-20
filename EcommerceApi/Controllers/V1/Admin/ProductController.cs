@@ -10,7 +10,8 @@ namespace EcommerceApi.Controllers.V1.Admin
 {
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/Admin/")]
-    [Authorize(IdentityData.AdminPolicyName)]
+    //[Authorize(IdentityData.AdminPolicyName)]
+    [Authorize(Policy = "SsoAdmin")]
     [ApiController]
     public class ProductController : ControllerBase
     {

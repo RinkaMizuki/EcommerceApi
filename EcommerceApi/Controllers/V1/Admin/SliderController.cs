@@ -11,7 +11,8 @@ namespace EcommerceApi.Controllers.V1.Admin
     [Route("api/v{version:apiVersion}/Admin")]
     [ApiVersion("1.0")]
     [ApiController]
-    [Authorize(Policy = IdentityData.AdminPolicyName)]
+    //[Authorize(Policy = IdentityData.AdminPolicyName)]
+    [Authorize(Policy = "SsoAdmin")]
     public class SliderController : ControllerBase
     {
         private readonly ISliderService _sliderService;

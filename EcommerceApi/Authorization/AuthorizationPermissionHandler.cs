@@ -6,13 +6,13 @@ namespace EcommerceApi.Attributes
     public class AuthorizationPermissionHandler : IAuthorizationHandler
     {
         private readonly IHttpContextAccessor _httpContext;
-        public AuthorizationPermissionHandler(IHttpContextAccessor httpContext, ISsoService ssoService)
+        public AuthorizationPermissionHandler(IHttpContextAccessor httpContext)
         {
             _httpContext = httpContext;
         }
         private bool IsAdmin(IAuthorizationRequirement requirement)
         {
-            var claimsPrincipal = _httpContext.HttpContext!.User;
+           var claimsPrincipal = _httpContext.HttpContext!.User;
             var require = requirement as AdminAccessApiRequirement;
             var correctRole = claimsPrincipal.HasClaim(c =>
                 c.Type == "Role" && c.Value == require!.Role

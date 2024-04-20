@@ -8,7 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace EcommerceApi.Controllers.V1.Admin
 {
     [ApiVersion("1.0")]
-    [Authorize(Policy = IdentityData.AdminPolicyName)]
+    //[Authorize(Policy = IdentityData.AdminPolicyName)]
+    [Authorize(Policy = "SsoAdmin")]
     [Route("api/v{version:apiVersion}/Admin/")]
     [ApiController]
     public class OrderController : ControllerBase

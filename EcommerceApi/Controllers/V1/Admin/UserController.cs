@@ -11,7 +11,8 @@ using Azure.Core;
 
 namespace EcommerceApi.Controllers.V1.Admin
 {
-    [Authorize(Policy = IdentityData.AdminPolicyRole)]
+    //[Authorize(Policy = IdentityData.AdminPolicyRole)]
+    [Authorize(Policy = "SsoAdmin")]
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/Admin/")]
     [ApiController]

@@ -16,9 +16,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models.Provider;
-using Azure.Core;
 using System.Text.Json;
-using MimeKit.Encodings;
 
 namespace EcommerceApi.Controllers.V1.User
 {
@@ -45,39 +43,39 @@ namespace EcommerceApi.Controllers.V1.User
         [Route("register")]
         public async Task<IActionResult> Register(UserDto userDto, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(userDto.UserName)
-                || string.IsNullOrEmpty(userDto.Email)
-                || string.IsNullOrEmpty(userDto.Password)
-                || string.IsNullOrEmpty(userDto.ConfirmPassword)
-                || userDto.Password != userDto.ConfirmPassword
-               )
-            {
-                return BadRequest(new
-                {
-                    message = "Register failed",
-                    statusCode = HttpStatusCode.BadRequest,
-                });
-            }
+            //if (string.IsNullOrEmpty(userDto.UserName)
+            //    || string.IsNullOrEmpty(userDto.Email)
+            //    || string.IsNullOrEmpty(userDto.Password)
+            //    || string.IsNullOrEmpty(userDto.ConfirmPassword)
+            //    || userDto.Password != userDto.ConfirmPassword
+            //   )
+            //{
+            //    return BadRequest(new
+            //    {
+            //        message = "Register failed",
+            //        statusCode = HttpStatusCode.BadRequest,
+            //    });
+            //}
 
-            var isAccountExist =
-                await _context.Users.AnyAsync(u => u.UserName == userDto.UserName || u.Email == userDto.Email,
-                    cancellationToken);
-            if (isAccountExist)
-            {
-                return new JsonResult(new
-                {
-                    message =
-                        "The request could not be completed due to a conflict with the current state of the resource.",
-                    statusCode = HttpStatusCode.Conflict,
-                });
-            }
+            //var isAccountExist =
+            //    await _context.Users.AnyAsync(u => u.UserName == userDto.UserName || u.Email == userDto.Email,
+            //        cancellationToken);
+            //if (isAccountExist)
+            //{
+            //    return new JsonResult(new
+            //    {
+            //        message =
+            //            "The request could not be completed due to a conflict with the current state of the resource.",
+            //        statusCode = HttpStatusCode.Conflict,
+            //    });
+            //}
 
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
+            //var passwordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
             var newUser = new UserModel()
             {
                 UserName = userDto.UserName,
                 Email = userDto.Email,
-                PasswordHash = passwordHash,
+                //PasswordHash = passwordHash,
                 BirthDate = DateTime.Now,
                 CreatedAt = DateTime.Now,
                 ModifiedAt = DateTime.Now,
@@ -232,6 +230,7 @@ namespace EcommerceApi.Controllers.V1.User
                         ProviderKey = providerDto.ProviderId,
                         AccountAvatar = providerDto.Picture,
                         AccountName = providerDto.Email,
+                        IsUnlink = false,
                     };
                     await _context.UserLogins.AddAsync(newProvider, cancellationToken);
                     await _context.SaveChangesAsync(cancellationToken);
@@ -458,7 +457,7 @@ namespace EcommerceApi.Controllers.V1.User
                     }
                     var newUser = new UserModel()
                     {
-                        UserName = userProfile.Name,
+                        UserName = userProfile.Email,
                         Email = userProfile.Email,
                         BirthDate = DateTime.Now,
                         CreatedAt = DateTime.Now,
@@ -581,151 +580,151 @@ namespace EcommerceApi.Controllers.V1.User
 
         }
 
-        [HttpPost]
-        [Route("login")]
-        public async Task<IActionResult> Login(LoginDto loginDto, CancellationToken cancellationToken)
-        {
-            if (string.IsNullOrEmpty(loginDto.UserNameOrEmail)
-                || string.IsNullOrEmpty(loginDto.Password))
-            {
-                return BadRequest(new
-                {
-                    message = "Login failed.",
-                    statusCode = HttpStatusCode.BadRequest,
-                });
-            }
-            //check confirm email and username, email, password
-            var userLogin = await _context.Users
-                .Where(u => (u.UserName == loginDto.UserNameOrEmail || u.Email == loginDto.UserNameOrEmail) && u.EmailConfirm)
-                .FirstOrDefaultAsync(cancellationToken);
-            if (userLogin == null)
-            {
-                return BadRequest(new
-                {
-                    message = "Login failed.",
-                    statusCode = HttpStatusCode.BadRequest,
-                });
-            }
+        //[HttpPost]
+        //[Route("login")]
+        //public async Task<IActionResult> Login(LoginDto loginDto, CancellationToken cancellationToken)
+        //{
+        //    if (string.IsNullOrEmpty(loginDto.UserNameOrEmail)
+        //        || string.IsNullOrEmpty(loginDto.Password))
+        //    {
+        //        return BadRequest(new
+        //        {
+        //            message = "Login failed.",
+        //            statusCode = HttpStatusCode.BadRequest,
+        //        });
+        //    }
+        //    //check confirm email and username, email, password
+        //    var userLogin = await _context.Users
+        //        .Where(u => (u.UserName == loginDto.UserNameOrEmail || u.Email == loginDto.UserNameOrEmail) && u.EmailConfirm)
+        //        .FirstOrDefaultAsync(cancellationToken);
+        //    if (userLogin == null)
+        //    {
+        //        return BadRequest(new
+        //        {
+        //            message = "Login failed.",
+        //            statusCode = HttpStatusCode.BadRequest,
+        //        });
+        //    }
 
-            var isMatchPassword = BCrypt.Net.BCrypt.Verify(loginDto.Password, userLogin.PasswordHash);
-            if (!isMatchPassword ||
-                userLogin.UserName != loginDto.UserNameOrEmail && userLogin.Email != loginDto.UserNameOrEmail)
-            {
-                return BadRequest(new
-                {
-                    message = "Login failed.",
-                    statusCode = HttpStatusCode.BadRequest,
-                });
-            }
+        //    var isMatchPassword = BCrypt.Net.BCrypt.Verify(loginDto.Password, userLogin.PasswordHash);
+        //    if (!isMatchPassword ||
+        //        userLogin.UserName != loginDto.UserNameOrEmail && userLogin.Email != loginDto.UserNameOrEmail)
+        //    {
+        //        return BadRequest(new
+        //        {
+        //            message = "Login failed.",
+        //            statusCode = HttpStatusCode.BadRequest,
+        //        });
+        //    }
 
-            var accessToken = GenerateAccessToken(GetListClaim(userLogin));
-            var refreshToken = GenerateRefreshToken();
-            SetCookieRefreshToken(refreshToken);
-            refreshToken.User = userLogin;
-            refreshToken.UserId = userLogin.UserId;
+        //    var accessToken = GenerateAccessToken(GetListClaim(userLogin));
+        //    var refreshToken = GenerateRefreshToken();
+        //    SetCookieRefreshToken(refreshToken);
+        //    refreshToken.User = userLogin;
+        //    refreshToken.UserId = userLogin.UserId;
 
-            await _context
-                          .RefreshTokens
-                          .AddAsync(refreshToken, cancellationToken);
+        //    await _context
+        //                  .RefreshTokens
+        //                  .AddAsync(refreshToken, cancellationToken);
 
-            await _context.SaveChangesAsync(cancellationToken);
-            return Ok(new
-            {
-                statusCode = HttpStatusCode.OK,
-                user = new UserResponse()
-                {
-                    Id = userLogin.UserId,
-                    UserName = userLogin.UserName,
-                    Email = userLogin.Email,
-                    Avatar = userLogin.Avatar,
-                    BirthDate = userLogin.BirthDate,
-                    EmailConfirm = userLogin.EmailConfirm,
-                    IsActive = userLogin.IsActive,
-                    Phone = userLogin.Phone,
-                    Role = userLogin.Role.ToLower(),
-                    Url = userLogin.Url,
-                },
-                accessToken,
-            });
-        }
+        //    await _context.SaveChangesAsync(cancellationToken);
+        //    return Ok(new
+        //    {
+        //        statusCode = HttpStatusCode.OK,
+        //        user = new UserResponse()
+        //        {
+        //            Id = userLogin.UserId,
+        //            UserName = userLogin.UserName,
+        //            Email = userLogin.Email,
+        //            Avatar = userLogin.Avatar,
+        //            BirthDate = userLogin.BirthDate,
+        //            EmailConfirm = userLogin.EmailConfirm,
+        //            IsActive = userLogin.IsActive,
+        //            Phone = userLogin.Phone,
+        //            Role = userLogin.Role.ToLower(),
+        //            Url = userLogin.Url,
+        //        },
+        //        accessToken,
+        //    });
+        //}
 
-        [HttpPost]
-        [Route("refresh-token")]
-        public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken)
-        {
-            var refreshToken = Request.Cookies["refreshToken"];
-            if (string.IsNullOrEmpty(refreshToken))
-            {
-                return Forbid();
-            }
+        //[HttpPost]
+        //[Route("refresh-token")]
+        //public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken)
+        //{
+        //    var refreshToken = Request.Cookies["refreshToken"];
+        //    if (string.IsNullOrEmpty(refreshToken))
+        //    {
+        //        return Forbid();
+        //    }
 
-            var currentRt = await _context.RefreshTokens.Where(rt => rt.Token == refreshToken)
-                .FirstOrDefaultAsync(cancellationToken);
-            if (currentRt == null)
-            {
-                return Unauthorized();
-            }
+        //    var currentRt = await _context.RefreshTokens.Where(rt => rt.Token == refreshToken)
+        //        .FirstOrDefaultAsync(cancellationToken);
+        //    if (currentRt == null)
+        //    {
+        //        return Unauthorized();
+        //    }
 
-            var user = await _context.Users.Where(u => u.UserId == currentRt.UserId).FirstOrDefaultAsync(cancellationToken);
-            if (user == null) return Unauthorized();
-            if (currentRt.Expires < DateTime.Now)
-            {
-                return Unauthorized();
-            }
+        //    var user = await _context.Users.Where(u => u.UserId == currentRt.UserId).FirstOrDefaultAsync(cancellationToken);
+        //    if (user == null) return Unauthorized();
+        //    if (currentRt.Expires < DateTime.Now)
+        //    {
+        //        return Unauthorized();
+        //    }
 
-            var at = GenerateAccessToken(GetListClaim(user));
-            var rt = GenerateRefreshToken();
-            SetCookieRefreshToken(rt);
+        //    var at = GenerateAccessToken(GetListClaim(user));
+        //    var rt = GenerateRefreshToken();
+        //    SetCookieRefreshToken(rt);
 
-            currentRt.Expires = rt.Expires;
-            currentRt.Token = rt.Token;
-            currentRt.CreatedAt = rt.CreatedAt;
+        //    currentRt.Expires = rt.Expires;
+        //    currentRt.Token = rt.Token;
+        //    currentRt.CreatedAt = rt.CreatedAt;
 
-            await _context.SaveChangesAsync(cancellationToken);
-            return Ok(new
-            {
-                statusCode = HttpStatusCode.OK,
-                user = new
-                {
-                    userName = user.UserName,
-                    email = user.Email,
-                    role = user.Role,
-                },
-                message = "refresh token successfully",
-                accessToken = at,
-            });
-        }
+        //    await _context.SaveChangesAsync(cancellationToken);
+        //    return Ok(new
+        //    {
+        //        statusCode = HttpStatusCode.OK,
+        //        user = new
+        //        {
+        //            userName = user.UserName,
+        //            email = user.Email,
+        //            role = user.Role,
+        //        },
+        //        message = "refresh token successfully",
+        //        accessToken = at,
+        //    });
+        //}
 
-        [HttpPost]
-        [Route("logout")]
-        public async Task<IActionResult> Logout(int userId)
-        {
-            var refreshToken = Request.Cookies["refreshToken"];
-            var token = await _context.RefreshTokens.Where(rt => rt.UserId == userId || refreshToken == rt.Token)
-                .FirstOrDefaultAsync();
-            if (token == null) return NotFound();
-            _context.RefreshTokens.Remove(token);
-            await _context.SaveChangesAsync();
-            Response.Cookies.Delete("refreshToken");
-            return Ok(new
-            {
-                message = "Logout successfully.",
-                statusCode = HttpStatusCode.OK
-            });
-        }
+        //[HttpPost]
+        //[Route("logout")]
+        //public async Task<IActionResult> Logout(int userId)
+        //{
+        //    var refreshToken = Request.Cookies["refreshToken"];
+        //    var token = await _context.RefreshTokens.Where(rt => rt.UserId == userId || refreshToken == rt.Token)
+        //        .FirstOrDefaultAsync();
+        //    if (token == null) return NotFound();
+        //    _context.RefreshTokens.Remove(token);
+        //    await _context.SaveChangesAsync();
+        //    Response.Cookies.Delete("refreshToken");
+        //    return Ok(new
+        //    {
+        //        message = "Logout successfully.",
+        //        statusCode = HttpStatusCode.OK
+        //    });
+        //}
 
-        private List<Claim> GetListClaim(UserModel user)
-        {
-            var claims = new List<Claim>
-            {
-                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new(JwtRegisteredClaimNames.Email, user.Email, ClaimTypes.Email),
-                new(JwtRegisteredClaimNames.UniqueName, user.UserName, ClaimTypes.Name),
-                new("UserId", user.UserId.ToString()),
-                new("Role", user.Role),
-            };
-            return claims;
-        }
+        //private List<Claim> GetListClaim(UserModel user)
+        //{
+        //    var claims = new List<Claim>
+        //    {
+        //        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        //        new(JwtRegisteredClaimNames.Email, user.Email, ClaimTypes.Email),
+        //        new(JwtRegisteredClaimNames.UniqueName, user.UserName, ClaimTypes.Name),
+        //        new("UserId", user.UserId.ToString()),
+        //        new("Role", user.Role),
+        //    };
+        //    return claims;
+        //}
         private async Task<FacebookUser?> GetFacebookUserProfileAsync(string accessToken)
         {
             var httpClient = new HttpClient();

@@ -10,7 +10,8 @@ namespace EcommerceApi.Controllers.V1.Admin
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/Admin")]
     [ApiController]
-    [Authorize(Policy = IdentityData.AdminPolicyName)]
+    //[Authorize(Policy = IdentityData.AdminPolicyName)]
+    [Authorize(Policy = "SsoAdmin")]
     public class DestinateController : ControllerBase
     {
         private readonly IDestinateService _destinateService;

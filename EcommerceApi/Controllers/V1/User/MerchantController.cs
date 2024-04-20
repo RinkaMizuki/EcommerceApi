@@ -11,7 +11,8 @@ namespace EcommerceApi.Controllers.V1.User
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}")]
     [ApiController]
-    [Authorize(Policy = IdentityData.AdminPolicyName)]
+    //[Authorize(Policy = IdentityData.AdminPolicyName)]
+    [Authorize(Policy = "SsoAdmin")]
     public class MerchantController : ControllerBase
     {
         private readonly IMerchantService _merchantService;

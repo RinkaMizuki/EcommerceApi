@@ -11,7 +11,8 @@ namespace EcommerceApi.Controllers.V1.Admin
 {
     [Authorize(IdentityData.AdminPolicyName)]
     [ApiVersion("1.0")]
-    [Route("api/v{version:apiVersion}/Admin/")]
+    //[Route("api/v{version:apiVersion}/Admin/")]
+    [Authorize(Policy = "SsoAdmin")]
     [ApiController]
     public class CouponController : ControllerBase
     {

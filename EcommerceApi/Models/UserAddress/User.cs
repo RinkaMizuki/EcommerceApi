@@ -1,4 +1,3 @@
-using EcommerceApi.Models.Order;
 using EcommerceApi.Models.Provider;
 using EcommerceApi.Models.Segment;
 using System.ComponentModel.DataAnnotations;

@@ -84,6 +84,7 @@ builder.Services.AddSwaggerGen(options => {
     options.OperationFilter<SwaggerDefaultValues>();
 });
 builder.Services.AddScoped<JwtMiddleware>();
+builder.Services.AddScoped<AuthMiddleware>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ICloudflareClientService, CloudflareClientService>();
@@ -125,84 +126,92 @@ builder.Services.AddCors(options =>
                 .AllowCredentials();
         });
 });
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer("Default", options =>
-{
-    options.IncludeErrorDetails = true;
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidAudience = configuration.GetSection("JwtConfiguration:ValidAudience").Value,
-        ValidIssuer = configuration.GetSection("JwtConfiguration:ValidIssuer").Value,
-        ClockSkew = TimeSpan.Zero,
-        IssuerSigningKey =
-            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configure.GetSection("JwtConfiguration:Secret").Value ?? ""))
-    };
-}).AddJwtBearer("Google", options =>
-{
-    var certificates = Helpers.Certificates.Value;
-    options.IncludeErrorDetails = true;
-    options.TokenValidationParameters = new TokenValidationParameters()
-    {
-        ValidateIssuerSigningKey = true,
-        RequireSignedTokens = true,
-        ValidateIssuer = true,
-        ValidateActor = false,
-        ValidateAudience = true,
-        ValidAudience = configuration.GetSection("GoogleConfiguration:ClientId").Value,
-        ValidIssuer = configuration.GetSection("GoogleConfiguration:GoogleIssuer").Value,
-        IssuerSigningKeyResolver = (token, securityToken, kid, validationParameters) =>
-        {
-            return certificates
-            .Where(x => x.Key?.ToUpper() == kid?.ToUpper())
-            .Select(x => new X509SecurityKey(x.Value));
-        },
-        IssuerSigningKeys = certificates.Values.Select(x => new X509SecurityKey(x)),
-        ValidateLifetime = true,
-        RequireExpirationTime = true,
-    };
-}).AddJwtBearer("Facebook", options =>
-{
-    options.IncludeErrorDetails = true;
-    options.TokenValidationParameters = new TokenValidationParameters()
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidAudience = configuration.GetSection("FacebookConfiguration:AppId").Value,
-        ValidIssuer = configuration.GetSection("FacebookConfiguration:FacebookIssuer").Value,
-        ClockSkew = TimeSpan.Zero, //apply when validate time of token
-        IssuerSigningKey =
-            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configure.GetSection("FacebookConfiguration:AppSecret").Value ?? ""))
-    };
-})
-.AddScheme<TokenAuthSchemeOptions, AuthenticationUserHandler>(
-    "SsoSchema",
+//options =>
+//{
+//    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+//    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+//    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+//}
+builder.Services.AddAuthentication().AddScheme<TokenAuthSchemeOptions, AuthenticationDefaultHandler>(
+    "SsoDefaultSchema",
+    opts => { }
+).AddScheme<TokenAuthSchemeOptions, AuthenticationFacebookHandler>(
+    "SsoFacebookSchema",
     opts => { }
 );
+//.AddScheme<TokenAuthSchemeOptions, AuthenticationGoogleHandler>(
+//    "SsoGoogleSchema",
+//    opts => { }
+//);
+//.AddJwtBearer("Default", options =>
+//{
+//    options.IncludeErrorDetails = true;
+//    options.TokenValidationParameters = new TokenValidationParameters
+//    {
+//        ValidateIssuer = true,
+//        ValidateAudience = true,
+//        ValidAudience = configuration.GetSection("JwtConfiguration:ValidAudience").Value,
+//        ValidIssuer = configuration.GetSection("JwtConfiguration:ValidIssuer").Value,
+//        ClockSkew = TimeSpan.Zero,
+//        IssuerSigningKey =
+//            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configure.GetSection("JwtConfiguration:Secret").Value ?? ""))
+//    };
+//})
+//.AddJwtBearer("Google", options =>
+//{
+//    var certificates = Helpers.Certificates.Value;
+//    options.IncludeErrorDetails = true;
+//    options.TokenValidationParameters = new TokenValidationParameters()
+//    {
+//        ValidateIssuerSigningKey = true,
+//        RequireSignedTokens = true,
+//        ValidateIssuer = true,
+//        ValidateActor = false,
+//        ValidateAudience = true,
+//        ValidAudience = configuration.GetSection("GoogleConfiguration:ClientId").Value,
+//        ValidIssuer = configuration.GetSection("GoogleConfiguration:GoogleIssuer").Value,
+//        IssuerSigningKeyResolver = (token, securityToken, kid, validationParameters) =>
+//        {
+//            return certificates
+//            .Where(x => x.Key?.ToUpper() == kid?.ToUpper())
+//            .Select(x => new X509SecurityKey(x.Value));
+//        },
+//        IssuerSigningKeys = certificates.Values.Select(x => new X509SecurityKey(x)),
+//        ValidateLifetime = true,
+//        RequireExpirationTime = true,
+//    };
+//}).AddJwtBearer("Facebook", options =>
+//{
+//    options.IncludeErrorDetails = true;
+//    options.TokenValidationParameters = new TokenValidationParameters()
+//    {
+//        ValidateIssuer = true,
+//        ValidateAudience = true,
+//        ValidAudience = configuration.GetSection("FacebookConfiguration:AppId").Value,
+//        ValidIssuer = configuration.GetSection("FacebookConfiguration:FacebookIssuer").Value,
+//        ClockSkew = TimeSpan.Zero, //apply when validate time of token
+//        IssuerSigningKey =
+//            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configure.GetSection("FacebookConfiguration:AppSecret").Value ?? ""))
+//    };
+//})
+//options.AddPolicy(IdentityData.AdminPolicyName, new AuthorizationPolicyBuilder()
+//        .RequireAuthenticatedUser()
+//        .AddAuthenticationSchemes("Default")
+//        .RequireClaim("Role", IdentityData.AdminPolicyRole)
+//        .Build()
+//);
 
 builder.Services.AddAuthorization(options =>
 {
     options.DefaultPolicy = new AuthorizationPolicyBuilder() //default [Authorize]
             .RequireAuthenticatedUser()
-            .AddAuthenticationSchemes("Default", "Facebook", "Google")
+            .AddAuthenticationSchemes("SsoDefaultSchema", "SsoFacebookSchema") //custom Facebook, Google Schema , "SsoGoogleSchema"
             .Build();
-
-    options.AddPolicy(IdentityData.AdminPolicyName, new AuthorizationPolicyBuilder()
-            .RequireAuthenticatedUser()
-            .AddAuthenticationSchemes("Default")
-            .RequireClaim("Role", IdentityData.AdminPolicyRole)
-            .Build()
-    );
     options.AddPolicy("SsoAdmin", new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .AddAuthenticationSchemes("SsoSchema")
-        .AddRequirements(new AdminAccessApiRequirement(configuration))
-        .Build()
+            .RequireAuthenticatedUser()
+            .AddAuthenticationSchemes("SsoDefaultSchema")
+            .AddRequirements(new AdminAccessApiRequirement(configuration))
+            .Build()
     );
 });
 
@@ -229,10 +238,13 @@ app.UseHttpsRedirection();
 app.UseDetection();
 app.UseCors("MyAllowSpecificOrigins");
 
-app.UseMiddleware<DeviceMiddleware>();
+//app.UseMiddleware<DeviceMiddleware>();
+app.UseMiddleware<JwtMiddleware>();
 
 app.UseAuthentication();
+app.UseMiddleware<AuthMiddleware>();
 app.UseAuthorization();
+
 
 app.MapControllers();
 

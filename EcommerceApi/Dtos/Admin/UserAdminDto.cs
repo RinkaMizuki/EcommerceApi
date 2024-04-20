@@ -12,4 +12,5 @@ public class UserAdminDto
     public bool EmailConfirm { get; set; }
     public bool IsActive { get; set; }
     public string? Avatar { get; set; } = string.Empty;
+    public string? Url { get ;set; } = string.Empty;
 }
