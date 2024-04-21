@@ -8,9 +8,9 @@ namespace EcommerceApi.Middlewares
         {
             var defaultAuthResult = await context.AuthenticateAsync("SsoDefaultSchema");
             var fbAuthResult = await context.AuthenticateAsync("SsoFacebookSchema");
-            //var ggAuthResult = await context.AuthenticateAsync("SsoGoogleSchema");
+            var ggAuthResult = await context.AuthenticateAsync("SsoGoogleSchema");
 
-            if((!defaultAuthResult.Succeeded && !fbAuthResult.Succeeded) && (!defaultAuthResult.None || !fbAuthResult.None))
+            if ((!defaultAuthResult.Succeeded && !fbAuthResult.Succeeded && !ggAuthResult.Succeeded) && (!defaultAuthResult.None || !fbAuthResult.None || !ggAuthResult.None))
             {
                 context.Response.Clear();
                 context.Response.ContentType = "text/plain";

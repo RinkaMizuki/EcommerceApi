@@ -138,11 +138,10 @@ builder.Services.AddAuthentication().AddScheme<TokenAuthSchemeOptions, Authentic
 ).AddScheme<TokenAuthSchemeOptions, AuthenticationFacebookHandler>(
     "SsoFacebookSchema",
     opts => { }
+).AddScheme<TokenAuthSchemeOptions, AuthenticationGoogleHandler>(
+    "SsoGoogleSchema",
+    opts => { }
 );
-//.AddScheme<TokenAuthSchemeOptions, AuthenticationGoogleHandler>(
-//    "SsoGoogleSchema",
-//    opts => { }
-//);
 //.AddJwtBearer("Default", options =>
 //{
 //    options.IncludeErrorDetails = true;
@@ -205,7 +204,7 @@ builder.Services.AddAuthorization(options =>
 {
     options.DefaultPolicy = new AuthorizationPolicyBuilder() //default [Authorize]
             .RequireAuthenticatedUser()
-            .AddAuthenticationSchemes("SsoDefaultSchema", "SsoFacebookSchema") //custom Facebook, Google Schema , "SsoGoogleSchema"
+            .AddAuthenticationSchemes("SsoDefaultSchema", "SsoFacebookSchema", "SsoGoogleSchema") //custom Facebook, Google Schema 
             .Build();
     options.AddPolicy("SsoAdmin", new AuthorizationPolicyBuilder()
             .RequireAuthenticatedUser()
