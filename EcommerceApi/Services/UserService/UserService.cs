@@ -42,7 +42,7 @@ public class UserService : IUserService
             {
                 UserName = userAdmin.UserName,
                 Email = userAdmin.Email,
-                PasswordHash = userAdmin.Password,
+                //PasswordHash = userAdmin.Password,
                 CreatedAt = DateTime.Now,
                 ModifiedAt = DateTime.Now,
                 Role = userAdmin.Role.ToLower(),

@@ -109,7 +109,8 @@ builder.Services.AddScoped<IMailService, MailService>();
 builder.Services.AddScoped<IOpenaiService, OpenaiService>();
 builder.Services.AddScoped<ISsoService, SsoService>();
 builder.Services.AddScoped<IAuthorizationHandler, AuthorizationPermissionHandler>();
-builder.Services.AddHostedService<ExpiredUserCleanupService>();
+//builder.Services.AddHostedService<ExpiredUserCleanupService>();
+
 //binding config appsettings.json
 builder.Services.Configure<CloudflareR2Config>(configuration.GetSection("CloudflareR2Config"));
 builder.Services.Configure<EmailConfig>(configuration.GetSection("EmailConfiguration"));

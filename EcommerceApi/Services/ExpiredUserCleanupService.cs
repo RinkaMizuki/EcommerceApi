@@ -1,6 +1,5 @@
 ﻿using EcommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Threading;
 
 namespace EcommerceApi.Services
 {
@@ -14,28 +13,28 @@ namespace EcommerceApi.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                using (var scope = _serviceScopeFactory.CreateScope())
-                {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<EcommerceDbContext>();
-                    var currentDate = DateTime.UtcNow;
+            //while (!stoppingToken.IsCancellationRequested)
+            //{
+            //    using (var scope = _serviceScopeFactory.CreateScope())
+            //    {
+            //        var dbContext = scope.ServiceProvider.GetRequiredService<EcommerceDbContext>();
+            //        var currentDate = DateTime.UtcNow;
 
-                    var expiredUsers = await dbContext.RefreshTokens
-                        .Where(rf => rf.Expires <= currentDate)
-                        .ToListAsync(stoppingToken);
+            //        var expiredUsers = await dbContext.RefreshTokens
+            //            .Where(rf => rf.Expires <= currentDate)
+            //            .ToListAsync(stoppingToken);
 
-                    foreach (var user in expiredUsers)
-                    {
-                        dbContext.RefreshTokens.RemoveRange(expiredUsers);
-                        await dbContext.SaveChangesAsync(stoppingToken);
-                    }
-                }
-                Console.WriteLine($"Re call");
-                // Kiểm tra và xóa các bản ghi đã hết hạn mỗi 1 giờ
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-                await base.StopAsync(stoppingToken);
-            }
+            //        foreach (var user in expiredUsers)
+            //        {
+            //            dbContext.RefreshTokens.RemoveRange(expiredUsers);
+            //            await dbContext.SaveChangesAsync(stoppingToken);
+            //        }
+            //    }
+            //    Console.WriteLine($"Re call");
+            //    // Kiểm tra và xóa các bản ghi đã hết hạn mỗi 1 giờ
+            //    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            //    await base.StopAsync(stoppingToken);
+            //}
         }
     }
 }

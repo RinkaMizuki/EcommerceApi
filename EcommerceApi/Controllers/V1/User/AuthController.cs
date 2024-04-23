@@ -39,10 +39,10 @@ namespace EcommerceApi.Controllers.V1.User
             _confirmService = confirmService;
         }
 
-        [HttpPost]
-        [Route("register")]
-        public async Task<IActionResult> Register(UserDto userDto, CancellationToken cancellationToken)
-        {
+        //[HttpPost]
+        //[Route("register")]
+        //public async Task<IActionResult> Register(UserDto userDto, CancellationToken cancellationToken)
+        //{
             //if (string.IsNullOrEmpty(userDto.UserName)
             //    || string.IsNullOrEmpty(userDto.Email)
             //    || string.IsNullOrEmpty(userDto.Password)
@@ -71,37 +71,37 @@ namespace EcommerceApi.Controllers.V1.User
             //}
 
             //var passwordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
-            var newUser = new UserModel()
-            {
-                UserName = userDto.UserName,
-                Email = userDto.Email,
-                //PasswordHash = passwordHash,
-                BirthDate = DateTime.Now,
-                CreatedAt = DateTime.Now,
-                ModifiedAt = DateTime.Now,
-            };
-            await _context.Users.AddAsync(newUser, cancellationToken);
-            await _context.SaveChangesAsync(cancellationToken);
+        //    var newUser = new UserModel()
+        //    {
+        //        UserName = userDto.UserName,
+        //        Email = userDto.Email,
+        //        //PasswordHash = passwordHash,
+        //        BirthDate = DateTime.Now,
+        //        CreatedAt = DateTime.Now,
+        //        ModifiedAt = DateTime.Now,
+        //    };
+        //    await _context.Users.AddAsync(newUser, cancellationToken);
+        //    await _context.SaveChangesAsync(cancellationToken);
 
-            var token = _confirmService.GenerateEmailConfirmToken(newUser, 1);
-            var domain = HttpContext.Request.Headers["origin"];
+        //    var token = _confirmService.GenerateEmailConfirmToken(newUser, 1);
+        //    var domain = HttpContext.Request.Headers["origin"];
 
-            var message =
-                $"{domain}/confirm-email?email={newUser.Email}&token={token}";
+        //    var message =
+        //        $"{domain}/confirm-email?email={newUser.Email}&token={token}";
 
-            await _mailService.SendEmailAsync(new MessageModel(
-                newUser.Email,
-                newUser.UserName,
-                "Please confirm your email.",
-                $"Click here to confirm your email. <a href=\"{message}\">Click here!</a>"
-            ), cancellationToken);
+        //    await _mailService.SendEmailAsync(new MessageModel(
+        //        newUser.Email,
+        //        newUser.UserName,
+        //        "Please confirm your email.",
+        //        $"Click here to confirm your email. <a href=\"{message}\">Click here!</a>"
+        //    ), cancellationToken);
 
-            return StatusCode(201, new
-            {
-                message = "Register successfully.",
-                statusCode = HttpStatusCode.Created,
-            });
-        }
+        //    return StatusCode(201, new
+        //    {
+        //        message = "Register successfully.",
+        //        statusCode = HttpStatusCode.Created,
+        //    });
+        //}
 
         [HttpGet]
         [Route("resend-confirm-email/{id:int}")]
@@ -133,452 +133,451 @@ namespace EcommerceApi.Controllers.V1.User
             });
         }
 
-        [HttpGet]
-        [Route("confirm-email")]
-        public async Task<IActionResult> ConfirmEmail([FromQuery] int userId, [FromQuery] string token,
-            CancellationToken cancellationToken)
-        {
-            var userConfirm = await _context
-                                  .Users
-                                  .Where(u => u.UserId == userId)
-                                  .FirstOrDefaultAsync(cancellationToken)
-                                   ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
-            if (_confirmService.ValidateEmailConfirmationToken(token, out ClaimsPrincipal claimsPrincipal))
-            {
-                userConfirm.EmailConfirm = true;
-                await _context.SaveChangesAsync(cancellationToken);
-                return StatusCode(200, new
-                {
-                    message = "Confirm email successfully",
-                    statusCode = 200,
-                    user = new UserResponse()
-                    {
-                        Id = userConfirm.UserId,
-                        UserName = userConfirm.UserName,
-                        Email = userConfirm.Email,
-                        Avatar = userConfirm.Avatar,
-                        BirthDate = userConfirm.BirthDate,
-                        EmailConfirm = userConfirm.EmailConfirm,
-                        IsActive = userConfirm.IsActive,
-                        Phone = userConfirm.Phone,
-                        Role = userConfirm.Role.ToLower(),
-                        Url = userConfirm.Url,
-                    }
-                });
-            }
-            else
-            {
-                return StatusCode(400, new
-                {
-                    message = "Confirm email failed",
-                    statusCode = 400,
-                });
-            }
-        }
-        [HttpPost]
-        [Route("google-auth")]
-        public async Task<IActionResult> GoogleAuth([FromBody]ProviderDto providerDto, CancellationToken cancellationToken)
-        {
-            //case 1 : có tk rồi và đăng nhập google trùng với tk
-            //case 2 : chưa có tk và đăng nhập bằng google
-            try
-            {
-                var userLink = await _context
-                                             .Users
-                                             .Where(u => u.Email == providerDto.Email)
-                                             .AsNoTracking()
-                                             .FirstOrDefaultAsync(cancellationToken);
+        //[HttpGet]
+        //[Route("confirm-email")]
+        //public async Task<IActionResult> ConfirmEmail([FromQuery] int userId, [FromQuery] string token,
+        //    CancellationToken cancellationToken)
+        //{
+        //    var userConfirm = await _context
+        //                          .Users
+        //                          .Where(u => u.UserId == userId)
+        //                          .FirstOrDefaultAsync(cancellationToken)
+        //                           ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
+        //    if (_confirmService.ValidateEmailConfirmationToken(token, out ClaimsPrincipal claimsPrincipal))
+        //    {
+        //        userConfirm.EmailConfirm = true;
+        //        await _context.SaveChangesAsync(cancellationToken);
+        //        return StatusCode(200, new
+        //        {
+        //            message = "Confirm email successfully",
+        //            statusCode = 200,
+        //            user = new UserResponse()
+        //            {
+        //                Id = userConfirm.UserId,
+        //                UserName = userConfirm.UserName,
+        //                Email = userConfirm.Email,
+        //                Avatar = userConfirm.Avatar,
+        //                BirthDate = userConfirm.BirthDate,
+        //                EmailConfirm = userConfirm.EmailConfirm,
+        //                IsActive = userConfirm.IsActive,
+        //                Phone = userConfirm.Phone,
+        //                Role = userConfirm.Role.ToLower(),
+        //                Url = userConfirm.Url,
+        //            }
+        //        });
+        //    }
+        //    else
+        //    {
+        //        return StatusCode(400, new
+        //        {
+        //            message = "Confirm email failed",
+        //            statusCode = 400,
+        //        });
+        //    }
+        //}
+        //[HttpPost]
+        //[Route("google-auth")]
+        //public async Task<IActionResult> GoogleAuth([FromBody]ProviderDto providerDto, CancellationToken cancellationToken)
+        //{
+        //    //case 1 : có tk rồi và đăng nhập google trùng với tk
+        //    //case 2 : chưa có tk và đăng nhập bằng google
+        //    try
+        //    {
+        //        var userLink = await _context
+        //                                     .Users
+        //                                     .Where(u => u.Email == providerDto.Email)
+        //                                     .AsNoTracking()
+        //                                     .FirstOrDefaultAsync(cancellationToken);
 
-                var userLogins = await _context
-                                               .UserLogins
-                                               .Where(ul => ul.ProviderKey == providerDto.ProviderId)
-                                               .FirstOrDefaultAsync(cancellationToken);
+        //        var userLogins = await _context
+        //                                       .UserLogins
+        //                                       .Where(ul => ul.ProviderKey == providerDto.ProviderId)
+        //                                       .FirstOrDefaultAsync(cancellationToken);
 
-                if (userLogins != null)
-                {
-                    var user = await _context
-                                                 .Users
-                                                 .Include(u => u.UserLogins)
-                                                 .Where(u => u.UserId == userLogins.UserId)
-                                                 .FirstOrDefaultAsync(cancellationToken);
-                    return Ok(new
-                    {
-                        statusCode = HttpStatusCode.OK,
-                        user = new UserResponse()
-                        {
-                            Id = user.UserId,
-                            UserName = user.UserName,
-                            Email = user.Email,
-                            Avatar = user.Avatar,
-                            BirthDate = user.BirthDate,
-                            EmailConfirm = user.EmailConfirm,
-                            IsActive = user.IsActive,
-                            Phone = user.Phone,
-                            Role = user.Role.ToLower(),
-                            Url = user.Url,
-                            UserLogins = user.UserLogins
-                        },
-                    });
-                }
-                if (userLink != null && userLogins is null)
-                {
-                    var newProvider = new UserLogins()
-                    {
-                        UserId = userLink.UserId,
-                        LoginProvider = providerDto.ProviderName,
-                        ProviderDisplayName = providerDto.ProviderDisplayName,
-                        ProviderKey = providerDto.ProviderId,
-                        AccountAvatar = providerDto.Picture,
-                        AccountName = providerDto.Email,
-                        IsUnlink = false,
-                    };
-                    await _context.UserLogins.AddAsync(newProvider, cancellationToken);
-                    await _context.SaveChangesAsync(cancellationToken);
+        //        if (userLogins != null)
+        //        {
+        //            var user = await _context
+        //                                         .Users
+        //                                         .Include(u => u.UserLogins)
+        //                                         .Where(u => u.UserId == userLogins.UserId)
+        //                                         .FirstOrDefaultAsync(cancellationToken);
+        //            return Ok(new
+        //            {
+        //                statusCode = HttpStatusCode.OK,
+        //                user = new UserResponse()
+        //                {
+        //                    Id = user.UserId,
+        //                    UserName = user.UserName,
+        //                    Email = user.Email,
+        //                    Avatar = user.Avatar,
+        //                    BirthDate = user.BirthDate,
+        //                    EmailConfirm = user.EmailConfirm,
+        //                    IsActive = user.IsActive,
+        //                    Phone = user.Phone,
+        //                    Role = user.Role.ToLower(),
+        //                    Url = user.Url,
+        //                    UserLogins = user.UserLogins
+        //                },
+        //            });
+        //        }
+        //        if (userLink != null && userLogins is null)
+        //        {
+        //            var newProvider = new UserLogins()
+        //            {
+        //                UserId = userLink.UserId,
+        //                LoginProvider = providerDto.ProviderName,
+        //                ProviderDisplayName = providerDto.ProviderDisplayName,
+        //                ProviderKey = providerDto.ProviderId,
+        //                AccountAvatar = providerDto.Picture,
+        //                AccountName = providerDto.Email,
+        //                IsUnlink = false,
+        //            };
+        //            await _context.UserLogins.AddAsync(newProvider, cancellationToken);
+        //            await _context.SaveChangesAsync(cancellationToken);
 
-                    var userLinkSameAccount = await _context
-                                                            .Users
-                                                            .Include(u => u.UserLogins)
-                                                            .Where(u => u.UserId == newProvider.UserId).FirstOrDefaultAsync
-                                                            (cancellationToken);
+        //            var userLinkSameAccount = await _context
+        //                                                    .Users
+        //                                                    .Include(u => u.UserLogins)
+        //                                                    .Where(u => u.UserId == newProvider.UserId).FirstOrDefaultAsync
+        //                                                    (cancellationToken);
 
-                    return Ok(new
-                    {
-                        statusCode = HttpStatusCode.OK,
-                        user = new UserResponse()
-                        {
-                            Id = userLink.UserId,
-                            UserName = userLink.UserName,
-                            Email = userLink.Email,
-                            Avatar = userLink.Avatar,
-                            BirthDate = userLink.BirthDate,
-                            EmailConfirm = userLink.EmailConfirm,
-                            IsActive = userLink.IsActive,
-                            Phone = userLink.Phone,
-                            Role = userLink.Role.ToLower(),
-                            Url = userLink.Url,
-                            UserLogins = userLinkSameAccount.UserLogins,
-                        },
-                    });
-                }
-                else
-                {
-                    var newUserWithProvider = new UserModel()
-                    {
-                        UserName = providerDto.Email,
-                        Email = providerDto.Email,
-                        BirthDate = DateTime.Now,
-                        CreatedAt = DateTime.Now,
-                        ModifiedAt = DateTime.Now,
-                        EmailConfirm = true,
-                        Url = providerDto.Picture,
-                        Avatar = "Provider Avatar",
-                    };
-                    var newProvider = new UserLogins()
-                    {
-                        User = newUserWithProvider,
-                        LoginProvider = providerDto.ProviderName,
-                        ProviderDisplayName = providerDto.ProviderDisplayName,
-                        ProviderKey = providerDto.ProviderId,
-                        AccountAvatar = providerDto.Picture,
-                        AccountName = providerDto.Email,
-                        IsUnlink = false,
-                    };
-                    await _context.UserLogins.AddAsync(newProvider, cancellationToken);
-                    await _context.Users.AddAsync(newUserWithProvider, cancellationToken);
-                    await _context.SaveChangesAsync(cancellationToken);
+        //            return Ok(new
+        //            {
+        //                statusCode = HttpStatusCode.OK,
+        //                user = new UserResponse()
+        //                {
+        //                    Id = userLink.UserId,
+        //                    UserName = userLink.UserName,
+        //                    Email = userLink.Email,
+        //                    Avatar = userLink.Avatar,
+        //                    BirthDate = userLink.BirthDate,
+        //                    EmailConfirm = userLink.EmailConfirm,
+        //                    IsActive = userLink.IsActive,
+        //                    Phone = userLink.Phone,
+        //                    Role = userLink.Role.ToLower(),
+        //                    Url = userLink.Url,
+        //                    UserLogins = userLinkSameAccount.UserLogins,
+        //                },
+        //            });
+        //        }
+        //        else
+        //        {
+        //            var newUserWithProvider = new UserModel()
+        //            {
+        //                UserName = providerDto.Email,
+        //                Email = providerDto.Email,
+        //                BirthDate = DateTime.Now,
+        //                CreatedAt = DateTime.Now,
+        //                ModifiedAt = DateTime.Now,
+        //                EmailConfirm = true,
+        //                Url = providerDto.Picture,
+        //                Avatar = "Provider Avatar",
+        //            };
+        //            var newProvider = new UserLogins()
+        //            {
+        //                User = newUserWithProvider,
+        //                LoginProvider = providerDto.ProviderName,
+        //                ProviderDisplayName = providerDto.ProviderDisplayName,
+        //                ProviderKey = providerDto.ProviderId,
+        //                AccountAvatar = providerDto.Picture,
+        //                AccountName = providerDto.Email,
+        //                IsUnlink = false,
+        //            };
+        //            await _context.UserLogins.AddAsync(newProvider, cancellationToken);
+        //            await _context.Users.AddAsync(newUserWithProvider, cancellationToken);
+        //            await _context.SaveChangesAsync(cancellationToken);
 
-                    var newUser = await _context
-                                                .Users
-                                                .Include(u => u.UserLogins)
-                                                .Where(u => u.Email == providerDto.Email)
-                                                .FirstOrDefaultAsync(cancellationToken);
-                    return Ok(new
-                    {
-                        statusCode = HttpStatusCode.OK,
-                        user = new UserResponse()
-                        {
-                            Id = newUser.UserId,
-                            UserName = newUser.UserName,
-                            Email = newUser.Email,
-                            Avatar = newUser.Avatar,
-                            BirthDate = newUser.BirthDate,
-                            EmailConfirm = newUser.EmailConfirm,
-                            IsActive = newUser.IsActive,
-                            Phone = newUser.Phone,
-                            Role = newUser.Role.ToLower(),
-                            Url = newUser.Url,
-                            UserLogins = newUser.UserLogins,
-                        },
-                    });
-                }
-            }catch(Exception ex)
-            {
-                throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-        [HttpPost]
-        [Route("google-link")]
-        public async Task<IActionResult> GoogleLink([FromQuery]int userId, [FromBody]ProviderDto providerDto, CancellationToken cancellationToken)
-        {
-            //case 3 : có tk rồi nhưng vào tk đó lk khác gmail
-            //case 4 : có tk rồi đăng nhập bằng tk và lk cùng gmail
-            var providerExternalLink = await _context
-                                               .UserLogins
-                                               .Where(ul => ul.ProviderKey == providerDto.ProviderId)
-                                               .FirstOrDefaultAsync(cancellationToken);
-            if(providerExternalLink == null)
-            {
-                var userLink = await _context
-                                            .Users
-                                            .Include(u => u.UserLogins)
-                                            .Where(u => u.UserId == userId)
-                                            .FirstOrDefaultAsync(cancellationToken)
-                                            ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found");
-                var newProvider = new UserLogins()
-                {
-                    User = userLink,
-                    LoginProvider = providerDto.ProviderName,
-                    ProviderDisplayName = providerDto.ProviderDisplayName,
-                    ProviderKey = providerDto.ProviderId,
-                    AccountAvatar = providerDto.Picture,
-                    AccountName = providerDto.Email,
-                };
-                await _context.UserLogins.AddAsync(newProvider, cancellationToken);
-                await _context.SaveChangesAsync(cancellationToken);
-                return Ok(new
-                {
-                    statusCode = HttpStatusCode.OK,
-                    user = new UserResponse()
-                    {
-                        Id = userLink.UserId,
-                        UserName = userLink.UserName,
-                        Email = userLink.Email,
-                        Avatar = userLink.Avatar,
-                        BirthDate = userLink.BirthDate,
-                        EmailConfirm = userLink.EmailConfirm,
-                        IsActive = userLink.IsActive,
-                        Phone = userLink.Phone,
-                        Role = userLink.Role.ToLower(),
-                        Url = userLink.Url,
-                        UserLogins = userLink.UserLogins,
-                    },
-                });
-            }
-            else
-            {
-                throw new HttpStatusException(HttpStatusCode.Conflict, "Google account is invalid or already in use.");
-            }
-        }
-        [HttpDelete]
-        [Route("unlink-account")]
-        public async Task<IActionResult> UnlinkAccount([FromQuery]int userId, [FromQuery] string providerId, CancellationToken cancellationToken)
-        {
-            var userUnlink = await _context
-                                            .UserLogins
-                                            .Where(ul => ul.UserId == userId && ul.ProviderKey == providerId)
-                                            .FirstOrDefaultAsync(cancellationToken)
-                                            ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User or Provider not found.");
-            _context.UserLogins.Remove(userUnlink);
-            await _context.SaveChangesAsync(cancellationToken);
-            return StatusCode(204, new
-            {
-                message = "Delete provider successfully",
-                statusCode = 204,
-            });
-        }
-        [HttpPost]
-        [Route("facebook-auth")]
-        public async Task<IActionResult> FacebookAuth([FromQuery]string type,[FromQuery]int? userId, [FromQuery]string facebookAccessToken, CancellationToken cancellationToken)
-        {
-            var userProfile  = await GetFacebookUserProfileAsync(facebookAccessToken);
-            if(userProfile is null)
-            {
-                return BadRequest();
-            }
-            var userLogins = await _context
-                                           .UserLogins
-                                           .Where(ul => ul.ProviderKey == userProfile.Id)
-                                           .FirstOrDefaultAsync(cancellationToken);
-            if(userLogins != null)
-            {
-                if(type == "login")
-                {
-                    var user = await _context
-                                             .Users
-                                             .Include(u => u.UserLogins)
-                                             .Where(u => u.UserId == userLogins.UserId)
-                                             .FirstOrDefaultAsync(cancellationToken);
-                    var accessToken = GenerateFacebookToken(userProfile);
-                    var refreshToken = GenerateRefreshToken();
-                    SetCookieRefreshToken(refreshToken);
-                    refreshToken.User = user;
-                    refreshToken.UserId = userLogins.UserId;
-                    await _context
-                                .RefreshTokens
-                                .AddAsync(refreshToken, cancellationToken);
-                    await _context.SaveChangesAsync(cancellationToken);
-                    return Ok(new
-                    {
-                        statusCode = HttpStatusCode.OK,
-                        user = new UserResponse()
-                        {
-                            Id = user.UserId,
-                            UserName = user.UserName,
-                            Email = user.Email,
-                            Avatar = user.Avatar,
-                            BirthDate = user.BirthDate,
-                            EmailConfirm = user.EmailConfirm,
-                            IsActive = user.IsActive,
-                            Phone = user.Phone,
-                            Role = user.Role.ToLower(),
-                            Url = user.Url,
-                            UserLogins = user.UserLogins
-                        },
-                        accessToken,
-                    });
-                }
-                //nếu type link
-                //...
-                else
-                {
-                    throw new HttpStatusException(HttpStatusCode.Conflict, "Facebook account is invalid or already in use.");
-                }
-            }
-            else
-            {
-                //nếu type login
-                if (type == "login")
-                {
+        //            var newUser = await _context
+        //                                        .Users
+        //                                        .Include(u => u.UserLogins)
+        //                                        .Where(u => u.Email == providerDto.Email)
+        //                                        .FirstOrDefaultAsync(cancellationToken);
+        //            return Ok(new
+        //            {
+        //                statusCode = HttpStatusCode.OK,
+        //                user = new UserResponse()
+        //                {
+        //                    Id = newUser.UserId,
+        //                    UserName = newUser.UserName,
+        //                    Email = newUser.Email,
+        //                    Avatar = newUser.Avatar,
+        //                    BirthDate = newUser.BirthDate,
+        //                    EmailConfirm = newUser.EmailConfirm,
+        //                    IsActive = newUser.IsActive,
+        //                    Phone = newUser.Phone,
+        //                    Role = newUser.Role.ToLower(),
+        //                    Url = newUser.Url,
+        //                    UserLogins = newUser.UserLogins,
+        //                },
+        //            });
+        //        }
+        //    }catch(Exception ex)
+        //    {
+        //        throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
+        //    }
+        //}
+        //[HttpPost]
+        //[Route("google-link")]
+        //public async Task<IActionResult> GoogleLink([FromQuery]int userId, [FromBody]ProviderDto providerDto, CancellationToken cancellationToken)
+        //{
+        //    //case 3 : có tk rồi nhưng vào tk đó lk khác gmail
+        //    //case 4 : có tk rồi đăng nhập bằng tk và lk cùng gmail
+        //    var providerExternalLink = await _context
+        //                                       .UserLogins
+        //                                       .Where(ul => ul.ProviderKey == providerDto.ProviderId)
+        //                                       .FirstOrDefaultAsync(cancellationToken);
+        //    if(providerExternalLink == null)
+        //    {
+        //        var userLink = await _context
+        //                                    .Users
+        //                                    .Include(u => u.UserLogins)
+        //                                    .Where(u => u.UserId == userId)
+        //                                    .FirstOrDefaultAsync(cancellationToken)
+        //                                    ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found");
+        //        var newProvider = new UserLogins()
+        //        {
+        //            User = userLink,
+        //            LoginProvider = providerDto.ProviderName,
+        //            ProviderDisplayName = providerDto.ProviderDisplayName,
+        //            ProviderKey = providerDto.ProviderId,
+        //            AccountAvatar = providerDto.Picture,
+        //            AccountName = providerDto.Email,
+        //        };
+        //        await _context.UserLogins.AddAsync(newProvider, cancellationToken);
+        //        await _context.SaveChangesAsync(cancellationToken);
+        //        return Ok(new
+        //        {
+        //            statusCode = HttpStatusCode.OK,
+        //            user = new UserResponse()
+        //            {
+        //                Id = userLink.UserId,
+        //                UserName = userLink.UserName,
+        //                Email = userLink.Email,
+        //                Avatar = userLink.Avatar,
+        //                BirthDate = userLink.BirthDate,
+        //                EmailConfirm = userLink.EmailConfirm,
+        //                IsActive = userLink.IsActive,
+        //                Phone = userLink.Phone,
+        //                Role = userLink.Role.ToLower(),
+        //                Url = userLink.Url,
+        //                UserLogins = userLink.UserLogins,
+        //            },
+        //        });
+        //    }
+        //    else
+        //    {
+        //        throw new HttpStatusException(HttpStatusCode.Conflict, "Google account is invalid or already in use.");
+        //    }
+        //}
+        //[HttpDelete]
+        //[Route("unlink-account")]
+        //public async Task<IActionResult> UnlinkAccount([FromQuery]int userId, [FromQuery] string pr oviderId, CancellationToken cancellationToken)
+        //{
+        //    var userUnlink = await _context
+        //                                    .UserLogins
+        //                                    .Where(ul => ul.UserId == userId && ul.ProviderKey == providerId)
+        //                                    .FirstOrDefaultAsync(cancellationToken)
+        //                                    ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User or Provider not found.");
+        //    _context.UserLogins.Remove(userUnlink);
+        //    await _context.SaveChangesAsync(cancellationToken);
+        //    return StatusCode(204, new
+        //    {
+        //        message = "Delete provider successfully",
+        //        statusCode = 204,
+        //    });
+        //}
+        //[HttpPost]
+        //[Route("facebook-auth")]
+        //public async Task<IActionResult> FacebookAuth([FromQuery]string type,[FromQuery]int? userId, [FromQuery]string facebookAccessToken, CancellationToken cancellationToken)
+        //{
+        //    var userProfile  = await GetFacebookUserProfileAsync(facebookAccessToken);
+        //    if(userProfile is null)
+        //    {
+        //        return BadRequest();
+        //    }
+        //    var userLogins = await _context
+        //                                   .UserLogins
+        //                                   .Where(ul => ul.ProviderKey == userProfile.Id)
+        //                                   .FirstOrDefaultAsync(cancellationToken);
+        //    if(userLogins != null)
+        //    {
+        //        if(type == "login")
+        //        {
+        //            var user = await _context
+        //                                     .Users
+        //                                     .Include(u => u.UserLogins)
+        //                                     .Where(u => u.UserId == userLogins.UserId)
+        //                                     .FirstOrDefaultAsync(cancellationToken);
+        //            var accessToken = GenerateFacebookToken(userProfile);
+        //            var refreshToken = GenerateRefreshToken();
+        //            SetCookieRefreshToken(refreshToken);
+        //            refreshToken.User = user;
+        //            refreshToken.UserId = userLogins.UserId;
+        //            await _context
+        //                        .RefreshTokens
+        //                        .AddAsync(refreshToken, cancellationToken);
+        //            await _context.SaveChangesAsync(cancellationToken);
+        //            return Ok(new
+        //            {
+        //                statusCode = HttpStatusCode.OK,
+        //                user = new UserResponse()
+        //                {
+        //                    Id = user.UserId,
+        //                    UserName = user.UserName,
+        //                    Email = user.Email,
+        //                    Avatar = user.Avatar,
+        //                    BirthDate = user.BirthDate,
+        //                    EmailConfirm = user.EmailConfirm,
+        //                    IsActive = user.IsActive,
+        //                    Phone = user.Phone,
+        //                    Role = user.Role.ToLower(),
+        //                    Url = user.Url,
+        //                    UserLogins = user.UserLogins
+        //                },
+        //                accessToken,
+        //            });
+        //        }
+        //        //nếu type link
+        //        //...
+        //        else
+        //        {
+        //            throw new HttpStatusException(HttpStatusCode.Conflict, "Facebook account is invalid or already in use.");
+        //        }
+        //    }
+        //    else
+        //    {
+        //        //nếu type login
+        //        if (type == "login")
+        //        {
 
-                    var isExistedEmail = await _context.Users.AnyAsync(u => u.Email == userProfile.Email,cancellationToken);
-                    if(isExistedEmail)
-                    {
-                        throw new HttpStatusException(HttpStatusCode.Conflict, $"Email {userProfile.Email} is already used by a login method other than Facebook.");
-                    }
-                    var newUser = new UserModel()
-                    {
-                        UserName = userProfile.Email,
-                        Email = userProfile.Email,
-                        BirthDate = DateTime.Now,
-                        CreatedAt = DateTime.Now,
-                        ModifiedAt = DateTime.Now,
-                        EmailConfirm = true,
-                        Url = userProfile.Picture.Data.Url,
-                        Avatar = "Provider Avatar",
-                    };
+        //            var isExistedEmail = await _context.Users.AnyAsync(u => u.Email == userProfile.Email,cancellationToken);
+        //            if(isExistedEmail)
+        //            {
+        //                throw new HttpStatusException(HttpStatusCode.Conflict, $"Email {userProfile.Email} is already used by a login method other than Facebook.");
+        //            }
+        //            var newUser = new UserModel()
+        //            {
+        //                UserName = userProfile.Email,
+        //                Email = userProfile.Email,
+        //                BirthDate = DateTime.Now,
+        //                CreatedAt = DateTime.Now,
+        //                ModifiedAt = DateTime.Now,
+        //                EmailConfirm = true,
+        //                Url = userProfile.Picture.Data.Url,
+        //                Avatar = "Provider Avatar",
+        //            };
 
-                    var newProvider = new UserLogins()
-                    {
-                        User = newUser,
-                        LoginProvider = "Facebook",
-                        ProviderDisplayName = "Facebook",
-                        ProviderKey = userProfile.Id,
-                        AccountAvatar = userProfile.Picture.Data.Url,
-                        AccountName = userProfile.Name,
-                    };
+        //            var newProvider = new UserLogins()
+        //            {
+        //                User = newUser,
+        //                LoginProvider = "Facebook",
+        //                ProviderDisplayName = "Facebook",
+        //                ProviderKey = userProfile.Id,
+        //                AccountAvatar = userProfile.Picture.Data.Url,
+        //                AccountName = userProfile.Name,
+        //            };
 
-                    var accessToken = GenerateFacebookToken(userProfile);
-                    var refreshToken = GenerateRefreshToken();
-                    SetCookieRefreshToken(refreshToken);
-                    refreshToken.User = newUser;
+        //            var accessToken = GenerateFacebookToken(userProfile);
+        //            var refreshToken = GenerateRefreshToken();
+        //            SetCookieRefreshToken(refreshToken);
+        //            refreshToken.User = newUser;
 
-                    await _context
-                                  .UserLogins
-                                  .AddAsync(newProvider, cancellationToken);
-                    await _context
-                                  .RefreshTokens
-                                  .AddAsync(refreshToken, cancellationToken);
-                    await _context.SaveChangesAsync(cancellationToken);
+        //            await _context
+        //                          .UserLogins
+        //                          .AddAsync(newProvider, cancellationToken);
+        //            await _context
+        //                          .RefreshTokens
+        //                          .AddAsync(refreshToken, cancellationToken);
+        //            await _context.SaveChangesAsync(cancellationToken);
 
-                    var currentUser = await _context
-                                                    .Users
-                                                    .Include(u => u.UserLogins)
-                                                    .Where(u => u.UserId == newUser.UserId)
-                                                    .FirstOrDefaultAsync(cancellationToken);
+        //            var currentUser = await _context
+        //                                            .Users
+        //                                            .Include(u => u.UserLogins)
+        //                                            .Where(u => u.UserId == newUser.UserId)
+        //                                            .FirstOrDefaultAsync(cancellationToken);
 
-                    return Ok(new
-                    {
-                        statusCode = HttpStatusCode.OK,
-                        user = new UserResponse()
-                        {
-                            Id = currentUser.UserId,
-                            UserName = newUser.UserName,
-                            Email = newUser.Email,
-                            Avatar = newUser.Avatar,
-                            BirthDate = newUser.BirthDate,
-                            EmailConfirm = newUser.EmailConfirm,
-                            IsActive = newUser.IsActive,
-                            Phone = newUser.Phone,
-                            Role = newUser.Role.ToLower(),
-                            Url = newUser.Url,
-                            UserLogins = currentUser.UserLogins,
-                        },
-                        accessToken,
-                    });
-                }
-                //nếu type link => lấy userId đang login
-                //...
-                else
-                {
-                    var userLink = await _context
-                                                 .Users
-                                                 .Include(u => u.UserLogins)
-                                                 .Where(u => u.UserId == userId)
-                                                 .FirstOrDefaultAsync(cancellationToken)
-                                                 ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
-                    var newProvider = new UserLogins()
-                    {
-                        User = userLink,
-                        LoginProvider = "Facebook",
-                        ProviderDisplayName = "Facebook",
-                        ProviderKey = userProfile.Id,
-                        AccountAvatar = userProfile.Picture.Data.Url,
-                        AccountName = userProfile.Name,
-                    };
-                    var accessToken = GenerateFacebookToken(userProfile);
-                    var refreshToken = GenerateRefreshToken();
-                    SetCookieRefreshToken(refreshToken);
-                    refreshToken.User = userLink;
-                    refreshToken.UserId = userLink.UserId;
+        //            return Ok(new
+        //            {
+        //                statusCode = HttpStatusCode.OK,
+        //                user = new UserResponse()
+        //                {
+        //                    Id = currentUser.UserId,
+        //                    UserName = newUser.UserName,
+        //                    Email = newUser.Email,
+        //                    Avatar = newUser.Avatar,
+        //                    BirthDate = newUser.BirthDate,
+        //                    EmailConfirm = newUser.EmailConfirm,
+        //                    IsActive = newUser.IsActive,
+        //                    Phone = newUser.Phone,
+        //                    Role = newUser.Role.ToLower(),
+        //                    Url = newUser.Url,
+        //                    UserLogins = currentUser.UserLogins,
+        //                },
+        //                accessToken,
+        //            });
+        //        }
+        //        //nếu type link => lấy userId đang login
+        //        //...
+        //        else
+        //        {
+        //            var userLink = await _context
+        //                                         .Users
+        //                                         .Include(u => u.UserLogins)
+        //                                         .Where(u => u.UserId == userId)
+        //                                         .FirstOrDefaultAsync(cancellationToken)
+        //                                         ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
+        //            var newProvider = new UserLogins()
+        //            {
+        //                User = userLink,
+        //                LoginProvider = "Facebook",
+        //                ProviderDisplayName = "Facebook",
+        //                ProviderKey = userProfile.Id,
+        //                AccountAvatar = userProfile.Picture.Data.Url,
+        //                AccountName = userProfile.Name,
+        //            };
+        //            var accessToken = GenerateFacebookToken(userProfile);
+        //            var refreshToken = GenerateRefreshToken();
+        //            SetCookieRefreshToken(refreshToken);
+        //            refreshToken.User = userLink;
+        //            refreshToken.UserId = userLink.UserId;
 
-                    var removeToken = await _context
-                                                    .RefreshTokens
-                                                    .Where(rt => rt.UserId == userLink.UserId)
-                                                    .FirstOrDefaultAsync(cancellationToken);
-                    if(removeToken != null)
-                    {
-                        _context.RefreshTokens.Remove(removeToken);
-                    }
-                    await _context
-                                .RefreshTokens
-                                .AddAsync(refreshToken, cancellationToken);
-                    await _context
-                                  .UserLogins
-                                  .AddAsync(newProvider, cancellationToken);
-                    await _context.SaveChangesAsync(cancellationToken);
-                    return Ok(new
-                    {
-                        statusCode = HttpStatusCode.OK,
-                        user = new UserResponse()
-                        {
-                            Id = userLink.UserId,
-                            UserName = userLink.UserName,
-                            Email = userLink.Email,
-                            Avatar = userLink.Avatar,
-                            BirthDate = userLink.BirthDate,
-                            EmailConfirm = userLink.EmailConfirm,
-                            IsActive = userLink.IsActive,
-                            Phone = userLink.Phone,
-                            Role = userLink.Role.ToLower(),
-                            Url = userLink.Url,
-                            UserLogins = userLink.UserLogins,
-                        },
-                        accessToken,
-                    });
-                }
-            }
-
-        }
+        //            var removeToken = await _context
+        //                                            .RefreshTokens
+        //                                            .Where(rt => rt.UserId == userLink.UserId)
+        //                                            .FirstOrDefaultAsync(cancellationToken);
+        //            if(removeToken != null)
+        //            {
+        //                _context.RefreshTokens.Remove(removeToken);
+        //            }
+        //            await _context
+        //                        .RefreshTokens
+        //                        .AddAsync(refreshToken, cancellationToken);
+        //            await _context
+        //                          .UserLogins
+        //                          .AddAsync(newProvider, cancellationToken);
+        //            await _context.SaveChangesAsync(cancellationToken);
+        //            return Ok(new
+        //            {
+        //                statusCode = HttpStatusCode.OK,
+        //                user = new UserResponse()
+        //                {
+        //                    Id = userLink.UserId,
+        //                    UserName = userLink.UserName,
+        //                    Email = userLink.Email,
+        //                    Avatar = userLink.Avatar,
+        //                    BirthDate = userLink.BirthDate,
+        //                    EmailConfirm = userLink.EmailConfirm,
+        //                    IsActive = userLink.IsActive,
+        //                    Phone = userLink.Phone,
+        //                    Role = userLink.Role.ToLower(),
+        //                    Url = userLink.Url,
+        //                    UserLogins = userLink.UserLogins,
+        //                },
+        //                accessToken,
+        //            });
+        //        }
+        //    }
+        //}
 
         //[HttpPost]
         //[Route("login")]

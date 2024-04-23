@@ -50,13 +50,11 @@ namespace EcommerceApi.Authentication
             var jwtSecurityToken = handler.ReadJwtToken(data.token);
             // cần lấy về Role claim của User để Authorize
             var id = jwtSecurityToken.Claims.First(claim => claim.Type == "sub").Value;
-            var name = jwtSecurityToken.Claims.First(claim => claim.Type == "name").Value;
             var email = jwtSecurityToken.Claims.First(claim => claim.Type == "email").Value;
 
             var claims = new[] {
                 new Claim("Id", id),
                 new Claim("Email", email),
-                new Claim("Name", name),
             };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "Tokens"));
             var ticket = new AuthenticationTicket(principal, this.Scheme.Name);
