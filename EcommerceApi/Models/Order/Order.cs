@@ -8,7 +8,7 @@ namespace EcommerceApi.Models.Order;
 public class Order
 {
     [Key] public Guid OrderId { get; set; }
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     [JsonIgnore]
     [ForeignKey("UserId")] 
     public User User { get; set; }

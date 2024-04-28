@@ -22,7 +22,7 @@ public class RateFilterBuilder
     {
         if (!string.IsNullOrEmpty(filterValue))
         {
-            _filterOptions.Add(rate => rate.UserId.Equals(Convert.ToInt32(filterValue)));
+            _filterOptions.Add(rate => rate.UserId.Equals(new Guid(filterValue)));
         }
 
         return this;

@@ -28,7 +28,7 @@ namespace EcommerceApi.Controllers.V1.Admin
             return StatusCode(200, listOrder);
         }
         [HttpDelete]
-        [Route("oders/delele/{orderId:Guid}")]
+        [Route("oders/delele/{orderId:guid}")]
         public async Task<IActionResult> DeleteOrder(Guid orderId, CancellationToken cancellationToken)
         {
             await _orderService.DeleteOrderAsync(orderId, cancellationToken);
@@ -39,7 +39,7 @@ namespace EcommerceApi.Controllers.V1.Admin
             });
         }
         [HttpPut]
-        [Route("oders/update/{orderId:Guid}")]
+        [Route("oders/update/{orderId:guid}")]
         public async Task<IActionResult> UpdateOrder(OrderDto orderDto, Guid orderId, CancellationToken cancellationToken)
         {
             var updateOrder = await _orderService.UpdateOrderAsync(orderDto, orderId, cancellationToken);

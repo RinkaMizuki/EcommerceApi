@@ -103,35 +103,35 @@ namespace EcommerceApi.Controllers.V1.User
         //    });
         //}
 
-        [HttpGet]
-        [Route("resend-confirm-email/{id:int}")]
-        public async Task<IActionResult> ResendConfirmEmail(int id, CancellationToken cancellationToken)
-        {
-            var userReconfirm = await _context
-                                              .Users
-                                              .Where(u => u.UserId == id)
-                                              .FirstOrDefaultAsync(cancellationToken)
-                                              ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
+        //[HttpGet]
+        //[Route("resend-confirm-email/{id:int}")]
+        //public async Task<IActionResult> ResendConfirmEmail(int id, CancellationToken cancellationToken)
+        //{
+        //    var userReconfirm = await _context
+        //                                      .Users
+        //                                      .Where(u => u.UserId == id)
+        //                                      .FirstOrDefaultAsync(cancellationToken)
+        //                                      ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
 
-            var token = _confirmService.GenerateEmailConfirmToken(userReconfirm, 1);
+        //    var token = _confirmService.GenerateEmailConfirmToken(userReconfirm, 1);
 
-            var domain = HttpContext.Request.Headers["origin"];
+        //    var domain = HttpContext.Request.Headers["origin"];
             
-            var message =
-                $"{domain}/confirm-email?userId={userReconfirm.UserId}&token={token}";
+        //    var message =
+        //        $"{domain}/confirm-email?userId={userReconfirm.UserId}&token={token}";
 
-            await _mailService.SendEmailAsync(new MessageModel(
-                userReconfirm.Email,
-                userReconfirm.UserName,
-                "Please confirm your email.",
-                $"Click here to confirm your email. <a href=\"{message}\">Click here!</a>"
-            ), cancellationToken);
-            return StatusCode(200, new
-            {
-                message = "Resend email confirm successfully. Please check your email !",
-                statusCode = HttpStatusCode.OK,
-            });
-        }
+        //    await _mailService.SendEmailAsync(new MessageModel(
+        //        userReconfirm.Email,
+        //        userReconfirm.UserName,
+        //        "Please confirm your email.",
+        //        $"Click here to confirm your email. <a href=\"{message}\">Click here!</a>"
+        //    ), cancellationToken);
+        //    return StatusCode(200, new
+        //    {
+        //        message = "Resend email confirm successfully. Please check your email !",
+        //        statusCode = HttpStatusCode.OK,
+        //    });
+        //}
 
         //[HttpGet]
         //[Route("confirm-email")]
@@ -724,79 +724,79 @@ namespace EcommerceApi.Controllers.V1.User
         //    };
         //    return claims;
         //}
-        private async Task<FacebookUser?> GetFacebookUserProfileAsync(string accessToken)
-        {
-            var httpClient = new HttpClient();
-            var response = await httpClient.GetAsync($"https://graph.facebook.com/v19.0/me?fields=id,name,email,picture&access_token={accessToken}");
+        //private async Task<FacebookUser?> GetFacebookUserProfileAsync(string accessToken)
+        //{
+        //    var httpClient = new HttpClient();
+        //    var response = await httpClient.GetAsync($"https://graph.facebook.com/v19.0/me?fields=id,name,email,picture&access_token={accessToken}");
 
-            if (response.IsSuccessStatusCode)
-            {
-                var userJson = await response.Content.ReadAsStringAsync();
-                var facebookUser = JsonSerializer.Deserialize<FacebookUser>(userJson);
-                return facebookUser;
-            }
+        //    if (response.IsSuccessStatusCode)
+        //    {
+        //        var userJson = await response.Content.ReadAsStringAsync();
+        //        var facebookUser = JsonSerializer.Deserialize<FacebookUser>(userJson);
+        //        return facebookUser;
+        //    }
 
-            return null;
-        }
-        private string GenerateFacebookToken(FacebookUser facebookUser)
-        {
-            var claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, facebookUser.Id),
-                new Claim(JwtRegisteredClaimNames.Name, facebookUser.Name),
-                new Claim(JwtRegisteredClaimNames.Email, facebookUser.Email),
-                new Claim("Picture", JsonSerializer.Serialize(facebookUser.Picture)),
-            };
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetSection("FacebookConfiguration:AppSecret").Value ?? ""));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        //    return null;
+        //}
+        //private string GenerateFacebookToken(FacebookUser facebookUser)
+        //{
+        //    var claims = new[]
+        //    {
+        //        new Claim(JwtRegisteredClaimNames.Sub, facebookUser.Id),
+        //        new Claim(JwtRegisteredClaimNames.Name, facebookUser.Name),
+        //        new Claim(JwtRegisteredClaimNames.Email, facebookUser.Email),
+        //        new Claim("Picture", JsonSerializer.Serialize(facebookUser.Picture)),
+        //    };
+        //    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetSection("FacebookConfiguration:AppSecret").Value ?? ""));
+        //    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var token = new JwtSecurityToken(
-                issuer: _config.GetSection("FacebookConfiguration:FacebookIssuer").Value,
-                audience: _config.GetSection("FacebookConfiguration:AppId").Value,
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(30),
-                signingCredentials: creds
-            );
+        //    var token = new JwtSecurityToken(
+        //        issuer: _config.GetSection("FacebookConfiguration:FacebookIssuer").Value,
+        //        audience: _config.GetSection("FacebookConfiguration:AppId").Value,
+        //        claims: claims,
+        //        expires: DateTime.Now.AddMinutes(30),
+        //        signingCredentials: creds
+        //    );
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
+        //    return new JwtSecurityTokenHandler().WriteToken(token);
+        //}
 
-        private string GenerateAccessToken(List<Claim> claims)
-        {
-            var securityKey =
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetSection("JwtConfiguration:Secret").Value ?? ""));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-            var token = new JwtSecurityToken(
-                issuer: _config.GetSection("JwtConfiguration:ValidIssuer").Value,
-                audience: _config.GetSection("JwtConfiguration:ValidAudience").Value,
-                expires: DateTime.Now.AddMinutes(30),
-                signingCredentials: credentials,
-                claims: claims
-            );
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
+        //private string GenerateAccessToken(List<Claim> claims)
+        //{
+        //    var securityKey =
+        //        new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetSection("JwtConfiguration:Secret").Value ?? ""));
+        //    var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+        //    var token = new JwtSecurityToken(
+        //        issuer: _config.GetSection("JwtConfiguration:ValidIssuer").Value,
+        //        audience: _config.GetSection("JwtConfiguration:ValidAudience").Value,
+        //        expires: DateTime.Now.AddMinutes(30),
+        //        signingCredentials: credentials,
+        //        claims: claims
+        //    );
+        //    return new JwtSecurityTokenHandler().WriteToken(token);
+        //}
 
 
-        private RefreshToken GenerateRefreshToken()
-        {
-            var refreshToken = new RefreshToken()
-            {
-                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
-                Expires = DateTime.Now.AddDays(7),
-                CreatedAt = DateTime.Now
-            };
-            return refreshToken;
-        }
+        //private RefreshToken GenerateRefreshToken()
+        //{
+        //    var refreshToken = new RefreshToken()
+        //    {
+        //        Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+        //        Expires = DateTime.Now.AddDays(7),
+        //        CreatedAt = DateTime.Now
+        //    };
+        //    return refreshToken;
+        //}
 
-        private void SetCookieRefreshToken(RefreshToken refreshToken)
-        {
-            var cookieOptions = new CookieOptions()
-            {
-                HttpOnly = true,
-                Secure = false,
-                Expires = DateTime.Now.AddDays(7),
-            };
-            Response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);
-        }
+        //private void SetCookieRefreshToken(RefreshToken refreshToken)
+        //{
+        //    var cookieOptions = new CookieOptions()
+        //    {
+        //        HttpOnly = true,
+        //        Secure = false,
+        //        Expires = DateTime.Now.AddDays(7),
+        //    };
+        //    Response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);
+        //}
     }
 }

@@ -1,4 +1,3 @@
-using EcommerceApi.Models.Provider;
 using EcommerceApi.Models.Segment;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
@@ -7,7 +6,7 @@ namespace EcommerceApi.Models.UserAddress;
 
 public class User
 {
-    [Key] public int UserId { get; set; }
+    [Key]public Guid UserId { get; set; }
     [DataType(DataType.Text)] public string UserName { get; set; } = string.Empty;
     [DataType(DataType.EmailAddress)] public string Email { get; set; } = string.Empty;
     [JsonIgnore]

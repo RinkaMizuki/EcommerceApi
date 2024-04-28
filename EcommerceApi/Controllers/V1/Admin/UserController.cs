@@ -49,8 +49,8 @@ namespace EcommerceApi.Controllers.V1.Admin
 
         [HttpGet]
         [AllowAnonymous]
-        [Route("users/{id:int}")]
-        public async Task<IActionResult> GetUser(int id, CancellationToken userCancellationToken)
+        [Route("users/{id:guid}")]
+        public async Task<IActionResult> GetUser(Guid id, CancellationToken userCancellationToken)
         {
             var user = await _userService.GetUserByIdAsync(id, userCancellationToken);
             if (user == null) return NotFound();
@@ -84,8 +84,8 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
 
         [HttpPut]
-        [Route("users/update/{id:int}")]
-        public async Task<IActionResult> UpdateUser([FromRoute] int id, [FromForm] UserAdminDto userAdmin,
+        [Route("users/update/{id:guid}")]
+        public async Task<IActionResult> UpdateUser([FromRoute] Guid id, [FromForm] UserAdminDto userAdmin,
             CancellationToken userCancellationToken)
         {
             var updatedUser = await _userService.UpdateUserByIdAsync(id, userAdmin, HttpContext, Request, userCancellationToken);
@@ -107,8 +107,8 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
 
         [HttpDelete]
-        [Route("users/delete/{id:int}")]
-        public async Task<IActionResult> DeleteUser(int id, CancellationToken userCancellationToken)
+        [Route("users/delete/{id:guid}")]
+        public async Task<IActionResult> DeleteUser(Guid id, CancellationToken userCancellationToken)
         {
             var response = await _userService.DeleteUserByIdAsync(id, userCancellationToken);
             if (!response) throw new Exception("User not found");
@@ -120,8 +120,8 @@ namespace EcommerceApi.Controllers.V1.Admin
 
         [HttpPut]
         [AllowAnonymous]
-        [Route("users/update/profile/{id:int}")]
-        public async Task<IActionResult> UpdateProfile(int id,[FromForm]UserProfileDto userProfileDto, CancellationToken cancellationToken) { 
+        [Route("users/update/profile/{id:guid}")]
+        public async Task<IActionResult> UpdateProfile(Guid id,[FromForm]UserProfileDto userProfileDto, CancellationToken cancellationToken) { 
             var response = await _userService.UpdateUserProfile(id, Request, userProfileDto, cancellationToken);
             return StatusCode((int)HttpStatusCode.OK, new
             {

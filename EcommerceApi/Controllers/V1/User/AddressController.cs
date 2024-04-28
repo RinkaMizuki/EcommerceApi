@@ -18,16 +18,16 @@ namespace EcommerceApi.Controllers.V1.User
             _addressService = addressService;
         }
 
-        [Route("{userId:int}")]
+        [Route("{userId:guid}")]
         [HttpGet]
-        public async Task<IActionResult> GetListAddress(int userId, CancellationToken cancellationToken) {
+        public async Task<IActionResult> GetListAddress(Guid userId, CancellationToken cancellationToken) {
             var listAddress = await _addressService.GetListUserAddressAsync(userId, cancellationToken);
             return StatusCode((int)HttpStatusCode.OK, listAddress);
         }
 
-        [Route("post/{userId:int}")]
+        [Route("post/{userId:guid}")]
         [HttpPost]
-        public async Task<IActionResult> PostAddress([FromBody]UserAddressDto userAddressDto, int userId, CancellationToken cancellationToken)
+        public async Task<IActionResult> PostAddress([FromBody]UserAddressDto userAddressDto, Guid userId, CancellationToken cancellationToken)
         {
             var newAddress = await _addressService.PostUserAddressAsync(userAddressDto, userId, cancellationToken);
             return StatusCode((int)HttpStatusCode.OK, newAddress);

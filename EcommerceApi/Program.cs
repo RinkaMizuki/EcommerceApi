@@ -127,12 +127,7 @@ builder.Services.AddCors(options =>
                 .AllowCredentials();
         });
 });
-//options =>
-//{
-//    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-//    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-//    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-//}
+
 builder.Services.AddAuthentication().AddScheme<TokenAuthSchemeOptions, AuthenticationDefaultHandler>(
     "SsoDefaultSchema",
     opts => { }
@@ -143,6 +138,12 @@ builder.Services.AddAuthentication().AddScheme<TokenAuthSchemeOptions, Authentic
     "SsoGoogleSchema",
     opts => { }
 );
+//options =>
+//{
+//    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+//    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+//    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+//}
 //.AddJwtBearer("Default", options =>
 //{
 //    options.IncludeErrorDetails = true;

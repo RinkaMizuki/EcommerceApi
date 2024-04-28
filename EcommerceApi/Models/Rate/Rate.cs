@@ -14,7 +14,7 @@ public class Rate
     [ForeignKey("ProductId")]
     [JsonIgnore]
     public Product.Product Product { get; set; }
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     [ForeignKey("UserId")]
     [JsonIgnore]
     public User User { get; set; }

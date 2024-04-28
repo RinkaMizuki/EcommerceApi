@@ -8,7 +8,7 @@ namespace EcommerceApi.Models.Segment;
 public class UserSegment
 {
     [JsonIgnore]
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     [ForeignKey("UserId")]
 
     [JsonIgnore]

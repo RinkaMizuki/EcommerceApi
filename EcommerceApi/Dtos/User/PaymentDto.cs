@@ -20,7 +20,7 @@
         public decimal TotalDiscount { get; set; }
         public int TotalQuantity { get; set; }
         public Guid? CouponId { get; set; }
-        public int UserId { get; set; }
+        public Guid UserId { get; set; }
         public string Note { get; set; } = string.Empty;
         //order detail
         public List<OrderDetailDto> OrderDetails { get; set; } = new();

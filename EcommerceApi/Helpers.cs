@@ -58,13 +58,17 @@ namespace EcommerceApi
         public static string GetUserNameLogin(HttpContext httpContext)
         {
             var jwt = httpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            if(string.IsNullOrEmpty(jwt))
+            {
+                jwt = httpContext.Request.Cookies["accessToken"]!;
+            }
             var userName = string.Empty;
             if (jwt != null)
             {
                 var handler = new JwtSecurityTokenHandler();
                 var jsonToken = handler.ReadToken(jwt) as JwtSecurityToken;
                 userName = jsonToken?.Claims
-                    .FirstOrDefault(claim => claim.Type == JwtRegisteredClaimNames.UniqueName)?.Value;
+                    .FirstOrDefault(claim => claim.Type == "username")?.Value;
             }
 
             return userName!;
@@ -83,7 +87,17 @@ namespace EcommerceApi
 
             return role!;
         }
-        
+        public static List<T> CreatePaging<T>(List<T> list, List<int> rangeValues, int currentPage, int perPage, string type, HttpResponse response)
+        {
+            var totalCount = list.Count;
+            list = list
+                .Skip((currentPage - 1) * perPage)
+                .Take(perPage)
+                .ToList();
+            response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
+            response.Headers.Append("Content-Range", $"{type} {rangeValues[0]}-{rangeValues[1]}/{totalCount}");
+            return list;
+        }
         public static List<T> GetRandomElements<T>(List<T> list, int count)
         {
             Random random = new ();

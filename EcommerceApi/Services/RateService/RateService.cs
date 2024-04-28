@@ -173,7 +173,7 @@ namespace EcommerceApi.Services.FeedbackService
                     _ => listRate.OrderByDescending(r => r.CreatedAt).ToList()
                 };
 
-                var totalRate = listRate.Count();
+                var totalRate = listRate.Count;
 
                 listRate = listRate
                     .Skip((currentPage - 1) * perPage)

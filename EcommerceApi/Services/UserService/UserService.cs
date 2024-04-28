@@ -1,5 +1,5 @@
 using System.Net;
-using BCrypt.Net;
+//using BCrypt.Net;
 using EcommerceApi.Constant;
 using EcommerceApi.Dtos.Admin;
 using EcommerceApi.Dtos.Upload;
@@ -40,6 +40,7 @@ public class UserService : IUserService
 
             var newUser = new User()
             {
+                UserId = userAdmin.UserId,
                 UserName = userAdmin.UserName,
                 Email = userAdmin.Email,
                 //PasswordHash = userAdmin.Password,
@@ -80,7 +81,7 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<User?> GetUserByIdAsync(int userId, CancellationToken userCancellationToken)
+    public async Task<User?> GetUserByIdAsync(Guid userId, CancellationToken userCancellationToken)
     {
         try
         {
@@ -108,9 +109,7 @@ public class UserService : IUserService
             if (rangeValues.Count == 0)
             {
                 rangeValues.AddRange(new List<int> { 0, 24 });
-            }
-
-            ;
+            };
 
             var sortValues = Helpers.ParseString<string>(sort);
 
@@ -175,7 +174,7 @@ public class UserService : IUserService
                 .ThenInclude(u => u.Segment)
                 .Select(u => new UserResponse()
                 {
-                    Id = u.UserId,
+                    //Id = u.UserId,
                     UserName = u.UserName,
                     Email = u.Email,
                     Avatar = u.Avatar,
@@ -201,7 +200,7 @@ public class UserService : IUserService
             var filterSearch = filterValues[filterValues.IndexOf(UserFilterType.Search) + 1];
 
 
-            var filterRefIds = new List<int>();
+            var filterRefIds = new List<Guid>();
             if (filterValues.Contains(UserFilterType.Id))
             {
                 var keyStartIndex = filterValues.IndexOf(UserFilterType.Id);
@@ -209,7 +208,7 @@ public class UserService : IUserService
                 var listId = filterValues
                     .Skip(keyStartIndex + 1)
                     .Take(keyEndIndex - keyStartIndex - 1)
-                    .Select(int.Parse).ToList();
+                    .Select(Guid.Parse).ToList();
                 filterRefIds.AddRange(listId);
                 listUsers = listUsers
                     .Where(u => filterRefIds.Contains(u.Id))
@@ -255,16 +254,20 @@ public class UserService : IUserService
                 _ => listUsers
             };
 
-            var totalUser = listUsers.Count;
+            {
+                //var totalUser = listUsers.Count;
 
-            listUsers = listUsers
-                .Skip((currentPage - 1) * perPage)
-                .Take(perPage)
-                .ToList();
+                //listUsers = listUsers
+                //    .Skip((currentPage - 1) * perPage)
+                //    .Take(perPage)
+                //    .ToList();
 
-            response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
-            response.Headers.Append("Content-Range", $"users {rangeValues[0]}-{rangeValues[1]}/{totalUser}");
-            return listUsers;
+                //response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
+                //response.Headers.Append("Content-Range", $"users {rangeValues[0]}-{rangeValues[1]}/{totalUser}");
+                //return listUsers;
+            }
+            var listUserPaging = Helpers.CreatePaging(listUsers, rangeValues, currentPage, perPage, "users", response);
+            return listUserPaging;
         }
         catch (SqlException ex)
         {
@@ -300,7 +303,7 @@ public class UserService : IUserService
         return elmCount >= filters.Count;
     }
 
-    public async Task<bool> DeleteUserByIdAsync(int userId, CancellationToken userCancellationToken)
+    public async Task<bool> DeleteUserByIdAsync(Guid userId, CancellationToken userCancellationToken)
     {
         try
         {
@@ -319,7 +322,7 @@ public class UserService : IUserService
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
         }
     }
-    public async Task<UserResponse> UpdateUserProfile(int userId, HttpRequest request, UserProfileDto userProfileDto, CancellationToken userCancellationToken)
+    public async Task<UserResponse> UpdateUserProfile(Guid userId, HttpRequest request, UserProfileDto userProfileDto, CancellationToken userCancellationToken)
     {
         try
         {
@@ -392,7 +395,7 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<User> UpdateUserByIdAsync(int userId, UserAdminDto userAdminDto, HttpContext httpContext, HttpRequest request,
+    public async Task<User> UpdateUserByIdAsync(Guid userId, UserAdminDto userAdminDto, HttpContext httpContext, HttpRequest request,
         CancellationToken userCancellationToken)
     {
         try
@@ -401,9 +404,7 @@ public class UserService : IUserService
             if (updateUser == null)
             {
                 throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
-            }
-
-            ;
+            };
             if (_context.Users
                 .Where(u => (u.UserName == userAdminDto.UserName || u.Email == userAdminDto.Email) &&
                             u.UserId != userId)
@@ -449,16 +450,17 @@ public class UserService : IUserService
                 updateUser.Url = string.Empty;
             }
 
-            var currentUserRole = Helpers.GetUserRoleLogin(httpContext);
-            if (currentUserRole == "admin") { 
-                updateUser.Role = userAdminDto.Role;
-            }
+            //var currentUserRole = Helpers.GetUserRoleLogin(httpContext);
+            //if (currentUserRole == "admin") { 
+            //    updateUser.Role = userAdminDto.Role;
+            //}
 
             updateUser.UserName = userAdminDto.UserName;
             updateUser.Email = userAdminDto.Email;
             updateUser.Phone = userAdminDto.Phone ?? "";
             updateUser.BirthDate = Convert.ToDateTime(userAdminDto.BirthDate.ToLongDateString());
             updateUser.ModifiedAt = DateTime.Now;
+
             //if (!string.IsNullOrEmpty(userAdminDto.Password) && currentUserRole == "admin")
             //{
             //    updateUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(userAdminDto.Password);

@@ -4,6 +4,7 @@ using EcommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EcommerceApi.Migrations
 {
     [DbContext(typeof(EcommerceDbContext))]
-    partial class EcommerceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240428070333_updateUserPrimaryKey")]
+    partial class updateUserPrimaryKey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -49,12 +52,7 @@ namespace EcommerceApi.Migrations
                     b.Property<DateTime>("SentDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("ContactId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Contacts");
                 });
@@ -194,14 +192,9 @@ namespace EcommerceApi.Migrations
                     b.Property<int>("TotalQuantity")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("OrderId");
 
                     b.HasIndex("CouponId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Orders");
                 });
@@ -657,14 +650,9 @@ namespace EcommerceApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("RateId");
 
                     b.HasIndex("ProductId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Rates");
                 });
@@ -697,12 +685,7 @@ namespace EcommerceApi.Migrations
                     b.Property<int>("SegmentId")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("SegmentId", "UserId");
-
-                    b.HasIndex("UserId");
+                    b.HasKey("SegmentId");
 
                     b.ToTable("UserSegments");
                 });
@@ -744,10 +727,6 @@ namespace EcommerceApi.Migrations
 
             modelBuilder.Entity("EcommerceApi.Models.UserAddress.User", b =>
                 {
-                    b.Property<Guid>("UserId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Avatar")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -789,10 +768,6 @@ namespace EcommerceApi.Migrations
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("UserId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Users");
                 });
@@ -844,25 +819,9 @@ namespace EcommerceApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
-
                     b.ToTable("UserAddresses");
-                });
-
-            modelBuilder.Entity("EcommerceApi.Models.Contact.Contact", b =>
-                {
-                    b.HasOne("EcommerceApi.Models.UserAddress.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Coupon.CouponCondition", b =>
@@ -901,15 +860,7 @@ namespace EcommerceApi.Migrations
                         .WithMany()
                         .HasForeignKey("CouponId");
 
-                    b.HasOne("EcommerceApi.Models.UserAddress.User", "User")
-                        .WithMany("Orders")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Coupon");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Order.OrderDetail", b =>
@@ -1050,15 +1001,7 @@ namespace EcommerceApi.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EcommerceApi.Models.UserAddress.User", "User")
-                        .WithMany("Rates")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Product");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Segment.UserSegment", b =>
@@ -1069,26 +1012,7 @@ namespace EcommerceApi.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EcommerceApi.Models.UserAddress.User", "User")
-                        .WithMany("UserSegments")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Segment");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EcommerceApi.Models.UserAddress.UserAddress", b =>
-                {
-                    b.HasOne("EcommerceApi.Models.UserAddress.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Coupon.Coupon", b =>
@@ -1142,15 +1066,6 @@ namespace EcommerceApi.Migrations
                 {
                     b.Navigation("FeedbackRate")
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("EcommerceApi.Models.UserAddress.User", b =>
-                {
-                    b.Navigation("Orders");
-
-                    b.Navigation("Rates");
-
-                    b.Navigation("UserSegments");
                 });
 #pragma warning restore 612, 618
         }

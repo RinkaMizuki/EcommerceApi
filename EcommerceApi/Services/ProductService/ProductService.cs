@@ -85,7 +85,7 @@ namespace EcommerceApi.Services.ProductService
 
                 var filterValues = Helpers.ParseString<string>(filter);
                 var sortString = string.Join(", ", sortValues.Where((s, i) => i % 2 == 0)
-                                           .Zip(sortValues.Where((s, i) => i % 2 != 0), (a, b) => $"{a} {b}")).Trim();
+                                           .Zip(sortValues.Where((s, i) => i % 2 != 0), (a, b) => $"{(a == "id" ? "productId" : a)} {b}")).Trim();
 
                 if (!filterValues.Contains(ProductFilterType.Search))
                 {
@@ -271,16 +271,20 @@ namespace EcommerceApi.Services.ProductService
                     listProduct = listProduct.AsQueryable().OrderBy(sortString).ToList();
                 }
 
-                var totalProduct = listProduct.Count;
+                {
+                    //var totalProduct = listProduct.Count;
 
-                listProduct = listProduct
-                    .Skip((currentPage - 1) * perPage)
-                    .Take(perPage).ToList();
+                    //listProduct = listProduct
+                    //    .Skip((currentPage - 1) * perPage)
+                    //    .Take(perPage).ToList();
 
-                response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
-                response.Headers.Append("Content-Range", $"products {rangeValues[0]}-{rangeValues[1]}/{totalProduct}");
+                    //response.Headers.Append("Access-Control-Expose-Headers", "Content-Range");
+                    //response.Headers.Append("Content-Range", $"products {rangeValues[0]}-{rangeValues[1]}/{totalProduct}");
 
-                return listProduct;
+                    //return listProduct;
+                }
+                var listProductPaging = Helpers.CreatePaging(listProduct, rangeValues, currentPage, perPage, "products", response);
+                return listProductPaging;
             }
             catch (SqlException ex)
             {

@@ -9,7 +9,7 @@ namespace EcommerceApi.Responses
         public Guid OrderId { get; set; } = Guid.Empty;
         public int Amount { get; set; }
         public string TranNo { get; set; } = string.Empty;
-        public int CustomerId { get; set; }
+        public Guid CustomerId { get; set; }
         public string CustomerName { get; set; } = string.Empty;
         public string CustomerEmail { get; set; } = string.Empty;
         public string CustomerPhone{ get; set; } = string.Empty;

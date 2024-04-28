@@ -55,7 +55,5 @@ public class EcommerceDbContext : DbContext
         modelBuilder.Entity<OrderDetail>().HasKey(od => new { od.OrderId, od.ProductId });
         modelBuilder.Entity<UserSegment>().HasKey(us => new { us.SegmentId, us.UserId });
         modelBuilder.Entity<CouponCondition>().HasKey(cc => new { cc.ConditionId, cc.CouponId });
-        //modelBuilder.Entity<UserLogins>().HasKey(ul => new { ul.ProviderKey, ul.LoginProvider });
-        //modelBuilder.Ignore<UserLogins>();
     }
 }

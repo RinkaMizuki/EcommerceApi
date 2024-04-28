@@ -29,7 +29,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
 
         [HttpGet]
-        [Route("sliders/{silderId:Guid}")]
+        [Route("sliders/{silderId:guid}")]
         public async Task<IActionResult> GetSliderById(Guid silderId, CancellationToken cancellationToken)
         {
             var slider = await _sliderService.GetSliderByIdAsync(silderId, cancellationToken);
@@ -45,7 +45,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
 
         [HttpPut]
-        [Route("sliders/update/{sliderId:Guid}")]
+        [Route("sliders/update/{sliderId:guid}")]
         public async Task<IActionResult> UpdateSlider([FromForm] SliderDto sliderDto, Guid sliderId, CancellationToken cancellationToken)
         {
             var currentUser = Helpers.GetUserNameLogin(HttpContext);
@@ -53,7 +53,7 @@ namespace EcommerceApi.Controllers.V1.Admin
             return Ok(slider);
         }
         [HttpDelete]
-        [Route("sliders/delete/{sliderId:Guid}")]
+        [Route("sliders/delete/{sliderId:guid}")]
         public async Task<IActionResult> DeleteSlider(Guid sliderId, CancellationToken cancellationToken)
         {
             await _sliderService.DeleteSliderAsync(sliderId, cancellationToken);
