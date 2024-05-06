@@ -22,12 +22,12 @@ namespace EcommerceApi.Controllers.V1.User
         [Route("coupon")]
         public async Task<IActionResult> ApplyCoupon([FromBody]CouponProductDto couponProductDto, CancellationToken cancellationToken)
         {
-            var totalPrice = await _couponService.ApplyCouponProductAsync(couponProductDto, cancellationToken);
+            var price = await _couponService.ApplyCouponProductAsync(couponProductDto, cancellationToken);
             return StatusCode((int)HttpStatusCode.OK, new
             {
                 message = "Applied coupon successfully.",
                 statusCode = 200,
-                totalPrice,
+                price,
             });
         }
     }

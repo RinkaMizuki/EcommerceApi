@@ -25,5 +25,6 @@ public class User
     public List<Rate.Rate> Rates { get; set; } = new();
     public List<Order.Order> Orders { get; set; } = new();
     public List<UserSegment> UserSegments { get; set; } = new();
+    public List<UserAddress> UserAddresses { get; set; } = new();
     //public List<UserLogins> UserLogins { get; set; } = new();
 }

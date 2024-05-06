@@ -14,6 +14,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using System.Globalization;
 using System.Net;
+using static Org.BouncyCastle.Asn1.Cmp.Challenge;
 
 namespace EcommerceApi.Services.PaymentService
 {
@@ -28,20 +29,12 @@ namespace EcommerceApi.Services.PaymentService
             _mailservice = mailService;
         }
 
-        public async Task<InvoiceResponse> PostPaymentReturnAsync(TranDto tranDto, HttpRequest httpRequest, CancellationToken cancellationToken)
+        public async Task<InvoiceResponse> PostPaymentReturnAsync(HttpRequest httpRequest, CancellationToken cancellationToken)
         {
             var invoiceResponse = new InvoiceResponse();
             var newTransaction = new PaymentTransaction();
-            var tranId = tranDto.TranId;
 
             PaymentTransaction? currTran = null;
-            if(!string.IsNullOrEmpty(tranId))
-            {
-                currTran = await _context
-                                          .PaymentTransactions
-                                          .Where(pt => pt.TranscationId.ToString().ToLower().Equals(tranId))
-                                          .FirstOrDefaultAsync(cancellationToken);
-            }
 
             if (httpRequest.Query.Count > 0)
             {
@@ -57,13 +50,20 @@ namespace EcommerceApi.Services.PaymentService
                         vnpay.AddResponseData(s.Key, s.Value!);
                     }
                 }
+                string vnpayTranId = vnpay.GetResponseData("vnp_TransactionNo");
+                if (!string.IsNullOrEmpty(vnpayTranId))
+                {
+                    currTran = await _context
+                                              .PaymentTransactions
+                                              .Where(pt => pt.TranPayload.ToLower().Equals(vnpayTranId.ToLower()))
+                                              .FirstOrDefaultAsync(cancellationToken);
+                }
                 //vnp_TxnRef: Ma don hang merchant gui VNPAY tai command=pay    
                 //vnp_newTransactionNo: Ma GD tai he thong VNPAY
                 //vnp_ResponseCode:Response code from VNPAY: 00: Thanh cong, Khac 00: Xem tai lieu
                 //vnp_SecureHash: HmacSHA512 cua du lieu tra ve
 
                 string orderId = vnpay.GetResponseData("vnp_TxnRef");
-                string vnpayTranId = vnpay.GetResponseData("vnp_TransactionNo");
                 string vnp_ResponseCode = vnpay.GetResponseData("vnp_ResponseCode");
                 string vnp_TransactionStatus = vnpay.GetResponseData("vnp_TransactionStatus");
                 string vnp_SecureHash = httpRequest.Query["vnp_SecureHash"]!;
@@ -99,6 +99,7 @@ namespace EcommerceApi.Services.PaymentService
                         invoiceResponse.InvoiceAddress = order.DeliveryAddress;
                         invoiceResponse.InvoiceDate = order.OrderDate;
                         invoiceResponse.OrderDetails = order.OrderDetails;
+                        invoiceResponse.TotalDiscount = order.TotalDiscount;
                         if (currTran is null)
                         {
                             var paymentDate = vnpay.GetResponseData("vnp_PayDate");
@@ -176,10 +177,6 @@ namespace EcommerceApi.Services.PaymentService
                         newTransaction.CreatedAt = DateTime.Now;
                         newTransaction.PaymentId = payment.PaymentId;
                         invoiceResponse.TranId = newTransaction?.TranscationId;
-                    }
-                    else
-                    {
-                        invoiceResponse.TranId = currTran?.TranscationId;
                     }
                     throw new HttpStatusException(HttpStatusCode.InternalServerError, errorMessage);
                 }

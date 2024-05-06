@@ -1,5 +1,6 @@
 using EcommerceApi.Models.Provider;
 using EcommerceApi.Models.Segment;
+using EcommerceApi.Models.UserAddress;
 
 namespace EcommerceApi.Responses;
 

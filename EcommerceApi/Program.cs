@@ -1,6 +1,4 @@
-using System.Text;
 using Asp.Versioning;
-using EcommerceApi;
 using EcommerceApi.Attributes;
 using EcommerceApi.Authentication;
 using EcommerceApi.Config;

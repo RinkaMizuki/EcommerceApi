@@ -3,8 +3,6 @@ using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models;
 using EcommerceApi.Models.UserAddress;
 using Microsoft.EntityFrameworkCore;
-using Mono.TextTemplating;
-using Org.BouncyCastle.Utilities.Net;
 using System.Net;
 
 namespace EcommerceApi.Services.AddressService

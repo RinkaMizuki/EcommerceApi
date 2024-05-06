@@ -19,7 +19,7 @@ namespace EcommerceApi.Services.CouponService
             _context = context;
         }
 
-        public async Task<int> ApplyCouponProductAsync(CouponProductDto couponProductDto, CancellationToken userCancellationToken)
+        public async Task<object> ApplyCouponProductAsync(CouponProductDto couponProductDto, CancellationToken userCancellationToken)
         {
             var coupon = await _context
                                        .Coupons
@@ -63,7 +63,10 @@ namespace EcommerceApi.Services.CouponService
                 total -= amountDiscount;
                 if (total < 0) throw new HttpStatusException(HttpStatusCode.BadRequest, "Applied coupon failure.");
 
-                return total;
+                return new {
+                    total,
+                    amountDiscount
+                };
 
             }
             catch (Exception ex)

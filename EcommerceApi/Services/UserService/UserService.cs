@@ -85,7 +85,11 @@ public class UserService : IUserService
     {
         try
         {
-            var user = await _context.Users.FindAsync(new object[] { userId }, userCancellationToken);
+            var user = await _context
+                                    .Users
+                                    .Where(u => u.UserId == userId)
+                                    .FirstOrDefaultAsync(userCancellationToken);
+                                    
             if (user == null)
             {
                 throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
@@ -174,7 +178,7 @@ public class UserService : IUserService
                 .ThenInclude(u => u.Segment)
                 .Select(u => new UserResponse()
                 {
-                    //Id = u.UserId,
+                    Id = u.UserId,
                     UserName = u.UserName,
                     Email = u.Email,
                     Avatar = u.Avatar,
