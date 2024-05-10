@@ -250,7 +250,7 @@ namespace EcommerceApi.Services.ProductService
                                             .Build();
 
                 listProduct = listProduct
-                    .Where(filters).ToList();
+                                         .Where(filters).ToList();
 
                 if(favorites.Count > 0)
                 {

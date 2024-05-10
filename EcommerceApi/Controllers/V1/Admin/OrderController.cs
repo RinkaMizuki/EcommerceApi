@@ -22,13 +22,13 @@ namespace EcommerceApi.Controllers.V1.Admin
         }
         [HttpGet]
         [Route("orders")]
-        public async Task<IActionResult> GetListOrder(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetListOrder([FromQuery] string filter, [FromQuery] string range, [FromQuery] string sort, CancellationToken cancellationToken)
         {
-            var listOrder = await _orderService.GetListOrderAsync(cancellationToken);
+            var listOrder = await _orderService.GetListOrderAsync(filter, range, sort, Response ,cancellationToken);
             return StatusCode(200, listOrder);
         }
         [HttpDelete]
-        [Route("oders/delele/{orderId:guid}")]
+        [Route("orders/delele/{orderId:guid}")]
         public async Task<IActionResult> DeleteOrder(Guid orderId, CancellationToken cancellationToken)
         {
             await _orderService.DeleteOrderAsync(orderId, cancellationToken);
@@ -39,11 +39,18 @@ namespace EcommerceApi.Controllers.V1.Admin
             });
         }
         [HttpPut]
-        [Route("oders/update/{orderId:guid}")]
+        [Route("orders/update/{orderId:guid}")]
         public async Task<IActionResult> UpdateOrder(OrderDto orderDto, Guid orderId, CancellationToken cancellationToken)
         {
             var updateOrder = await _orderService.UpdateOrderAsync(orderDto, orderId, cancellationToken);
             return Ok(updateOrder);
+        }
+        [HttpGet]
+        [Route("orders/{orderId:guid}")]
+        public async Task<IActionResult> GetOrderById(Guid orderId, CancellationToken cancellationToken)
+        {
+            var order = await _orderService.GetOrderByIdAsync(orderId, cancellationToken);
+            return Ok(order);
         }
     }
 }

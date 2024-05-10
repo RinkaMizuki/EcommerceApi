@@ -43,7 +43,6 @@ public class UserService : IUserService
                 UserId = userAdmin.UserId,
                 UserName = userAdmin.UserName,
                 Email = userAdmin.Email,
-                //PasswordHash = userAdmin.Password,
                 CreatedAt = DateTime.Now,
                 ModifiedAt = DateTime.Now,
                 Role = userAdmin.Role.ToLower(),
@@ -174,6 +173,7 @@ public class UserService : IUserService
             var listUsersQuery = _context
                 .Users
                 .Where(u => u.Role != "admin")
+                .Include(u => u.UserAddresses)
                 .Include(u => u.UserSegments)
                 .ThenInclude(u => u.Segment)
                 .Select(u => new UserResponse()
@@ -192,7 +192,8 @@ public class UserService : IUserService
                     {
                         SegmentId = us.Segment.SegmentId,
                         Title = us.Segment.Title,
-                    }).ToList()
+                    }).ToList(),
+                    UserAddresses = u.UserAddresses.ToList()
                 });
 
             var listUsers = await listUsersQuery
@@ -476,9 +477,9 @@ public class UserService : IUserService
 
             return updateUser;
         }
-        catch (SqlException ex)
+        catch (Exception ex)
         {
-            throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
+            throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
         }
     }
 
@@ -494,5 +495,23 @@ public class UserService : IUserService
         }
 
         throw new HttpStatusException(response.HttpStatusCode, "Avatar not found.");
+    }
+
+    public async Task<bool> UpdateUserConfirm(Guid userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var user = await _context.Users
+                                           .Where(u => u.UserId.Equals(userId))
+                                           .FirstOrDefaultAsync(cancellationToken)
+                                           ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
+            user.EmailConfirm = true;
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (Exception ex)
+        {      
+            throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
+        }
     }
 }

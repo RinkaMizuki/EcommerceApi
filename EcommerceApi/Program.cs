@@ -136,6 +136,56 @@ builder.Services.AddAuthentication().AddScheme<TokenAuthSchemeOptions, Authentic
     "SsoGoogleSchema",
     opts => { }
 );
+builder.Services.AddAuthorization(options =>
+{
+    options.DefaultPolicy = new AuthorizationPolicyBuilder() //default [Authorize]
+            .RequireAuthenticatedUser()
+            .AddAuthenticationSchemes("SsoDefaultSchema", "SsoFacebookSchema", "SsoGoogleSchema") //custom Facebook, Google Schema 
+            .Build();
+    options.AddPolicy("SsoAdmin", new AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .AddAuthenticationSchemes("SsoDefaultSchema")
+            .AddRequirements(new AdminAccessApiRequirement(configuration))
+            .Build()
+    );
+});
+
+var app = builder.Build();
+
+app.UseExceptionHandler("/error"); // add middleware into pipeline to handle global exceptions
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        var descriptions = app.DescribeApiVersions();
+        foreach (var description in descriptions)
+        {
+            options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json",
+                $"Ecommerce_{description.GroupName.ToUpper()}");
+        }
+    });
+}
+
+app.UseHttpsRedirection();
+app.UseDetection();
+app.UseCors("MyAllowSpecificOrigins");
+
+//app.UseMiddleware<DeviceMiddleware>();
+app.UseMiddleware<JwtMiddleware>();
+
+app.UseAuthentication();
+app.UseMiddleware<AuthMiddleware>();
+app.UseAuthorization();
+
+
+app.MapControllers();
+
+app.Run();
+
+
 //options =>
 //{
 //    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -199,52 +249,3 @@ builder.Services.AddAuthentication().AddScheme<TokenAuthSchemeOptions, Authentic
 //        .RequireClaim("Role", IdentityData.AdminPolicyRole)
 //        .Build()
 //);
-
-builder.Services.AddAuthorization(options =>
-{
-    options.DefaultPolicy = new AuthorizationPolicyBuilder() //default [Authorize]
-            .RequireAuthenticatedUser()
-            .AddAuthenticationSchemes("SsoDefaultSchema", "SsoFacebookSchema", "SsoGoogleSchema") //custom Facebook, Google Schema 
-            .Build();
-    options.AddPolicy("SsoAdmin", new AuthorizationPolicyBuilder()
-            .RequireAuthenticatedUser()
-            .AddAuthenticationSchemes("SsoDefaultSchema")
-            .AddRequirements(new AdminAccessApiRequirement(configuration))
-            .Build()
-    );
-});
-
-var app = builder.Build();
-
-app.UseExceptionHandler("/error"); // add middleware into pipeline to handle global exceptions
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        var descriptions = app.DescribeApiVersions();
-        foreach (var description in descriptions)
-        {
-            options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json",
-                $"Ecommerce_{description.GroupName.ToUpper()}");
-        }
-    });
-}
-
-app.UseHttpsRedirection();
-app.UseDetection();
-app.UseCors("MyAllowSpecificOrigins");
-
-//app.UseMiddleware<DeviceMiddleware>();
-app.UseMiddleware<JwtMiddleware>();
-
-app.UseAuthentication();
-app.UseMiddleware<AuthMiddleware>();
-app.UseAuthorization();
-
-
-app.MapControllers();
-
-app.Run();

@@ -18,4 +18,6 @@ public class UserResponse
     public string Url { get; set; } = string.Empty;
     public List<Segment> Segments { get; set; } = new List<Segment>();
     public List<UserLogins> UserLogins { get; set; } = new();
+    public List<UserAddress> UserAddresses { get; set; } = new();
+
 }

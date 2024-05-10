@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using EcommerceApi.Dtos.User;
 using System.Net;
 using Azure.Core;
+using EcommerceApi.ExtensionExceptions;
+using System.Security.Claims;
 
 namespace EcommerceApi.Controllers.V1.Admin
 {
@@ -150,6 +152,18 @@ namespace EcommerceApi.Controllers.V1.Admin
         {
             var userAvatar = await _userService.GetAvatarAsync(avatar, userCancellationToken);
             return File(userAvatar.FileStream, userAvatar.ContentType);
+        }
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("users/confirm-email/{userId:guid}")]
+        public async Task<IActionResult> UpdateConfirmEmail([FromRoute]Guid userId,
+        CancellationToken cancellationToken)
+        {
+            await _userService.UpdateUserConfirm(userId, cancellationToken);
+            return StatusCode(200, new { 
+                message = "Update confirm successfully.",
+                statusCode = 200
+            });
         }
     }
 }

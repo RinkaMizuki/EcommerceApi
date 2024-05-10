@@ -7,6 +7,7 @@ namespace EcommerceApi.Models.Order;
 
 public class Order
 {
+    [JsonPropertyName("id")]
     [Key] public Guid OrderId { get; set; }
     public Guid UserId { get; set; }
     [JsonIgnore]

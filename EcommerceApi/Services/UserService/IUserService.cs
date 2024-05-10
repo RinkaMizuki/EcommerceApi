@@ -16,4 +16,5 @@ public interface IUserService
     public Task<User> UpdateUserByIdAsync(Guid userId, UserAdminDto userAdminDto, HttpContext httpContext, HttpRequest request,CancellationToken userCancellationToken);
     public Task<User> PostUserAsync(UserAdminDto userAdmin, CancellationToken userCancellationToken);
     public Task<FileStreamResult> GetAvatarAsync(string avatarUrl, CancellationToken userCancellationToken);
+    public Task<bool> UpdateUserConfirm(Guid userId, CancellationToken cancellationToken);
 }

@@ -43,34 +43,34 @@ namespace EcommerceApi.Controllers.V1.User
         //[Route("register")]
         //public async Task<IActionResult> Register(UserDto userDto, CancellationToken cancellationToken)
         //{
-            //if (string.IsNullOrEmpty(userDto.UserName)
-            //    || string.IsNullOrEmpty(userDto.Email)
-            //    || string.IsNullOrEmpty(userDto.Password)
-            //    || string.IsNullOrEmpty(userDto.ConfirmPassword)
-            //    || userDto.Password != userDto.ConfirmPassword
-            //   )
-            //{
-            //    return BadRequest(new
-            //    {
-            //        message = "Register failed",
-            //        statusCode = HttpStatusCode.BadRequest,
-            //    });
-            //}
+        //if (string.IsNullOrEmpty(userDto.UserName)
+        //    || string.IsNullOrEmpty(userDto.Email)
+        //    || string.IsNullOrEmpty(userDto.Password)
+        //    || string.IsNullOrEmpty(userDto.ConfirmPassword)
+        //    || userDto.Password != userDto.ConfirmPassword
+        //   )
+        //{
+        //    return BadRequest(new
+        //    {
+        //        message = "Register failed",
+        //        statusCode = HttpStatusCode.BadRequest,
+        //    });
+        //}
 
-            //var isAccountExist =
-            //    await _context.Users.AnyAsync(u => u.UserName == userDto.UserName || u.Email == userDto.Email,
-            //        cancellationToken);
-            //if (isAccountExist)
-            //{
-            //    return new JsonResult(new
-            //    {
-            //        message =
-            //            "The request could not be completed due to a conflict with the current state of the resource.",
-            //        statusCode = HttpStatusCode.Conflict,
-            //    });
-            //}
+        //var isAccountExist =
+        //    await _context.Users.AnyAsync(u => u.UserName == userDto.UserName || u.Email == userDto.Email,
+        //        cancellationToken);
+        //if (isAccountExist)
+        //{
+        //    return new JsonResult(new
+        //    {
+        //        message =
+        //            "The request could not be completed due to a conflict with the current state of the resource.",
+        //        statusCode = HttpStatusCode.Conflict,
+        //    });
+        //}
 
-            //var passwordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
+        //var passwordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
         //    var newUser = new UserModel()
         //    {
         //        UserName = userDto.UserName,
@@ -116,7 +116,7 @@ namespace EcommerceApi.Controllers.V1.User
         //    var token = _confirmService.GenerateEmailConfirmToken(userReconfirm, 1);
 
         //    var domain = HttpContext.Request.Headers["origin"];
-            
+
         //    var message =
         //        $"{domain}/confirm-email?userId={userReconfirm.UserId}&token={token}";
 
@@ -133,48 +133,7 @@ namespace EcommerceApi.Controllers.V1.User
         //    });
         //}
 
-        //[HttpGet]
-        //[Route("confirm-email")]
-        //public async Task<IActionResult> ConfirmEmail([FromQuery] int userId, [FromQuery] string token,
-        //    CancellationToken cancellationToken)
-        //{
-        //    var userConfirm = await _context
-        //                          .Users
-        //                          .Where(u => u.UserId == userId)
-        //                          .FirstOrDefaultAsync(cancellationToken)
-        //                           ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
-        //    if (_confirmService.ValidateEmailConfirmationToken(token, out ClaimsPrincipal claimsPrincipal))
-        //    {
-        //        userConfirm.EmailConfirm = true;
-        //        await _context.SaveChangesAsync(cancellationToken);
-        //        return StatusCode(200, new
-        //        {
-        //            message = "Confirm email successfully",
-        //            statusCode = 200,
-        //            user = new UserResponse()
-        //            {
-        //                Id = userConfirm.UserId,
-        //                UserName = userConfirm.UserName,
-        //                Email = userConfirm.Email,
-        //                Avatar = userConfirm.Avatar,
-        //                BirthDate = userConfirm.BirthDate,
-        //                EmailConfirm = userConfirm.EmailConfirm,
-        //                IsActive = userConfirm.IsActive,
-        //                Phone = userConfirm.Phone,
-        //                Role = userConfirm.Role.ToLower(),
-        //                Url = userConfirm.Url,
-        //            }
-        //        });
-        //    }
-        //    else
-        //    {
-        //        return StatusCode(400, new
-        //        {
-        //            message = "Confirm email failed",
-        //            statusCode = 400,
-        //        });
-        //    }
-        //}
+
         //[HttpPost]
         //[Route("google-auth")]
         //public async Task<IActionResult> GoogleAuth([FromBody]ProviderDto providerDto, CancellationToken cancellationToken)
