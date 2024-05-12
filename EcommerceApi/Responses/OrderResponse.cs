@@ -3,7 +3,7 @@ using EcommerceApi.Models.Order;
 
 namespace EcommerceApi.Responses
 {
-    public class InvoiceResponse
+    public class OrderResponse
     {
         public string Message { get; set; } = string.Empty;
         public Guid OrderId { get; set; } = Guid.Empty;

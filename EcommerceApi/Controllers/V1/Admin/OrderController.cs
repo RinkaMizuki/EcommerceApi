@@ -28,7 +28,7 @@ namespace EcommerceApi.Controllers.V1.Admin
             return StatusCode(200, listOrder);
         }
         [HttpDelete]
-        [Route("orders/delele/{orderId:guid}")]
+        [Route("orders/delete/{orderId:guid}")]
         public async Task<IActionResult> DeleteOrder(Guid orderId, CancellationToken cancellationToken)
         {
             await _orderService.DeleteOrderAsync(orderId, cancellationToken);

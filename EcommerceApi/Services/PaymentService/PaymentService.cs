@@ -14,7 +14,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using System.Globalization;
 using System.Net;
-using static Org.BouncyCastle.Asn1.Cmp.Challenge;
 
 namespace EcommerceApi.Services.PaymentService
 {
@@ -29,9 +28,9 @@ namespace EcommerceApi.Services.PaymentService
             _mailservice = mailService;
         }
 
-        public async Task<InvoiceResponse> PostPaymentReturnAsync(HttpRequest httpRequest, CancellationToken cancellationToken)
+        public async Task<OrderResponse> PostPaymentReturnAsync(HttpRequest httpRequest, CancellationToken cancellationToken)
         {
-            var invoiceResponse = new InvoiceResponse();
+            var invoiceResponse = new OrderResponse();
             var newTransaction = new PaymentTransaction();
 
             PaymentTransaction? currTran = null;
@@ -129,7 +128,7 @@ namespace EcommerceApi.Services.PaymentService
                             invoiceResponse.TranId = newTransaction?.TranscationId;
 
                             //update trang thai order
-                            order.Status = PaymentStatus.Succeed;
+                            order.Status = OrderStatus.Succeed;
                         }
                         else
                         {
@@ -144,7 +143,7 @@ namespace EcommerceApi.Services.PaymentService
                         {
                             payment.PaymentLastMessage = errorMessage;
                             payment.PaymentStatus = PaymentStatus.Failed;
-                            order.Status = PaymentStatus.Failed;
+                            order.Status = OrderStatus.Failed;
                             newTransaction.TranscationId = Guid.NewGuid();
                             newTransaction.TranPayload = vnpayTranId;
                             newTransaction.TranStatus = vnp_TransactionStatus;
@@ -168,7 +167,7 @@ namespace EcommerceApi.Services.PaymentService
                     {
                         payment.PaymentLastMessage = errorMessage;
                         payment.PaymentStatus = PaymentStatus.Failed;
-                        order.Status = PaymentStatus.Failed;
+                        order.Status = OrderStatus.Failed;
                         newTransaction.TranscationId = Guid.NewGuid();
                         newTransaction.TranPayload = vnpayTranId;
                         newTransaction.TranStatus = vnp_TransactionStatus;

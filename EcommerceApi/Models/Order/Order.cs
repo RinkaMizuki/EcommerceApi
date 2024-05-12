@@ -18,6 +18,7 @@ public class Order
     public DateTime OrderDate { get; set; }
     public DateTime DeliveredDate { get; set; }
     public string Status { get; set; } = string.Empty;
+    public bool Returned { get; set; }
     public decimal TotalDiscount { get; set; }
     public int TotalQuantity { get; set; }
     public decimal TotalPrice { get; set; }

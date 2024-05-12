@@ -2,6 +2,12 @@
 {
     public static class OrderFilterType
     {
-        //public const string 
+        public const string Status = "status";
+        public const string UserId = "userId";
+        public const string OrderId = "id";
+        public const string Before = "orderedBefore";
+        public const string Since = "orderedSince";
+        public const string Returned = "returned";
+        public const string MinAmount = "minAmount";
     }
 }
