@@ -41,7 +41,7 @@ namespace EcommerceApi.Services.InvoiceService
 
 
                 var sortString = string.Join(", ", sortValues.Where((s, i) => i % 2 == 0)
-                                           .Zip(sortValues.Where((s, i) => i % 2 != 0), (a, b) => $"{(a == "id" ? "paymentId" : a)} {b}")).Trim();
+                                           .Zip(sortValues.Where((s, i) => i % 2 != 0), (a, b) => $"{a} {b}")).Trim();
 
                 if (!filterValues.Contains(PaymentFilterType.Customer))
                 {
@@ -79,6 +79,7 @@ namespace EcommerceApi.Services.InvoiceService
 
                 var listPaymentQuery = _context
                                         .Payments
+                                        .Include(pm => pm.PaymentDestination)
                                         .Include(pm => pm.Order)
                                         .ThenInclude(od => od.User);
                                        
@@ -94,6 +95,7 @@ namespace EcommerceApi.Services.InvoiceService
                                             Id = pm.PaymentId,
                                             Order = pm.Order,
                                             User = pm.Order.User,
+                                            PaymentDestination = pm.PaymentDestination,
                                             PaymentContent = pm.PaymentContent,
                                             PaymentMessage = pm.PaymentLastMessage,
                                             PaymentCurrency = pm.PaymentCurrency,

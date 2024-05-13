@@ -17,7 +17,5 @@ namespace EcommerceApi.Models.Payment
         [JsonIgnore]
         public PaymentDestination ParentPaymentDestination { get; set; } = null;
         public List<PaymentDestination> PaymentDestinationsChild { get; set; } = new();
-        public List<Payment> Payments { get; set; } = new();
-        
     }
 }

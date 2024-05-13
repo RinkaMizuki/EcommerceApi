@@ -62,30 +62,35 @@ namespace EcommerceApi.Services.PaymentService
                 //vnp_ResponseCode:Response code from VNPAY: 00: Thanh cong, Khac 00: Xem tai lieu
                 //vnp_SecureHash: HmacSHA512 cua du lieu tra ve
 
+                string vnp_BankCode = vnpay.GetResponseData("vnp_BankCode");
                 string orderId = vnpay.GetResponseData("vnp_TxnRef");
                 string vnp_ResponseCode = vnpay.GetResponseData("vnp_ResponseCode");
                 string vnp_TransactionStatus = vnpay.GetResponseData("vnp_TransactionStatus");
                 string vnp_SecureHash = httpRequest.Query["vnp_SecureHash"]!;
                 int vnp_Amount = Convert.ToInt32(vnpay.GetResponseData("vnp_Amount")) / 100;
-                Payment payment = new();
-                Order order = new();
-                bool checkSignature = vnpay.ValidateSignature(vnp_SecureHash, vnp_HashSecret);
-                if (checkSignature)
-                {
-                    if (vnp_ResponseCode == "00" && vnp_TransactionStatus == "00")
-                    {
-                            order = await _context
+                var order = await _context
                                                   .Orders
                                                   .Where(o => o.OrderId.ToString().ToLower().Equals(orderId.ToString().ToLower()))
                                                   .Include(o => o.OrderDetails)
                                                   .ThenInclude(od => od.Product)
                                                   .FirstOrDefaultAsync(cancellationToken)
                                                   ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Order not found.");
-                            payment = await _context
-                                                    .Payments
-                                                    .Where(p => p.PaymentOrderId.ToString().ToLower().Equals(orderId.ToString().ToLower()))
-                                                    .FirstOrDefaultAsync(cancellationToken)
-                                                    ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Payment not found.");
+                var payment = await _context
+                                        .Payments
+                                        .Where(p => p.PaymentOrderId.ToString().ToLower().Equals(orderId.ToString().ToLower()))
+                                        .FirstOrDefaultAsync(cancellationToken)
+                                        ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Payment not found.");
+                var destination = await _context
+                                                .PaymentDestinations
+                                                .Where(pd => pd.DesShortName.ToLower().Equals(vnp_BankCode.ToLower()))
+                                                .FirstOrDefaultAsync(cancellationToken)
+                                                ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Destination not found.");
+                bool checkSignature = vnpay.ValidateSignature(vnp_SecureHash, vnp_HashSecret);
+                if (checkSignature)
+                {
+                    if (vnp_ResponseCode == "00" && vnp_TransactionStatus == "00")
+                    {
+                            
                         //thanh toan thanh cong
                         invoiceResponse.Message = "Giao dịch được thực hiện thành công. Cảm ơn quý khách đã sử dụng dịch vụ";
                         invoiceResponse.OrderId = Guid.Parse(orderId);
@@ -125,6 +130,9 @@ namespace EcommerceApi.Services.PaymentService
                             payment.PaidAmout = vnp_Amount;
                             payment.PaymentStatus = PaymentStatus.Succeed;
                             payment.PaymentLastMessage = "Order payment successful";
+                            payment.PaymentDestinationId = destination.DestinationId;
+
+                            //response
                             invoiceResponse.TranId = newTransaction?.TranscationId;
 
                             //update trang thai order
@@ -139,7 +147,8 @@ namespace EcommerceApi.Services.PaymentService
                     {
                         //Thanh toan khong thanh cong. Ma loi: vnp_ResponseCode
                         var errorMessage = "An error occurred during processing. Error code: " + vnp_ResponseCode;
-                        if(currTran is null)
+
+                        if (currTran is null)
                         {
                             payment.PaymentLastMessage = errorMessage;
                             payment.PaymentStatus = PaymentStatus.Failed;
@@ -152,6 +161,7 @@ namespace EcommerceApi.Services.PaymentService
                             newTransaction.CreatedAt = DateTime.Now;
                             newTransaction.PaymentId = payment.PaymentId;
                             invoiceResponse.TranId = newTransaction?.TranscationId;
+                            await _context.SaveChangesAsync(cancellationToken);
                         }
                         else
                         {
@@ -176,6 +186,7 @@ namespace EcommerceApi.Services.PaymentService
                         newTransaction.CreatedAt = DateTime.Now;
                         newTransaction.PaymentId = payment.PaymentId;
                         invoiceResponse.TranId = newTransaction?.TranscationId;
+                        await _context.SaveChangesAsync(cancellationToken);
                     }
                     throw new HttpStatusException(HttpStatusCode.InternalServerError, errorMessage);
                 }
@@ -266,7 +277,7 @@ namespace EcommerceApi.Services.PaymentService
 
                     vnpay.AddRequestData("vnp_Version", VnPayLibrary.VERSION);
                     vnpay.AddRequestData("vnp_Command", "pay");
-                    vnpay.AddRequestData("vnp_BankCode", "NCB");
+                    //vnpay.AddRequestData("vnp_BankCode", "NCB");
                     vnpay.AddRequestData("vnp_TmnCode", _config.vnp_TmnCode);
                     vnpay.AddRequestData("vnp_Amount", (paymentDto.RequiredAmount * 100).ToString()); //Số tiền thanh toán. Số tiền không mang các ký tự phân tách thập phân, phần nghìn, ký tự tiền tệ. Để gửi số tiền thanh toán là 100,000 VND (một trăm nghìn VNĐ) thì merchant cần nhân thêm 100 lần (khử phần thập phân), sau đó gửi sang VNPAY là: 10000000
                     vnpay.AddRequestData("vnp_CreateDate", newPayment.CreatedAt.ToString("yyyyMMddHHmmss"));
@@ -289,7 +300,7 @@ namespace EcommerceApi.Services.PaymentService
                     //Billing
                     vnpay.AddRequestData("vnp_Bill_Email", paymentDto.Email.Trim());
                     var fullName = paymentDto.FullName.Trim();
-                    if (!String.IsNullOrEmpty(fullName))
+                    if (!string.IsNullOrEmpty(fullName))
                     {
                         var indexof = fullName.IndexOf(' ');
                         vnpay.AddRequestData("vnp_Bill_FirstName", fullName.Substring(0, indexof));
