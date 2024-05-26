@@ -4,6 +4,7 @@ using EcommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EcommerceApi.Migrations
 {
     [DbContext(typeof(EcommerceDbContext))]
-    partial class EcommerceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240524100152_updateTableProductCategory")]
+    partial class updateTableProductCategory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -217,10 +220,6 @@ namespace EcommerceApi.Migrations
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Color")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("DiscountProduct")
                         .HasColumnType("int");
@@ -512,6 +511,9 @@ namespace EcommerceApi.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
                     b.Property<int>("Return")
                         .HasColumnType("int");
 
@@ -635,24 +637,6 @@ namespace EcommerceApi.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("ProductImages");
-                });
-
-            modelBuilder.Entity("EcommerceApi.Models.Product.ProductStock", b =>
-                {
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasAnnotation("Relational:JsonPropertyName", "id");
-
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("StockQuantity")
-                        .HasColumnType("int");
-
-                    b.HasKey("ProductId");
-
-                    b.ToTable("ProductStocks");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Rate.Rate", b =>
@@ -1069,17 +1053,6 @@ namespace EcommerceApi.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("EcommerceApi.Models.Product.ProductStock", b =>
-                {
-                    b.HasOne("EcommerceApi.Models.Product.Product", "Product")
-                        .WithOne("ProductStock")
-                        .HasForeignKey("EcommerceApi.Models.Product.ProductStock", "ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("EcommerceApi.Models.Rate.Rate", b =>
                 {
                     b.HasOne("EcommerceApi.Models.Product.Product", "Product")
@@ -1165,9 +1138,6 @@ namespace EcommerceApi.Migrations
                     b.Navigation("ProductImages");
 
                     b.Navigation("ProductRates");
-
-                    b.Navigation("ProductStock")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Product.ProductCategory", b =>

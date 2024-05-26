@@ -5,7 +5,6 @@ using EcommerceApi.Models.Product;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
-using EcommerceApi.Responses;
 using EcommerceApi.Constant;
 
 namespace EcommerceApi.Services.CategoryService;
@@ -22,18 +21,20 @@ public class CategoryService : ICategoryService
     public async Task<List<ProductCategory>> GetListCategoryAsync(string filter,
         CancellationToken userCancellationToken)
     {
-        //var listFakeCate = FakeCategory();
-        //await _context.ProductCategories.AddRangeAsync(listFakeCate);
-        //await _context.SaveChangesAsync();
         try
         {
-            var listCate = await _context
-                .ProductCategories
+            // Step 1: Load root categories
+            var listCate = await _context.ProductCategories
+                .Where(pc => pc.ParentCategoryId == null) // Assuming root categories have ParentCategoryId as null
                 .Include(pc => pc.Products)
-                .Include(pc => pc.ListProductCategoryChild)
-                .ThenInclude(pcc => pcc.Products)
                 .AsNoTracking()
                 .ToListAsync(userCancellationToken);
+
+            // Step 2: Recursively load child categories
+            foreach (var rootCategory in listCate)
+            {
+                await LoadChildCategories(rootCategory, userCancellationToken);
+            }
 
             var filterValues = Helpers.ParseString<string>(filter);
 
@@ -44,13 +45,15 @@ public class CategoryService : ICategoryService
                     .Skip(keyStartIndex + 1)
                     .Take(filterValues.Count - 1)
                     .Select(int.Parse).ToList();
-                listCate = listCate
+                var allCategories = listCate.Concat(listCate.SelectMany(c => c.ListProductCategoryChild)).ToList();
+                listCate = allCategories
                     .Where(c => listId.Contains(c.CategoryId))
                     .ToList();
             }
             else if(filterValues.Contains(CategoryFilterType.All))
             {
-                return listCate;
+                var allCategories = listCate.Concat(listCate.SelectMany(c => c.ListProductCategoryChild)).ToList();
+                return allCategories;
             }
             else
             {
@@ -59,72 +62,9 @@ public class CategoryService : ICategoryService
  
             return listCate;
         }
-        catch (SqlException ex)
+        catch (Exception ex)
         {
-            throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
-        }
-    }
-
-    public List<ProductCategory> FakeCategory()
-    {
-        try
-        {
-            var laptop = new ProductCategory()
-            {
-                Title = "Laptop",
-                Description = "Đây là danh mục laptop",
-                Status = true,
-                Hot = false,
-                CreatedAt = DateTime.Now,
-                ModifiedAt = DateTime.Now,
-                ModifiedBy = string.Empty,
-                CreatedBy = string.Empty,
-                ParentProductCategory = null,
-            };
-            var listFakeCate = new List<ProductCategory>
-            {
-                new ProductCategory()
-                {
-                    Title = "Laptop gaming",
-                    Description = "Đây là danh mục laptop gaming",
-                    Status = true,
-                    Hot = false,
-                    CreatedAt = DateTime.Now,
-                    ModifiedAt = DateTime.Now,
-                    ModifiedBy = string.Empty,
-                    CreatedBy = string.Empty,
-                    ParentProductCategory = laptop,
-                },
-                new ProductCategory()
-                {
-                    Title = "PC",
-                    Description = "Đây là danh mục pc",
-                    Status = true,
-                    Hot = false,
-                    CreatedAt = DateTime.Now,
-                    ModifiedAt = DateTime.Now,
-                    ModifiedBy = string.Empty,
-                    CreatedBy = string.Empty,
-                    ParentProductCategory = null,
-                },
-                new ProductCategory()
-                {
-                    Title = "Mobile",
-                    Description = "Đây là danh mục mobile",
-                    Status = true,
-                    Hot = false,
-                    CreatedAt = DateTime.Now,
-                    ModifiedAt = DateTime.Now,
-                    ModifiedBy = string.Empty,
-                    CreatedBy = string.Empty,
-                    ParentProductCategory = null,
-                },
-            };
-            return listFakeCate;
-        }
-        catch (SqlException ex)
-        {
-            throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
+            throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
         }
     }
 
@@ -257,4 +197,19 @@ public class CategoryService : ICategoryService
             throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
         }
     }
+
+    private async Task LoadChildCategories(ProductCategory category, CancellationToken userCancellationToken)
+    {
+        category.ListProductCategoryChild = await _context.ProductCategories
+            .Where(pc => pc.ParentCategoryId == category.CategoryId) // Assuming there's a ParentCategoryId to reference the parent
+            .Include(pc => pc.Products)
+            .AsNoTracking()
+            .ToListAsync(userCancellationToken);
+
+        foreach (var childCategory in category.ListProductCategoryChild)
+        {
+            await LoadChildCategories(childCategory, userCancellationToken);
+        }
+    }
+
 }

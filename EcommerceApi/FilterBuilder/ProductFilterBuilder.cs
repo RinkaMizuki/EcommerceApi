@@ -10,15 +10,15 @@ namespace EcommerceApi.FilterBuilder
         {
             if (minStock >= 0 && maxStock >= 0)
             {
-                _filterOptions.Add(prod => prod.Quantity >= minStock && prod.Quantity <= maxStock);
+                _filterOptions.Add(prod => prod.ProductStock.StockQuantity >= minStock && prod.ProductStock.StockQuantity <= maxStock);
             }
             else if(minStock > 0 && maxStock < 0)
             {
-                _filterOptions.Add(prod => prod.Quantity >= minStock);
+                _filterOptions.Add(prod => prod.ProductStock.StockQuantity >= minStock);
             }
             else if(maxStock > 0 && minStock < 0)
             {
-                _filterOptions.Add(prod => prod.Quantity <= maxStock);
+                _filterOptions.Add(prod => prod.ProductStock.StockQuantity <= maxStock);
             }
             return this;
         }

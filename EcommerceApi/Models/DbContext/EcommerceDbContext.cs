@@ -20,6 +20,7 @@ public class EcommerceDbContext : DbContext
     public DbSet<CouponCondition> CouponConditions { get; set; }
     public DbSet<Condition> Conditions { get; set; }
     public DbSet<Product.Product> Products { get; set; }
+    public DbSet<ProductStock> ProductStocks { get; set; }
     public DbSet<ProductCategory> ProductCategories { get; set; }
     public DbSet<ProductColor> ProductColors { get; set; }
     public DbSet<ProductImage> ProductImages { get; set; }
@@ -35,9 +36,6 @@ public class EcommerceDbContext : DbContext
     public DbSet<PaymentNotification> PaymentNotifications { get; set; }
     public DbSet<PaymentSignature> PaymentSignatures { get; set; }
     public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
-    //public DbSet<UserLogins> UserLogins { get; set; }
-    //public DbSet<RefreshToken> RefreshTokens { get; set; }
-
 
     public EcommerceDbContext(DbContextOptions<EcommerceDbContext> dbContextOptions) : base(dbContextOptions)
     {

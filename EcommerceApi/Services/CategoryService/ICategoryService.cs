@@ -9,8 +9,6 @@ public interface ICategoryService
     public Task<List<ProductCategory>> GetListCategoryAsync(string filter,
         CancellationToken userCancellationToken);
 
-    public List<ProductCategory> FakeCategory();
-
     public Task<ProductCategory> PostCategoryAsync(CategoryDto categoryDto, string userName,
         CancellationToken userCancellationToken);
 

@@ -17,7 +17,6 @@ public class Product
     public bool Hot { get; set; }
     public bool FlashSale { get; set; }
     public bool Upcoming { get; set; }
-    public int Quantity { get; set; }
     public int Return { get; set; }
     public string Image { get; set; } = string.Empty;
     [DataType(DataType.ImageUrl)] public string Url { get; set; } = string.Empty;
@@ -26,6 +25,7 @@ public class Product
     public string ModifiedBy { get; set; } = string.Empty;
     public string CreatedBy { get; set; } = string.Empty;
     public int CategoryId { get; set; }
+    public ProductStock ProductStock { get; set; }
     [ForeignKey("CategoryId")]
     [JsonIgnore]
     public ProductCategory ProductCategory { get; set; } = new ProductCategory();

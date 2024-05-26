@@ -21,6 +21,7 @@ namespace EcommerceApi.Controllers.V1.Admin
             _orderService = orderService;
         }
         [HttpGet]
+        [AllowAnonymous]
         [Route("orders")]
         public async Task<IActionResult> GetListOrder([FromQuery] string filter, [FromQuery] string range, [FromQuery] string sort, CancellationToken cancellationToken)
         {
@@ -46,6 +47,7 @@ namespace EcommerceApi.Controllers.V1.Admin
             return Ok(updateOrder);
         }
         [HttpGet]
+        [AllowAnonymous]
         [Route("orders/{orderId:guid}")]
         public async Task<IActionResult> GetOrderById(Guid orderId, CancellationToken cancellationToken)
         {

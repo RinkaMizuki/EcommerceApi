@@ -15,6 +15,7 @@ public class OrderDetail
     [JsonIgnore]
     [ForeignKey("OrderId")]
     public Order Order { get; set; }
+    public string Color { get; set; } = string.Empty;
     public int DiscountProduct { get; set; }
     public int PriceProduct { get; set; }
     public int QuantityProduct { get; set; }

@@ -4,6 +4,7 @@ using EcommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EcommerceApi.Migrations
 {
     [DbContext(typeof(EcommerceDbContext))]
-    partial class EcommerceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240524123125_addTableProductStock")]
+    partial class addTableProductStock
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -217,10 +220,6 @@ namespace EcommerceApi.Migrations
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Color")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("DiscountProduct")
                         .HasColumnType("int");
@@ -511,6 +510,9 @@ namespace EcommerceApi.Migrations
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
 
                     b.Property<int>("Return")
                         .HasColumnType("int");
@@ -1072,8 +1074,8 @@ namespace EcommerceApi.Migrations
             modelBuilder.Entity("EcommerceApi.Models.Product.ProductStock", b =>
                 {
                     b.HasOne("EcommerceApi.Models.Product.Product", "Product")
-                        .WithOne("ProductStock")
-                        .HasForeignKey("EcommerceApi.Models.Product.ProductStock", "ProductId")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1165,9 +1167,6 @@ namespace EcommerceApi.Migrations
                     b.Navigation("ProductImages");
 
                     b.Navigation("ProductRates");
-
-                    b.Navigation("ProductStock")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Product.ProductCategory", b =>

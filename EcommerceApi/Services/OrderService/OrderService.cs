@@ -127,6 +127,7 @@ namespace EcommerceApi.Services.OrderService
                 var listOrderQuery = _context
                                         .Orders
                                         .Include(od => od.User)
+                                        .Include(od => od.Coupon)
                                         .Include(od => od.OrderDetails)
                                         .ThenInclude(odd => odd.Product);
              
@@ -158,6 +159,7 @@ namespace EcommerceApi.Services.OrderService
                 var order = await _context
                                           .Orders
                                           .Where(u => u.OrderId.Equals(orderId))
+                                          .Include(od => od.Coupon)
                                           .Include(od => od.OrderDetails)
                                           .ThenInclude(odd => odd.Product)
                                           .AsNoTracking()
@@ -187,7 +189,7 @@ namespace EcommerceApi.Services.OrderService
                 await _context.SaveChangesAsync(userCancellationToken);
                 return updateOrder;
             }
-            catch( DbUpdateException ex)
+            catch(Exception ex)
             {
                 throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
             }

@@ -12,6 +12,7 @@ using EcommerceApi.Constant;
 //using System.Collections.Generic;
 using System.Linq.Dynamic.Core;
 using EcommerceApi.FilterBuilder;
+using k8s.KubeConfigModels;
 
 namespace EcommerceApi.Services.ProductService
 {
@@ -185,6 +186,7 @@ namespace EcommerceApi.Services.ProductService
 
                 var listProductQuery = _context
                     .Products
+                    .Include(p => p.ProductStock)
                     .Include(p => p.ProductImages)
                     .Include(p => p.ProductColors)
                     .Include(p => p.ProductRates)
@@ -318,6 +320,7 @@ namespace EcommerceApi.Services.ProductService
             {
                 var productById = await _context.Products
                                       .Where(p => p.ProductId == productId)
+                                      .Include(p => p.ProductStock)
                                       .Include(p => p.ProductImages)
                                       .Include(p => p.ProductColors)
                                       .Include(p => p.ProductRates)
@@ -328,15 +331,16 @@ namespace EcommerceApi.Services.ProductService
 
                 return productById;
             }
-            catch (SqlException ex)
+            catch (Exception ex)
             {
-                throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
+                throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 
         public async Task<Product> PostProductAsync(ProductDto productDto, string userName, HttpRequest request,
             CancellationToken userCancellationToken)
         {
+            using var productTransaction = await _context.Database.BeginTransactionAsync(userCancellationToken);
             var category =
                     await _context.ProductCategories.FindAsync(new object?[] { productDto.CategoryId },
                         cancellationToken: userCancellationToken) ??
@@ -354,7 +358,6 @@ namespace EcommerceApi.Services.ProductService
                     Hot = productDto.Hot,
                     FlashSale = productDto.FlashSale,
                     Upcoming = productDto.Upcoming,
-                    Quantity = productDto.Quantity,
                     Return = productDto.Return,
                     CreatedAt = DateTime.Now,
                     CreatedBy = userName,
@@ -370,7 +373,6 @@ namespace EcommerceApi.Services.ProductService
                 }
 
                 List<ProductImage> listProductImage = new ();
-
                 bool flag = false;
 
                 foreach (var file in productDto.Files)
@@ -409,25 +411,37 @@ namespace EcommerceApi.Services.ProductService
                         Product = newProduct,
                     });
                 }
+                var productStock = new ProductStock()
+                {
+                    ProductId = newProduct.ProductId,
+                    Product = newProduct,
+                    StockQuantity = productDto.Quantity,
+                    Location = productDto.Location
+                };
 
                 await _context
-                    .Products
-                    .AddAsync(newProduct, userCancellationToken);
+                            .ProductStocks
+                            .AddAsync(productStock, userCancellationToken);
+                await _context
+                            .Products
+                            .AddAsync(newProduct, userCancellationToken);
 
                 await _context
-                    .ProductImages
-                    .AddRangeAsync(listProductImage, userCancellationToken);
+                            .ProductImages
+                            .AddRangeAsync(listProductImage, userCancellationToken);
                 await _context
-                    .ProductColors
-                    .AddRangeAsync(listColor, userCancellationToken);
+                            .ProductColors
+                            .AddRangeAsync(listColor, userCancellationToken);
 
                 await _context
-                    .SaveChangesAsync(userCancellationToken);
+                            .SaveChangesAsync(userCancellationToken);
 
+                await productTransaction.CommitAsync(userCancellationToken);
                 return newProduct;
             }
             catch (DbUpdateException ex)
             {
+                await productTransaction.RollbackAsync(userCancellationToken);
                 throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
@@ -435,11 +449,13 @@ namespace EcommerceApi.Services.ProductService
         public async Task<Product> UpdateProductAsync(ProductDto productDto, Guid productId, string userName,
             HttpRequest request, CancellationToken userCancellationToken)
         {
+            using var productTransaction = await _context.Database.BeginTransactionAsync(userCancellationToken); 
             try
             {
                 var updateProduct = await _context
                                         .Products
                                         .Where(p => p.ProductId == productId)
+                                        .Include(p => p.ProductStock)
                                         .Include(p => p.ProductImages)
                                         .Include(p => p.ProductColors)
                                         .FirstOrDefaultAsync(userCancellationToken)
@@ -557,7 +573,6 @@ namespace EcommerceApi.Services.ProductService
 
                 updateProduct.Title = productDto.Title;
                 updateProduct.Description = productDto.Description;
-                updateProduct.Quantity = productDto.Quantity;
                 updateProduct.Price = productDto.Price;
                 updateProduct.Status = productDto.Status;
                 updateProduct.Discount = productDto.Discount;
@@ -605,13 +620,22 @@ namespace EcommerceApi.Services.ProductService
                     }, userCancellationToken);
                 }
 
+                if(updateProduct.ProductStock != null)
+                {
+                    updateProduct.ProductStock.StockQuantity = productDto.Quantity;
+                    updateProduct.ProductStock.Location = productDto.Location;
+                }
+
                 await _context.SaveChangesAsync(userCancellationToken);
+
+                await productTransaction.CommitAsync(userCancellationToken);
 
                 return updateProduct;
             }
-            catch (SqlException ex)
+            catch (Exception ex)
             {
-                throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
+                await productTransaction.RollbackAsync(userCancellationToken);
+                throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 

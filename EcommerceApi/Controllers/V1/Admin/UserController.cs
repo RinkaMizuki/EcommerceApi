@@ -52,7 +52,7 @@ namespace EcommerceApi.Controllers.V1.Admin
         [HttpGet]
         [AllowAnonymous]
         [Route("users/{id:guid}")]
-        public async Task<IActionResult> GetUser(Guid id, CancellationToken userCancellationToken)
+        public async Task<IActionResult> GetUserById(Guid id, CancellationToken userCancellationToken)
         {
             var user = await _userService.GetUserByIdAsync(id, userCancellationToken);
             if (user == null) return NotFound();

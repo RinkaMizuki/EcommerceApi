@@ -243,6 +243,7 @@ namespace EcommerceApi.Services.PaymentService
                             PriceProduct = od.PriceProduct,
                             QuantityProduct = od.QuantityProduct,
                             DiscountProduct = od.DiscountProduct,
+                            Color = od.Color,
                         };
                         listOrderDetail.Add(newOrderDetail);
                     }
