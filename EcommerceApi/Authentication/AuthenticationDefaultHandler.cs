@@ -31,9 +31,17 @@ namespace EcommerceApi.Authentication
                 return AuthenticateResult.NoResult();
             }
             var accessToken = _httpContext.HttpContext!.Request.Headers["Authorization"].ToString();
+            if(string.IsNullOrEmpty(accessToken))
+            {
+                accessToken = Context.Request.Query["access_token"];
+            }
             if(!string.IsNullOrEmpty(accessToken))
             {
-                accessToken = accessToken.Split(" ")[1];
+                var tokenSplit = accessToken.Split(" ");
+                if(tokenSplit.Length > 1)
+                {
+                    accessToken = tokenSplit[1];
+                }
             }
 
             var jsonString = await _ssoService.SsoDefaultTokenVerify(accessToken);

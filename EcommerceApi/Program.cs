@@ -3,6 +3,7 @@ using EcommerceApi.Attributes;
 using EcommerceApi.Authentication;
 using EcommerceApi.Config;
 using EcommerceApi.FilterBuilder;
+using EcommerceApi.Hubs;
 using EcommerceApi.Middleware;
 using EcommerceApi.Middlewares;
 using EcommerceApi.Models;
@@ -78,7 +79,7 @@ builder.Services.AddApiVersioning(options =>
 builder.Services.AddMemoryCache();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDetection();
-
+builder.Services.AddSignalR();
 builder.Services.AddSwaggerGen(options => {
     options.OperationFilter<SwaggerDefaultValues>();
 });
@@ -184,7 +185,7 @@ app.UseAuthentication();
 app.UseMiddleware<AuthMiddleware>();
 app.UseAuthorization();
 
-
+app.MapHub<OrderHub>("/api/v1/admin/orderhub").RequireAuthorization("SsoAdmin");
 app.MapControllers();
 
 app.Run();
