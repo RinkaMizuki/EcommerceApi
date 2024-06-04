@@ -39,7 +39,9 @@
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="7.0.11" />
         <PackageReference Include="MimeKit" Version="4.3.0" />
         <PackageReference Include="OpenAI" Version="1.10.0" />
+        <PackageReference Include="payOS" Version="1.0.5" />
         <PackageReference Include="Scrutor" Version="4.2.2" />
+        <PackageReference Include="StackExchange.Redis" Version="2.7.33" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.3" />
         <PackageReference Include="System.Linq.Dynamic.Core" Version="1.3.10" />

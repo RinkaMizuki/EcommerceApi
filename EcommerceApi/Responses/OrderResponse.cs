@@ -6,7 +6,8 @@ namespace EcommerceApi.Responses
     public class OrderResponse
     {
         public string Message { get; set; } = string.Empty;
-        public Guid OrderId { get; set; } = Guid.Empty;
+        public Guid? OrderId { get; set; } = Guid.Empty;
+        public long? OrderCode { get; set; }
         public int Amount { get; set; }
         public string TranNo { get; set; } = string.Empty;
         public Guid CustomerId { get; set; }

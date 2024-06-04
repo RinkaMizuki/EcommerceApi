@@ -1,11 +1,10 @@
-using EcommerceApi.Constant;
-using EcommerceApi.Models.Rate;
+using EcommerceApi.Responses;
 
 namespace EcommerceApi.FilterBuilder;
 
 public class RateFilterBuilder
 {
-    private readonly List<Func<Rate, bool>> _filterOptions = new();
+    private readonly List<Func<RateResponse, bool>> _filterOptions = new();
 
     //options
     public RateFilterBuilder AddSearchFilter(string searchValue)
@@ -72,5 +71,5 @@ public class RateFilterBuilder
     }
     
     //build filter with many options
-    public Func<Rate, bool> Build() => rate => _filterOptions.All(filter => filter(rate));
+    public Func<RateResponse, bool> Build() => rate => _filterOptions.All(filter => filter(rate));
 }

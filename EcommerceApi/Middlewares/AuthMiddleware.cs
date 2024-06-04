@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using EcommerceApi.ExtensionExceptions;
+using Microsoft.AspNetCore.Authentication;
+using System;
 
 namespace EcommerceApi.Middlewares
 {
@@ -9,6 +11,20 @@ namespace EcommerceApi.Middlewares
             var defaultAuthResult = await context.AuthenticateAsync("SsoDefaultSchema");
             var fbAuthResult = await context.AuthenticateAsync("SsoFacebookSchema");
             var ggAuthResult = await context.AuthenticateAsync("SsoGoogleSchema");
+
+            if(defaultAuthResult.Failure is HttpStatusException)
+            {
+                var RevokeTokenException = (HttpStatusException)defaultAuthResult.Failure;
+                context.Response.Clear();
+                context.Response.ContentType = "text/plain";
+                context.Response.StatusCode = (int)RevokeTokenException.Status!;
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    message = RevokeTokenException.Message,
+                    statusCode = RevokeTokenException.Status
+                });
+                return;
+            }
 
             if ((!defaultAuthResult.Succeeded && !fbAuthResult.Succeeded && !ggAuthResult.Succeeded) && (!defaultAuthResult.None || !fbAuthResult.None || !ggAuthResult.None))
             {

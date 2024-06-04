@@ -1,5 +1,6 @@
 ﻿using Asp.Versioning;
 using EcommerceApi.Dtos.User;
+using EcommerceApi.Lib;
 using EcommerceApi.Services.PaymentService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,26 +18,41 @@ namespace EcommerceApi.Controllers.V1.User
             _paymentService = paymentService;
         }
         [HttpPost]
-        [Route("post")]
-        public async Task<IActionResult> RedirectPayment(PaymentDto paymentDto,CancellationToken cancellationToken)
+        [Route("payos/post")]
+        public async Task<IActionResult> RedirectPaymentPayOs(PaymentDto paymentDto, CancellationToken cancellationToken)
         {
-            var newPayment = await _paymentService.PostPaymentOrderAsync(paymentDto, Request, cancellationToken);
+            var newCheckout = await _paymentService.PostPaymentPayOSOrderAsync(paymentDto, Request, cancellationToken);
+            return Ok(newCheckout);
+        }
+        [HttpPost]
+        [Route("payos/return")]
+        public async Task<IActionResult> ReturnPayOsPayment(CancellationToken cancellationToken)
+        {
+
+            var newPayment = await _paymentService.PostPaymentPayOSReturnAsync(Request, cancellationToken);
             return Ok(newPayment);
         }
         [HttpPost]
-        [Route("return")]
-        public async Task<IActionResult> ReturnPayment(CancellationToken cancellationToken)
+        [Route("vnpay/post")]
+        public async Task<IActionResult> RedirectPaymentVnPay(PaymentDto paymentDto,CancellationToken cancellationToken)
+        {
+            var newCheckout = await _paymentService.PostPaymentVnPayOrderAsync(paymentDto, Request, cancellationToken);
+            return Ok(newCheckout);
+        }
+        [HttpPost]
+        [Route("vnpay/return")]
+        public async Task<IActionResult> ReturnVnPayPayment(CancellationToken cancellationToken)
         {
 
-            var newPayment = await _paymentService.PostPaymentReturnAsync(Request, cancellationToken);
+            var newPayment = await _paymentService.PostPaymentVnPayReturnAsync(Request, cancellationToken);
             return Ok(newPayment);
         }
         [HttpGet]
-        [Route("ipn")]
+        [Route("vnpay/ipn")]
         [AllowAnonymous]
-        public async Task<IActionResult> IpnPayment(CancellationToken cancellationToken)
+        public async Task<IActionResult> IpnVnPayPayment(CancellationToken cancellationToken)
         {
-            var ipnResponse = await _paymentService.GetPaymentIpnAsync(Request, cancellationToken);
+            var ipnResponse = await _paymentService.GetPaymentVnPayIpnAsync(Request, cancellationToken);
             return Ok(ipnResponse);
         }
     }

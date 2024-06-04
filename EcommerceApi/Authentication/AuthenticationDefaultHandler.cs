@@ -1,5 +1,6 @@
 ﻿using EcommerceApi.Dtos.User;
 using EcommerceApi.ExtensionExceptions;
+using EcommerceApi.Services.RedisService;
 using EcommerceApi.Services.SsoService;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -15,12 +16,15 @@ namespace EcommerceApi.Authentication
     public class AuthenticationDefaultHandler : AuthenticationHandler<TokenAuthSchemeOptions>
     {
         private readonly ISsoService _ssoService;
+        private readonly IRedisService _redisService;
         private readonly IHttpContextAccessor _httpContext;
-        public AuthenticationDefaultHandler(IHttpContextAccessor httpContext, ISsoService ssoService, IOptionsMonitor<TokenAuthSchemeOptions> options,
+
+        public AuthenticationDefaultHandler(IHttpContextAccessor httpContext, ISsoService ssoService, IRedisService redisService, IOptionsMonitor<TokenAuthSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder, ISystemClock clock) : base(options, logger, encoder, clock)
         {
             _ssoService = ssoService;
+            _redisService = redisService;
             _httpContext = httpContext;
         }
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -31,7 +35,8 @@ namespace EcommerceApi.Authentication
                 return AuthenticateResult.NoResult();
             }
             var accessToken = _httpContext.HttpContext!.Request.Headers["Authorization"].ToString();
-            if(string.IsNullOrEmpty(accessToken))
+            var tokenDirty = "";
+            if (string.IsNullOrEmpty(accessToken))
             {
                 accessToken = Context.Request.Query["access_token"];
             }
@@ -42,6 +47,12 @@ namespace EcommerceApi.Authentication
                 {
                     accessToken = tokenSplit[1];
                 }
+                tokenDirty = await _redisService.GetValueAsync(accessToken);
+            }
+
+            if(!string.IsNullOrEmpty(tokenDirty))
+            {
+                return AuthenticateResult.Fail(new HttpStatusException(HttpStatusCode.Forbidden, "Authentication failed. Because this token has been revoked."));
             }
 
             var jsonString = await _ssoService.SsoDefaultTokenVerify(accessToken);

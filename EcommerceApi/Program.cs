@@ -4,6 +4,7 @@ using EcommerceApi.Authentication;
 using EcommerceApi.Config;
 using EcommerceApi.FilterBuilder;
 using EcommerceApi.Hubs;
+using EcommerceApi.Lib;
 using EcommerceApi.Middleware;
 using EcommerceApi.Middlewares;
 using EcommerceApi.Models;
@@ -26,6 +27,7 @@ using EcommerceApi.Services.OpenaiService;
 using EcommerceApi.Services.OrderService;
 using EcommerceApi.Services.PaymentService;
 using EcommerceApi.Services.ProductService;
+using EcommerceApi.Services.RedisService;
 using EcommerceApi.Services.SegmentService;
 using EcommerceApi.Services.SliderService;
 using EcommerceApi.Services.SsoService;
@@ -35,6 +37,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -83,6 +86,9 @@ builder.Services.AddSignalR();
 builder.Services.AddSwaggerGen(options => {
     options.OperationFilter<SwaggerDefaultValues>();
 });
+builder.Services.AddSingleton<PayOsLibrary>();
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(configuration.GetSection("Redis")["ConnectionStrings"]!));
+builder.Services.AddSingleton<IRedisService, RedisService>();
 builder.Services.AddScoped<JwtMiddleware>();
 builder.Services.AddScoped<AuthMiddleware>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -118,6 +124,8 @@ builder.Services.AddScoped<IAuthorizationHandler, AuthorizationPermissionHandler
 builder.Services.Configure<CloudflareR2Config>(configuration.GetSection("CloudflareR2Config"));
 builder.Services.Configure<EmailConfig>(configuration.GetSection("EmailConfiguration"));
 builder.Services.Configure<VnPayConfig>(configuration.GetSection("VnPayConfiguration"));
+builder.Services.Configure<PayOsConfig>(configuration.GetSection("PayOsConfiguration"));
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("MyAllowSpecificOrigins",

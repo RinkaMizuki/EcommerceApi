@@ -62,6 +62,23 @@ namespace EcommerceApi.FilterBuilder
             return this;
         }
 
+        public OrderFilterBuilder AddCancelledFilter(string cancelled)
+        {
+            if (!string.IsNullOrEmpty(cancelled))
+            {
+                _filterOptions.Add(od => od.Status.ToLower().Equals(cancelled.ToLower()));
+            }
+            return this;
+        }
+
+        public OrderFilterBuilder AddOrderedFilter(string ordered)
+        {
+            if(!string.IsNullOrEmpty(ordered))
+            {
+                _filterOptions.Add(od => od.Status.ToLower() != "cancelled" && !od.Returned);
+            }
+            return this;
+        }
         public OrderFilterBuilder AddAmountFilter(string amount)
         {
             if (!string.IsNullOrEmpty(amount))

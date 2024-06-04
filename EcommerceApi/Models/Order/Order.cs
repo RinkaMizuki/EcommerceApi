@@ -17,6 +17,7 @@ public class Order
     [ForeignKey("CouponId")] public Coupon.Coupon? Coupon { get; set; }
     public DateTime OrderDate { get; set; }
     public DateTime DeliveredDate { get; set; }
+    public long? OrderCode {  get; set; }
     public string Status { get; set; } = string.Empty;
     public bool Returned { get; set; }
     public decimal TotalDiscount { get; set; }

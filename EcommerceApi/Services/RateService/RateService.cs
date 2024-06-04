@@ -9,6 +9,7 @@ using System.Net;
 using EcommerceApi.Constant;
 using EcommerceApi.FilterBuilder;
 using SortOrder = EcommerceApi.Constant.SortOrder;
+using EcommerceApi.Responses;
 
 namespace EcommerceApi.Services.FeedbackService
 {
@@ -54,13 +55,13 @@ namespace EcommerceApi.Services.FeedbackService
                 await _context.SaveChangesAsync(userCancellationToken);
                 return true;
             }
-            catch (SqlException ex)
+            catch (Exception ex)
             {
-                throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
+                throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 
-        public async Task<List<Rate>> GetListRateAsync(string sort, string range, string filter, HttpResponse response,
+        public async Task<List<RateResponse>> GetListRateAsync(string sort, string range, string filter, HttpResponse response,
             CancellationToken userCancellationToken)
         {
             try
@@ -126,7 +127,25 @@ namespace EcommerceApi.Services.FeedbackService
                 var listRateQuery = _context
                     .Rates
                     .Include(r => r.Product)
-                    .Include(r => r.User);
+                    .Include(r => r.User)
+                    .Select(r => new RateResponse { 
+                        UserId = r.UserId,
+                        ProductId = r.ProductId,
+                        Id = r.RateId,
+                        Content = r.Content,
+                        Star = r.Star,
+                        Status = r.Status,
+                        CreatedAt = r.CreatedAt,
+                        ModifiedAt = r.ModifiedAt,
+                        ProductRateResponse = new ProductRateResponse()
+                        {
+                            Url = r.Product.Url,
+                            Image = r.Product.Image,
+                            Title = r.Product.Title,
+                            Description = r.Product.Description
+                        },
+                        UserName = r.User.UserName
+                    });
 
                 var listRate = await listRateQuery
                     .AsNoTracking()
@@ -157,17 +176,17 @@ namespace EcommerceApi.Services.FeedbackService
                     "asc" => sortBy switch
                     {
                         SortOrder.SortByStar => listRate.OrderBy(r => r.Star).ToList(),
-                        SortOrder.SortByUser => listRate.OrderBy(r => r.User.UserName).ToList(),
+                        SortOrder.SortByUser => listRate.OrderBy(r => r.UserName).ToList(),
                         SortOrder.SortByCreatedAt => listRate.OrderBy(r => r.CreatedAt).ToList(),
-                        SortOrder.SortByProduct => listRate.OrderBy(r => r.Product.Title).ToList(),
+                        SortOrder.SortByProduct => listRate.OrderBy(r => r.ProductRateResponse.Title).ToList(),
                         _ => listRate
                     },
                     "desc" => sortBy switch
                     {
                         SortOrder.SortByStar => listRate.OrderByDescending(r => r.Star).ToList(),
-                        SortOrder.SortByUser => listRate.OrderByDescending(r => r.User.UserName).ToList(),
+                        SortOrder.SortByUser => listRate.OrderByDescending(r => r.UserName).ToList(),
                         SortOrder.SortByCreatedAt => listRate.OrderByDescending(r => r.CreatedAt).ToList(),
-                        SortOrder.SortByProduct => listRate.OrderByDescending(r => r.Product.Title).ToList(),
+                        SortOrder.SortByProduct => listRate.OrderByDescending(r => r.ProductRateResponse.Title).ToList(),
                         _ => listRate
                     },
                     _ => listRate.OrderByDescending(r => r.CreatedAt).ToList()
