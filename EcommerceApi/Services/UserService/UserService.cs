@@ -87,18 +87,14 @@ public class UserService : IUserService
             var user = await _context
                                     .Users
                                     .Where(u => u.UserId == userId)
-                                    .FirstOrDefaultAsync(userCancellationToken);
-                                    
-            if (user == null)
-            {
-                throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
-            }
+                                    .FirstOrDefaultAsync(userCancellationToken)
+                                    ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
 
             return user;
         }
-        catch (SqlException ex)
+        catch (Exception ex)
         {
-            throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
+            throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
         }
     }
 
@@ -336,20 +332,6 @@ public class UserService : IUserService
                                             .Where(u => u.UserId.Equals(userId))
                                             .FirstOrDefaultAsync(userCancellationToken)
                                             ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User profile not found.");
-            if(!string.IsNullOrEmpty(userProfileDto.Password))
-            {
-                //var currentPasswordHash = BCrypt.Net.BCrypt.Verify(userProfileDto.Password, userProfile.PasswordHash);
-                //if (!currentPasswordHash)
-                //{
-                //    throw new HttpStatusException(HttpStatusCode.BadRequest, "Current password incorrect !");
-                //}
-            }
-            
-            //if(!string.IsNullOrEmpty(userProfileDto.NewPassword))
-            //{
-            //    var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(userProfileDto.NewPassword);
-            //    userProfile.PasswordHash = newPasswordHash;
-            //}
 
             if (userProfileDto?.Avatar?.FileName != userProfile.Avatar && userProfileDto?.Avatar is not null)
             {

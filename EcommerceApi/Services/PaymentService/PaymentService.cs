@@ -12,6 +12,7 @@ using EcommerceApi.Responses;
 using EcommerceApi.Services.MailService;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Z.EntityFramework.Plus;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Net.payOS.Errors;
@@ -19,6 +20,7 @@ using Net.payOS.Types;
 using Newtonsoft.Json.Linq;
 using System.Globalization;
 using System.Net;
+using EcommerceApi.Models.Product;
 
 namespace EcommerceApi.Services.PaymentService
 {
@@ -106,7 +108,7 @@ namespace EcommerceApi.Services.PaymentService
                         {
 
                             //thanh toan thanh cong
-                            invoiceResponse.Message = "Giao dịch được thực hiện thành công. Cảm ơn quý khách đã sử dụng dịch vụ";
+                            invoiceResponse.Message = "Order payment successfully.";
                             invoiceResponse.OrderId = Guid.Parse(orderId);
                             invoiceResponse.Amount = vnp_Amount;
                             invoiceResponse.TranNo = vnpayTranId;
@@ -120,6 +122,25 @@ namespace EcommerceApi.Services.PaymentService
                             invoiceResponse.TotalDiscount = order.TotalDiscount;
                             if (currTran is null)
                             {
+                                var orderDetailsGroupedByProductId = order.OrderDetails
+                                                                                      .GroupBy(od => od.ProductId)
+                                                                                      .Select(g => new
+                                                                                       {
+                                                                                           ProductId = g.Key,
+                                                                                           TotalQuantity = g.Sum(od => od.QuantityProduct)
+                                                                                       })
+                                                                                      .ToList();
+
+                                // Batch update the StockQuantity for each ProductStock entry
+                                foreach (var detail in orderDetailsGroupedByProductId)
+                                {
+                                    await _context.ProductStocks
+                                        .Where(ps => ps.ProductId == detail.ProductId)
+                                        .UpdateAsync(ps => new
+                                        {
+                                            StockQuantity = ps.StockQuantity - detail.TotalQuantity
+                                        }, cancellationToken);
+                                }
                                 var paymentDate = vnpay.GetResponseData("vnp_PayDate");
 
                                 string formatString = "yyyyMMddHHmmss";
@@ -151,6 +172,8 @@ namespace EcommerceApi.Services.PaymentService
 
                                 //update trang thai order
                                 order.Status = OrderStatus.Succeed;
+                                await _context.SaveChangesAsync(cancellationToken);
+                                await transaction.CommitAsync(cancellationToken);
                                 await _hubcontext.Clients.All.SendAsync("ReceivedOrder", order, cancellationToken);
                             }
                         }
@@ -206,6 +229,7 @@ namespace EcommerceApi.Services.PaymentService
             }
             catch(HttpStatusException hse)
             {
+                await transaction.RollbackAsync(cancellationToken);
                 throw new HttpStatusException(hse.Status, hse.Message);
             }
             catch (Exception ex)
