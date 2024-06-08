@@ -172,6 +172,8 @@ namespace EcommerceApi.Services.PaymentService
 
                                 //update trang thai order
                                 order.Status = OrderStatus.Succeed;
+
+                                await _context.PaymentTransactions.AddAsync(newTransaction, cancellationToken);
                                 await _context.SaveChangesAsync(cancellationToken);
                                 await transaction.CommitAsync(cancellationToken);
                                 await _hubcontext.Clients.All.SendAsync("ReceivedOrder", order, cancellationToken);

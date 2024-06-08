@@ -1,6 +1,7 @@
 using EcommerceApi.Models.Provider;
 using EcommerceApi.Models.Segment;
 using EcommerceApi.Models.UserAddress;
+using System.Text.Json.Serialization;
 
 namespace EcommerceApi.Responses;
 
@@ -19,5 +20,4 @@ public class UserResponse
     public List<Segment> Segments { get; set; } = new List<Segment>();
     public List<UserLogins> UserLogins { get; set; } = new();
     public List<UserAddress> UserAddresses { get; set; } = new();
-
 }

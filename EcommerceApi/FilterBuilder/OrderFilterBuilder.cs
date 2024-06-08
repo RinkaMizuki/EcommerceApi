@@ -1,4 +1,5 @@
-﻿using EcommerceApi.Models.Order;
+﻿using EcommerceApi.Constant;
+using EcommerceApi.Models.Order;
 
 namespace EcommerceApi.FilterBuilder
 {
@@ -11,7 +12,26 @@ namespace EcommerceApi.FilterBuilder
         {
             if (!string.IsNullOrEmpty(status))
             {
-                _filterOptions.Add(od => od.Status == status);
+                if(status == OrderFilterType.Returned)
+                {
+                    _filterOptions.Add(od => od.Returned);
+                }
+                else if(status == OrderFilterType.Ordered)
+                {
+                    _filterOptions.Add(od => od.Status.ToLower().Equals(status) && !od.Returned);
+                }
+                else if(status == OrderFilterType.Cancelled)
+                {
+                    _filterOptions.Add(od => od.Status.ToLower().Equals(status) && !od.Returned);
+                }
+                else if(status == OrderFilterType.Delivered)
+                {
+                    _filterOptions.Add(od => od.Status.ToLower().Equals(status));
+                }
+                else
+                {
+                    _filterOptions.Add(od => od.Status.ToLower().Equals(status));//shipped
+                }
             }
             return this;
         }
@@ -53,32 +73,32 @@ namespace EcommerceApi.FilterBuilder
             return this;
         }
 
-        public OrderFilterBuilder AddReturnedFilter(string returned)
-        {
-            if (!string.IsNullOrEmpty(returned))
-            {
-                _filterOptions.Add(od => od.Returned.Equals(Convert.ToBoolean(returned)));
-            }
-            return this;
-        }
+        //public OrderFilterBuilder AddReturnedFilter(string returned)
+        //{
+        //    if (!string.IsNullOrEmpty(returned))
+        //    {
+        //        _filterOptions.Add(od => od.Returned.Equals(Convert.ToBoolean(returned)));
+        //    }
+        //    return this;
+        //}
 
-        public OrderFilterBuilder AddCancelledFilter(string cancelled)
-        {
-            if (!string.IsNullOrEmpty(cancelled))
-            {
-                _filterOptions.Add(od => od.Status.ToLower().Equals(cancelled.ToLower()));
-            }
-            return this;
-        }
+        //public OrderFilterBuilder AddCancelledFilter(string cancelled)
+        //{
+        //    if (!string.IsNullOrEmpty(cancelled))
+        //    {
+        //        _filterOptions.Add(od => od.Status.ToLower().Equals(cancelled.ToLower()));
+        //    }
+        //    return this;
+        //}
 
-        public OrderFilterBuilder AddOrderedFilter(string ordered)
-        {
-            if(!string.IsNullOrEmpty(ordered))
-            {
-                _filterOptions.Add(od => od.Status.ToLower() != "cancelled" && !od.Returned);
-            }
-            return this;
-        }
+        //public OrderFilterBuilder AddOrderedFilter(string ordered)
+        //{
+        //    if(!string.IsNullOrEmpty(ordered))
+        //    {
+        //        _filterOptions.Add(od => od.Status.ToLower() != "cancelled" && !od.Returned);
+        //    }
+        //    return this;
+        //}
         public OrderFilterBuilder AddAmountFilter(string amount)
         {
             if (!string.IsNullOrEmpty(amount))

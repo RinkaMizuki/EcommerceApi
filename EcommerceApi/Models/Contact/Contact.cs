@@ -7,6 +7,7 @@ namespace EcommerceApi.Models.Contact;
 
 public class Contact
 {
+    [JsonPropertyName("id")]
     [Key] public int ContactId { get; set; }
     public Guid UserId { get; set; }
     [ForeignKey("UserId")] 

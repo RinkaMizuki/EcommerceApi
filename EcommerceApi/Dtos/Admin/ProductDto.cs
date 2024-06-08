@@ -17,7 +17,7 @@ namespace EcommerceApi.Dtos.Admin
         public int Quantity { get; set; }
         public int Return { get; set; }
         public int CategoryId { get; set; }
-        public string ColorCode { get; set; } = string.Empty;
+        public string? ColorCode { get; set; } = string.Empty;
         public IFormFile[] Files { get; set; }
     }
 }

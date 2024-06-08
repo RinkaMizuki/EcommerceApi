@@ -111,6 +111,7 @@ builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<RateFilterBuilder>();
 builder.Services.AddScoped<ProductFilterBuilder>();
 builder.Services.AddScoped<OrderFilterBuilder>();
+builder.Services.AddScoped<UserFilterBuilder>();
 builder.Services.AddScoped<InvoiceFilterBuilder>();
 builder.Services.AddScoped<IConfirmService, ConfirmService>();
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();

@@ -5,6 +5,7 @@ using EcommerceApi.Dtos.Admin;
 using EcommerceApi.Dtos.Upload;
 using EcommerceApi.Dtos.User;
 using EcommerceApi.ExtensionExceptions;
+using EcommerceApi.FilterBuilder;
 using EcommerceApi.Models;
 using EcommerceApi.Models.Segment;
 using EcommerceApi.Models.UserAddress;
@@ -20,11 +21,13 @@ public class UserService : IUserService
 {
     private readonly EcommerceDbContext _context;
     private readonly ICloudflareClientService _cloudflareClient;
+    private readonly UserFilterBuilder _userFilterBuilder;
 
-    public UserService(EcommerceDbContext context, ICloudflareClientService cloudflareClient)
+    public UserService(EcommerceDbContext context, ICloudflareClientService cloudflareClient, UserFilterBuilder userFilterBuilder)
     {
         _context = context;
         _cloudflareClient = cloudflareClient;
+        _userFilterBuilder = userFilterBuilder;
     }
 
     public async Task<User> PostUserAsync(UserAdminDto userAdmin, CancellationToken userCancellationToken)
@@ -147,6 +150,13 @@ public class UserService : IUserService
                 filterValues.Add("");
             }
 
+
+            if (!filterValues.Contains(UserFilterType.IsVerify))
+            {
+                filterValues.Add(UserFilterType.IsVerify);
+                filterValues.Add("");
+            }
+
             if (!filterValues.Contains(UserFilterType.IsActive))
             {
                 filterValues.Add(UserFilterType.IsActive);
@@ -199,7 +209,7 @@ public class UserService : IUserService
             var filterBan = filterValues[filterValues.IndexOf(UserFilterType.IsActive) + 1];
             var filterSegment = filterValues[filterValues.IndexOf(UserFilterType.Segments) + 1];
             var filterSearch = filterValues[filterValues.IndexOf(UserFilterType.Search) + 1];
-
+            var filterVerify = filterValues[filterValues.IndexOf(UserFilterType.IsVerify) + 1];
 
             var filterRefIds = new List<Guid>();
             if (filterValues.Contains(UserFilterType.Id))
@@ -216,27 +226,37 @@ public class UserService : IUserService
                     .ToList();
             }
 
+            var filters = _userFilterBuilder
+                                            .AddBanFilter(filterBan)
+                                            .AddVerifyFilter(filterVerify)
+                                            .AddSegmentsFilter(GetSegments(filterValues))
+                                            .Build();
             listUsers = listUsers
-                .Where(u => filterSegment != "" && filterSearch != "" && filterBan != ""
-                    ? u.UserName.ToLower().Contains(filterSearch.ToLower()) &&
-                      IsExistSegment(u.Segments, filterValues) && u.IsActive.ToString().ToLower() == filterBan.ToLower()
-                    : filterSegment == "" && filterSearch == "" && filterBan == ""
-                        ? filterSegment == "" && filterSearch == "" && filterBan == ""
-                        : filterSearch != "" && filterSegment == "" && filterBan == ""
-                            ? u.UserName.ToLower().Contains(filterSearch.ToLower())
-                            : filterSearch == "" && filterSegment != "" && filterBan == ""
-                                ? IsExistSegment(u.Segments, filterValues)
-                                : filterSearch == "" && filterSegment == "" && filterBan != ""
-                                    ? u.IsActive.ToString().ToLower() == filterBan.ToLower()
-                                    : filterSearch != "" && filterSegment != "" && filterBan == ""
-                                        ? u.UserName.ToLower().Contains(filterSearch.ToLower()) &&
-                                          IsExistSegment(u.Segments, filterValues)
-                                        : filterSearch == "" && filterSegment != "" && filterBan != ""
-                                            ? IsExistSegment(u.Segments, filterValues) &&
-                                              u.IsActive.ToString().ToLower() == filterBan.ToLower()
-                                            : u.UserName.ToLower().Contains(filterSearch.ToLower()) &&
-                                              u.IsActive.ToString().ToLower() == filterBan.ToLower()
-                ).ToList();
+                                .Where(filters)
+                                .ToList();
+            {
+            //    listUsers = listUsers
+            //    .Where(u => filterSegment != "" && filterSearch != "" && filterBan != ""
+            //        ? u.UserName.ToLower().Contains(filterSearch.ToLower()) &&
+            //          IsExistSegment(u.Segments, filterValues) && u.IsActive.ToString().ToLower() == filterBan.ToLower()
+            //        : filterSegment == "" && filterSearch == "" && filterBan == ""
+            //            ? filterSegment == "" && filterSearch == "" && filterBan == ""
+            //            : filterSearch != "" && filterSegment == "" && filterBan == ""
+            //                ? u.UserName.ToLower().Contains(filterSearch.ToLower())
+            //                : filterSearch == "" && filterSegment != "" && filterBan == ""
+            //                    ? IsExistSegment(u.Segments, filterValues)
+            //                    : filterSearch == "" && filterSegment == "" && filterBan != ""
+            //                        ? u.IsActive.ToString().ToLower() == filterBan.ToLower()
+            //                        : filterSearch != "" && filterSegment != "" && filterBan == ""
+            //                            ? u.UserName.ToLower().Contains(filterSearch.ToLower()) &&
+            //                              IsExistSegment(u.Segments, filterValues)
+            //                            : filterSearch == "" && filterSegment != "" && filterBan != ""
+            //                                ? IsExistSegment(u.Segments, filterValues) &&
+            //                                  u.IsActive.ToString().ToLower() == filterBan.ToLower()
+            //                                : u.UserName.ToLower().Contains(filterSearch.ToLower()) &&
+            //                                  u.IsActive.ToString().ToLower() == filterBan.ToLower()
+            //    ).ToList();
+            }
 
             listUsers = sortType switch
             {
@@ -276,7 +296,7 @@ public class UserService : IUserService
         }
     }
 
-    private bool IsExistSegment(List<Segment> segments, IList<string> segmentFilter)
+    private List<string> GetSegments(List<string> segmentFilter)
     {
         var filters = segmentFilter
             .Skip(segmentFilter.IndexOf(UserFilterType.Segments) + 1)
@@ -287,21 +307,13 @@ public class UserService : IUserService
             filters.RemoveAt(filters.IndexOf(UserFilterType.IsActive) + 1);
             filters.RemoveAt(filters.IndexOf(UserFilterType.IsActive));
         }
-
-        int elmCount = 0;
-        foreach (var us in segments) // review, order
+        if (filters.Contains(UserFilterType.IsVerify))
         {
-            foreach (var f in filters) // review
-            {
-                if (f.ToLower() == us.Title.ToLower())
-                {
-                    elmCount++;
-                    break;
-                }
-            }
+            filters.RemoveAt(filters.IndexOf(UserFilterType.IsVerify) + 1);
+            filters.RemoveAt(filters.IndexOf(UserFilterType.IsVerify));
         }
 
-        return elmCount >= filters.Count;
+        return filters;
     }
 
     public async Task<bool> DeleteUserByIdAsync(Guid userId, CancellationToken userCancellationToken)

@@ -8,10 +8,10 @@ using System.Net;
 
 namespace EcommerceApi.Controllers.V1.Admin
 {
-    [ApiVersion("1.0")]
     //[Authorize(Policy = IdentityData.AdminPolicyName)]
-    [Authorize(Policy = "SsoAdmin")]
+    [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/Admin/")]
+    [Authorize]
     [ApiController]
     public class ContactController : ControllerBase
     {
@@ -22,13 +22,15 @@ namespace EcommerceApi.Controllers.V1.Admin
             _contactService = contactService;
         }
         [HttpGet]
+        [Authorize(Policy = "SsoAdmin")]
         [Route("contacts")]
-        public async Task<IActionResult> GetListContact(CancellationToken userCancellationToken)
+        public async Task<IActionResult> GetListContact(string? sort, string? range, string? filter, CancellationToken userCancellationToken)
         {
-            var listContact = await _contactService.GetListContactASync(userCancellationToken);
+            var listContact = await _contactService.GetListContactASync(sort, range, filter, Response, userCancellationToken);
             return Ok(listContact);
         }
         [HttpGet]
+        [Authorize(Policy = "SsoAdmin")]
         [Route("contacts/{contactId:int}")]
         public async Task<IActionResult> GetContactById(int contactId, CancellationToken userCancellationToken)
         {
@@ -36,6 +38,7 @@ namespace EcommerceApi.Controllers.V1.Admin
             return Ok(contact);
         }
         [HttpDelete]
+        [Authorize(Policy = "SsoAdmin")]
         [Route("contacts/delete/{contactId:int}")]
         public async Task<IActionResult> DeleteContact(int contactId, CancellationToken userCancellationToken)
         {
@@ -51,6 +54,19 @@ namespace EcommerceApi.Controllers.V1.Admin
         {
             var newContact = await _contactService.PostContactAsync(contactDto, userCancellationToken);
             return StatusCode(201, newContact);
+        }
+        [HttpPut]
+        [Route("contacts/update/{contactId:int}")]
+        [Authorize(Policy = "SsoAdmin")]
+        public async Task<IActionResult> SupportContact([FromBody]ContactDto contactDto, CancellationToken userCancellationToken)
+        {
+            await _contactService.PostSupportContactAsync(contactDto, userCancellationToken);
+            return StatusCode(200, new
+            {
+                message = "Send email successfully.",
+                statusCode = 200,
+                id =  Guid.NewGuid(),
+            });
         }
     }
 }

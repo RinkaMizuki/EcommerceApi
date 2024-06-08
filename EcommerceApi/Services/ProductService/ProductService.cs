@@ -59,9 +59,9 @@ namespace EcommerceApi.Services.ProductService
 
                 return true;
             }
-            catch (SqlException ex)
+            catch (Exception ex)
             {
-                throw new HttpStatusException((HttpStatusCode)ex.ErrorCode, ex.Message);
+                throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 
@@ -252,7 +252,8 @@ namespace EcommerceApi.Services.ProductService
                                             .Build();
 
                 listProduct = listProduct
-                                         .Where(filters).ToList();
+                                         .Where(filters)
+                                         .ToList();
 
                 if(favorites.Count > 0)
                 {
@@ -400,17 +401,21 @@ namespace EcommerceApi.Services.ProductService
                 }
 
                 var listColor = new List<ProductColor>();
-                var listNewColor = productDto.ColorCode.Split(',');
-                foreach (var color in listNewColor)
+                if(!string.IsNullOrEmpty(productDto.ColorCode))
                 {
-                    listColor.Add(new ProductColor()
+                    var listNewColor = productDto.ColorCode.Split(',');
+                    foreach (var color in listNewColor)
                     {
-                        ProductId = newProduct.ProductId,
-                        ColorCode = color,
-                        ColorId = Guid.NewGuid(),
-                        Product = newProduct,
-                    });
+                        listColor.Add(new ProductColor()
+                        {
+                            ProductId = newProduct.ProductId,
+                            ColorCode = color,
+                            ColorId = Guid.NewGuid(),
+                            Product = newProduct,
+                        });
+                    }
                 }
+                
                 var productStock = new ProductStock()
                 {
                     ProductId = newProduct.ProductId,
@@ -425,14 +430,15 @@ namespace EcommerceApi.Services.ProductService
                 await _context
                             .Products
                             .AddAsync(newProduct, userCancellationToken);
-
                 await _context
                             .ProductImages
                             .AddRangeAsync(listProductImage, userCancellationToken);
-                await _context
-                            .ProductColors
-                            .AddRangeAsync(listColor, userCancellationToken);
 
+                if(listColor.Count > 0) {
+                    await _context
+                                .ProductColors
+                                .AddRangeAsync(listColor, userCancellationToken);
+                }
                 await _context
                             .SaveChangesAsync(userCancellationToken);
 
