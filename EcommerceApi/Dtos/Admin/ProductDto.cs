@@ -1,7 +1,4 @@
-﻿using EcommerceApi.Models.Product;
-using System.ComponentModel.DataAnnotations;
-
-namespace EcommerceApi.Dtos.Admin
+﻿namespace EcommerceApi.Dtos.Admin
 {
     public class ProductDto
     {

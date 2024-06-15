@@ -4,6 +4,7 @@ using EcommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EcommerceApi.Migrations
 {
     [DbContext(typeof(EcommerceDbContext))]
-    partial class EcommerceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240615072938_updateTableParticipation_v1")]
+    partial class updateTableParticipation_v1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -29,9 +32,10 @@ namespace EcommerceApi.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("LastestMessage")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("LastestSend")
+                    b.Property<DateTime>("LastestSend")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("StartedAt")
@@ -88,10 +92,6 @@ namespace EcommerceApi.Migrations
 
                     b.Property<Guid>("ConversationId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("datetime2");
@@ -1000,7 +1000,7 @@ namespace EcommerceApi.Migrations
                         .IsRequired();
 
                     b.HasOne("EcommerceApi.Models.UserAddress.User", "User")
-                        .WithMany()
+                        .WithMany("Participations")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1325,6 +1325,8 @@ namespace EcommerceApi.Migrations
             modelBuilder.Entity("EcommerceApi.Models.UserAddress.User", b =>
                 {
                     b.Navigation("Orders");
+
+                    b.Navigation("Participations");
 
                     b.Navigation("Rates");
 

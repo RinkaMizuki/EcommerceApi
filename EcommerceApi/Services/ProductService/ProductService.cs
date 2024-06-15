@@ -12,7 +12,8 @@ using EcommerceApi.Constant;
 //using System.Collections.Generic;
 using System.Linq.Dynamic.Core;
 using EcommerceApi.FilterBuilder;
-using k8s.KubeConfigModels;
+using EcommerceApi.Config;
+using Microsoft.Extensions.Options;
 
 namespace EcommerceApi.Services.ProductService
 {
@@ -21,11 +22,13 @@ namespace EcommerceApi.Services.ProductService
         private readonly EcommerceDbContext _context;
         private readonly ICloudflareClientService _cloudflareClient;
         private readonly ProductFilterBuilder _productFilter;
-        public ProductService(EcommerceDbContext context, ICloudflareClientService cloudflareClient, ProductFilterBuilder productFilterBuilder)
+        private readonly CloudflareR2Config _cloudFlareOption;
+        public ProductService(EcommerceDbContext context, ICloudflareClientService cloudflareClient, IOptions<CloudflareR2Config> cloudFlareOption,ProductFilterBuilder productFilterBuilder)
         {
             _context = context;
             _cloudflareClient = cloudflareClient;
             _productFilter = productFilterBuilder;
+            _cloudFlareOption = cloudFlareOption.Value;
         }
 
         public async Task<bool> DeleteProductAsync(Guid productId, CancellationToken userCancellationToken)
@@ -370,7 +373,7 @@ namespace EcommerceApi.Services.ProductService
                 {
                     newProduct.Image = productDto.Files[0].FileName;
                     newProduct.Url =
-                        $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{newProduct.ProductId}_{productDto.Files[0]?.FileName}";
+                        $"{_cloudFlareOption.publicUrl}/productImage_{newProduct.ProductId}_{productDto.Files[0]?.FileName}";
                 }
 
                 List<ProductImage> listProductImage = new ();
@@ -392,7 +395,7 @@ namespace EcommerceApi.Services.ProductService
                     {
                         Image = file.FileName,
                         Url =
-                            $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{newProduct.ProductId}_{file.FileName}",
+                            $"{_cloudFlareOption.publicUrl}/productImage_{newProduct.ProductId}_{file.FileName}",
                         ProductId = newProduct.ProductId,
                         CreatedAt = DateTime.Now,
                         Product = newProduct,
@@ -530,7 +533,7 @@ namespace EcommerceApi.Services.ProductService
                                 ProductId = updateProduct.ProductId,
                                 Image = imageFile.FileName,
                                 Url =
-                                    $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{updateProduct.ProductId}_{imageFile.FileName}",
+                                    $"{_cloudFlareOption.publicUrl}/productImage_{updateProduct.ProductId}_{imageFile.FileName}",
                                 CreatedAt = DateTime.Now,
                                 ModifiedAt = DateTime.Now,
                             }, userCancellationToken);
@@ -545,7 +548,7 @@ namespace EcommerceApi.Services.ProductService
                                 ProductId = updateProduct.ProductId,
                                 Image = imageFile.FileName,
                                 Url =
-                                    $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{updateProduct.ProductId}_{imageFile.FileName}",
+                                    $"{_cloudFlareOption.publicUrl}/productImage_{updateProduct.ProductId}_{imageFile.FileName}",
                                 CreatedAt = DateTime.Now,
                                 ModifiedAt = DateTime.Now,
                             }, userCancellationToken);
@@ -559,7 +562,7 @@ namespace EcommerceApi.Services.ProductService
                         $"productImage_{updateProduct.ProductId}_{updateProduct.Image}", userCancellationToken);
                     updateProduct.Image = listNewImage[0];
                     updateProduct.Url =
-                        $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{updateProduct.ProductId}_{listNewImage[0]}";
+                        $"{_cloudFlareOption.publicUrl}/productImage_{updateProduct.ProductId}_{listNewImage[0]}";
                     _context.ProductImages.Remove(
                         updateProduct.ProductImages.Where(pi => pi.Image == updateProduct.Image).FirstOrDefault() ??
                         throw new HttpStatusException(HttpStatusCode.NotFound,
@@ -570,7 +573,7 @@ namespace EcommerceApi.Services.ProductService
                 {
                     updateProduct.Image = listNewImage[0];
                     updateProduct.Url =
-                        $"{request.Scheme}://{request.Host}/api/v1/Admin/product/preview?productImage=productImage_{updateProduct.ProductId}_{listNewImage[0]}";
+                        $"{_cloudFlareOption.publicUrl}/productImage_{updateProduct.ProductId}_{listNewImage[0]}";
                     _context.ProductImages.Remove(
                         updateProduct.ProductImages.Where(pi => pi.Image == updateProduct.Image).FirstOrDefault() ??
                         throw new HttpStatusException(HttpStatusCode.NotFound,

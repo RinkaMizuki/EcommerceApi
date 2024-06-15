@@ -1,10 +1,12 @@
-﻿using EcommerceApi.Dtos.Admin;
+﻿using EcommerceApi.Config;
+using EcommerceApi.Dtos.Admin;
 using EcommerceApi.Dtos.Upload;
 using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models;
 using EcommerceApi.Models.Slider;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Net;
 
 namespace EcommerceApi.Services.SliderService
@@ -13,9 +15,11 @@ namespace EcommerceApi.Services.SliderService
     {
         private readonly EcommerceDbContext _context;
         private readonly ICloudflareClientService _cloudflareClient;
-        public SliderService(EcommerceDbContext context, ICloudflareClientService cloudflareClient) { 
+        private readonly CloudflareR2Config _cloudFlareOption;
+        public SliderService(EcommerceDbContext context, ICloudflareClientService cloudflareClient, IOptions<CloudflareR2Config> cloudFlareOption) { 
             _context = context;
             _cloudflareClient = cloudflareClient;
+            _cloudFlareOption = cloudFlareOption.Value;
         }
         public async Task<bool> DeleteSliderAsync(Guid sliderId, CancellationToken userCancellationToken)
         {
@@ -85,7 +89,7 @@ namespace EcommerceApi.Services.SliderService
                     Image = sliderDto.FormFile.FileName,
                     ModifiedAt = DateTime.Now,
                 };
-                newSlider.Url = $"{request.Scheme}://{request.Host}/api/v1/Admin/slider/preview?sliderImage=sliderImage_{newSlider.SilderId}_{newSlider.Image}";
+                newSlider.Url = $"{_cloudFlareOption.publicUrl}/sliderImage_{newSlider.SilderId}_{newSlider.Image}";
                 
 
                 await _context.Sliders.AddAsync(newSlider, cancellationToken);
@@ -134,7 +138,7 @@ namespace EcommerceApi.Services.SliderService
                     }, prefix: "sliderImage", cancellationToken);
 
                     sliderUpdate.Image = sliderDto.FormFile.FileName;
-                    sliderUpdate.Url = $"{request.Scheme}://{request.Host}/api/v1/Admin/slider/preview?sliderImage=sliderImage_{sliderUpdate.SilderId}_{sliderUpdate.Image}";
+                    sliderUpdate.Url = $"{_cloudFlareOption.publicUrl}/sliderImage_{sliderUpdate.SilderId}_{sliderUpdate.Image}";
                 }
 
                 await _context.SaveChangesAsync(cancellationToken);

@@ -9,8 +9,6 @@ public class User
     [Key]public Guid UserId { get; set; }
     [DataType(DataType.Text)] public string UserName { get; set; } = string.Empty;
     [DataType(DataType.EmailAddress)] public string Email { get; set; } = string.Empty;
-    [JsonIgnore]
-    //[DataType(DataType.Password)] public string PasswordHash { get; set; } = string.Empty;
     [DataType(DataType.Text)] public string Role { get; set; } = "member";
     public string Phone { get; set; } = string.Empty;
     public DateTime BirthDate { get; set; } = DateTime.Now;
@@ -26,4 +24,5 @@ public class User
     public List<Order.Order> Orders { get; set; } = new();
     public List<UserSegment> UserSegments { get; set; } = new();
     public List<UserAddress> UserAddresses { get; set; } = new();
+
 }

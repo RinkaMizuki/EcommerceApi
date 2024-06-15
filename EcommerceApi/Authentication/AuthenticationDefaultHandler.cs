@@ -70,11 +70,15 @@ namespace EcommerceApi.Authentication
             var serviceName = jwtSecurityToken.Claims.First(claim => claim.Type == "serviceName").Value;
             var serviceUrl = jwtSecurityToken.Claims.First(claim => claim.Type == "serviceUrl").Value;
             var role = jwtSecurityToken.Claims.First(claim => claim.Type == "role").Value;
+            var email = jwtSecurityToken.Claims.First(claim => claim.Type == "email").Value;
+            var userId = jwtSecurityToken.Claims.First(claim => claim.Type == "userId").Value;
 
             var claims = new[] { 
                 new Claim("ServiceName", serviceName),
                 new Claim("ServiceUrl", serviceUrl),
                 new Claim("Role", role),
+                new Claim("Email", email),
+                new Claim("UserId", userId),
             };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "Tokens"));
             var ticket = new AuthenticationTicket(principal, this.Scheme.Name);

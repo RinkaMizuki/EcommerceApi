@@ -1,7 +1,7 @@
 ﻿using EcommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace EcommerceApi.Services
+namespace EcommerceApi.Services.BackgroundTaskService
 {
     public class ExpiredUserCleanupService : BackgroundService
     {

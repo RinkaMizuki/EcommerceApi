@@ -1,4 +1,5 @@
 using System.Net;
+using EcommerceApi.Config;
 //using BCrypt.Net;
 using EcommerceApi.Constant;
 using EcommerceApi.Dtos.Admin;
@@ -13,6 +14,7 @@ using EcommerceApi.Responses;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SortOrder = EcommerceApi.Constant.SortOrder;
 
 namespace EcommerceApi.Services;
@@ -22,12 +24,14 @@ public class UserService : IUserService
     private readonly EcommerceDbContext _context;
     private readonly ICloudflareClientService _cloudflareClient;
     private readonly UserFilterBuilder _userFilterBuilder;
+    private readonly CloudflareR2Config _cloudFlareOption;
 
-    public UserService(EcommerceDbContext context, ICloudflareClientService cloudflareClient, UserFilterBuilder userFilterBuilder)
+    public UserService(EcommerceDbContext context, ICloudflareClientService cloudflareClient, IOptions<CloudflareR2Config> cloudFlareOption, UserFilterBuilder userFilterBuilder)
     {
         _context = context;
         _cloudflareClient = cloudflareClient;
         _userFilterBuilder = userFilterBuilder;
+        _cloudFlareOption = cloudFlareOption.Value;
     }
 
     public async Task<User> PostUserAsync(UserAdminDto userAdmin, CancellationToken userCancellationToken)
@@ -357,7 +361,7 @@ public class UserService : IUserService
                         File = userProfileDto!.Avatar,
                     }, "avatar", userCancellationToken);
                 }
-                userProfile.Url = $"{request.Scheme}://{request.Host}/api/v1/Admin/users/preview?avatar=avatar_{userId}_{userProfileDto!.Avatar.FileName}";
+                userProfile.Url = $"{_cloudFlareOption.publicUrl}/avatar_{userId}_{userProfileDto!.Avatar.FileName}";
                 userProfile.Avatar = userProfileDto.Avatar.FileName;
             }
 
@@ -438,7 +442,7 @@ public class UserService : IUserService
                 }
 
                 updateUser.Url =
-                    $"{request.Scheme}://{request.Host}/api/v1/Admin/users/preview?avatar=avatar_{userId}_{userAdminDto.file.FileName}";
+                    $"{_cloudFlareOption.publicUrl}/avatar_{userId}_{userAdminDto.file.FileName}";
                 updateUser.Avatar = userAdminDto.file.FileName;
             }
             else if (userAdminDto.file == null && string.IsNullOrEmpty(userAdminDto.Avatar))

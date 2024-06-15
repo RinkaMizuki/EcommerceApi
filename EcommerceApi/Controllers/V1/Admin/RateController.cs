@@ -10,7 +10,7 @@ namespace EcommerceApi.Controllers.V1.Admin
     //[Authorize(IdentityData.AdminPolicyName)]
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/Admin/")]
-    [Authorize(Policy = "SsoAdmin")]
+    [Authorize]
     [ApiController]
     public class RateController : ControllerBase
     {
@@ -45,7 +45,6 @@ namespace EcommerceApi.Controllers.V1.Admin
 
         [HttpPost]
         [Route("rates/post")]
-        [AllowAnonymous]
         public async Task<IActionResult> CreateRating([FromBody]RateDto rateDto, CancellationToken userCancellationToken)
         {
             var rate = await _rateService.PostRateAsync(rateDto, userCancellationToken);
@@ -53,6 +52,7 @@ namespace EcommerceApi.Controllers.V1.Admin
             return new JsonResult(rate);
         }
 
+        [Authorize(Policy = "SsoAdmin")]
         [HttpPut]
         [Route("rates/update/{rateId:int}")]
         public async Task<IActionResult> UpdateRate(RateDto rateDto, int rateId,
@@ -63,6 +63,7 @@ namespace EcommerceApi.Controllers.V1.Admin
             return Ok(updateRate);
         }
 
+        [Authorize(Policy = "SsoAdmin")]
         [HttpDelete]
         [Route("rates/delete/{rateId:int}")]
         public async Task<IActionResult> DeleteRate(int rateId, CancellationToken userCancellationToken)

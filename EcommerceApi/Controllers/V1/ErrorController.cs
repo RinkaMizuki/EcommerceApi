@@ -1,5 +1,8 @@
 ﻿using Amazon.Runtime.Internal;
+using EcommerceApi.Dtos.User;
 using EcommerceApi.ExtensionExceptions;
+using EcommerceApi.Extensions;
+using EcommerceApi.Models.Product;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -37,6 +40,16 @@ namespace EcommerceApi.Controllers.V1
                 {
                     message = AwsException.Message,
                     statusCode = AwsException.StatusCode,
+                });
+            }
+            else if(exception is ProductStatusException productException)
+            {
+                Response.StatusCode = Convert.ToInt32(productException.Status);
+                return new JsonResult(new
+                {
+                    message = productException.Message,
+                    statusCode = Convert.ToInt32(productException.Status),
+                    data = (List<OrderDetailFailureDto>)productException.Result ?? null
                 });
             }
             else

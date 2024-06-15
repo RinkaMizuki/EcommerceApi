@@ -1,10 +1,6 @@
 ﻿using EcommerceApi.Config;
-using EcommerceApi.Dtos.User;
-using EcommerceApi.ExtensionExceptions;
 using Microsoft.Extensions.Options;
 using Net.payOS;
-using Net.payOS.Types;
-using System.Net;
 
 namespace EcommerceApi.Lib
 {

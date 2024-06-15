@@ -1,6 +1,5 @@
 ﻿using Asp.Versioning;
 using EcommerceApi.Dtos.Admin;
-using EcommerceApi.Models.IdentityData;
 using EcommerceApi.Services.ContactService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

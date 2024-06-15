@@ -9,7 +9,7 @@ namespace EcommerceApi.Controllers.V1.Admin
 {
     [ApiVersion("1.0")]
     //[Authorize(Policy = IdentityData.AdminPolicyName)]
-    [Authorize(Policy = "SsoAdmin")]
+    [Authorize]
     [Route("api/v{version:apiVersion}/Admin/")]
     [ApiController]
     public class OrderController : ControllerBase
@@ -21,13 +21,13 @@ namespace EcommerceApi.Controllers.V1.Admin
             _orderService = orderService;
         }
         [HttpGet]
-        [AllowAnonymous]
         [Route("orders")]
         public async Task<IActionResult> GetListOrder([FromQuery] string filter, [FromQuery] string range, [FromQuery] string sort, CancellationToken cancellationToken)
         {
             var listOrder = await _orderService.GetListOrderAsync(filter, range, sort, Response ,cancellationToken);
             return StatusCode(200, listOrder);
         }
+        [Authorize(Policy = "SsoAdmin")]
         [HttpDelete]
         [Route("orders/delete/{orderId:guid}")]
         public async Task<IActionResult> DeleteOrder(Guid orderId, CancellationToken cancellationToken)
@@ -39,6 +39,7 @@ namespace EcommerceApi.Controllers.V1.Admin
                 StatusCode = 204
             });
         }
+        [Authorize(Policy = "SsoAdmin")]
         [HttpPut]
         [Route("orders/update/{orderId:guid}")]
         public async Task<IActionResult> UpdateOrder(OrderDto orderDto, Guid orderId, CancellationToken cancellationToken)
@@ -46,8 +47,8 @@ namespace EcommerceApi.Controllers.V1.Admin
             var updateOrder = await _orderService.UpdateOrderAsync(orderDto, orderId, cancellationToken);
             return Ok(updateOrder);
         }
+        [Authorize(Policy = "SsoAdmin")]
         [HttpGet]
-        [AllowAnonymous]
         [Route("orders/{orderId:guid}")]
         public async Task<IActionResult> GetOrderById(Guid orderId, CancellationToken cancellationToken)
         {

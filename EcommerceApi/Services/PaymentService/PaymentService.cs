@@ -21,6 +21,9 @@ using Newtonsoft.Json.Linq;
 using System.Globalization;
 using System.Net;
 using EcommerceApi.Models.Product;
+using EcommerceApi.Extensions;
+using EcommerceApi.Services.BackgroundTaskService;
+using EcommerceApi.Services.RedisService;
 
 namespace EcommerceApi.Services.PaymentService
 {
@@ -31,12 +34,15 @@ namespace EcommerceApi.Services.PaymentService
         private readonly IMailService _mailservice;
         private readonly IHubContext<OrderHub> _hubcontext;
         private readonly PayOsLibrary _payoslibrary;
-        public PaymentService(EcommerceDbContext context, IMailService mailService, IOptions<VnPayConfig> options, PayOsLibrary payOsLibrary,IHubContext<OrderHub> hubContext) {
+        private readonly IRedisService _redisService;
+        public PaymentService(EcommerceDbContext context, IMailService mailService, 
+            IOptions<VnPayConfig> options, PayOsLibrary payOsLibrary, IHubContext<OrderHub> hubContext, IRedisService redisService) {
             _config = options.Value;
             _context = context;
             _mailservice = mailService;
             _payoslibrary = payOsLibrary;
             _hubcontext = hubContext;
+            _redisService = redisService;
         }
 
         public async Task<OrderResponse> PostPaymentVnPayReturnAsync(HttpRequest httpRequest, CancellationToken cancellationToken)
@@ -122,14 +128,15 @@ namespace EcommerceApi.Services.PaymentService
                             invoiceResponse.TotalDiscount = order.TotalDiscount;
                             if (currTran is null)
                             {
-                                var orderDetailsGroupedByProductId = order.OrderDetails
-                                                                                      .GroupBy(od => od.ProductId)
-                                                                                      .Select(g => new
-                                                                                       {
-                                                                                           ProductId = g.Key,
-                                                                                           TotalQuantity = g.Sum(od => od.QuantityProduct)
-                                                                                       })
-                                                                                      .ToList();
+                                var orderDetailsGroupedByProductId = order
+                                                                          .OrderDetails
+                                                                          .GroupBy(od => od.ProductId)
+                                                                          .Select(g => new
+                                                                          {
+                                                                              ProductId = g.Key,
+                                                                              TotalQuantity = g.Sum(od => od.QuantityProduct)
+                                                                          })
+                                                                          .ToList();
 
                                 // Batch update the StockQuantity for each ProductStock entry
                                 foreach (var detail in orderDetailsGroupedByProductId)
@@ -186,6 +193,8 @@ namespace EcommerceApi.Services.PaymentService
 
                             if (currTran is null)
                             {
+                                await RemoveCacheQuantity(order.OrderDetails);
+
                                 payment.PaymentLastMessage = errorMessage;
                                 payment.PaymentStatus = PaymentStatus.Failed;
                                 order.Status = OrderStatus.Failed;
@@ -209,6 +218,8 @@ namespace EcommerceApi.Services.PaymentService
                         var errorMessage = "An error occurred during processing.";
                         if (currTran is null)
                         {
+                            await RemoveCacheQuantity(order.OrderDetails);
+
                             payment.PaymentLastMessage = errorMessage;
                             payment.PaymentStatus = PaymentStatus.Failed;
                             order.Status = OrderStatus.Failed;
@@ -223,6 +234,7 @@ namespace EcommerceApi.Services.PaymentService
                             await _context.PaymentTransactions.AddAsync(newTransaction, cancellationToken);
                             await _context.SaveChangesAsync(cancellationToken);
                             await transaction.CommitAsync(cancellationToken);
+                                                      
                         }
                         throw new HttpStatusException(HttpStatusCode.BadRequest, errorMessage);
                     }
@@ -231,7 +243,6 @@ namespace EcommerceApi.Services.PaymentService
             }
             catch(HttpStatusException hse)
             {
-                await transaction.RollbackAsync(cancellationToken);
                 throw new HttpStatusException(hse.Status, hse.Message);
             }
             catch (Exception ex)
@@ -279,17 +290,65 @@ namespace EcommerceApi.Services.PaymentService
                     await _context.Orders.AddAsync(newOrder, cancellationToken);
 
                     var listOrderDetail = new List<OrderDetail>();
-                    foreach(var od in paymentDto.OrderDetails) {
-                        var newOrderDetail = new OrderDetail()
+                    var listItemFailure = new List<OrderDetailFailureDto>();
+                    foreach (var od in paymentDto.OrderDetails)
+                    {
+                        var productStock = await _context
+                                                 .ProductStocks
+                                                 .Include(ps => ps.Product)
+                                                 .Where(p => p.ProductId == od.ProductId)
+                                                 .Select(ps => new
+                                                 {
+                                                     ps.ProductId,
+                                                     ps.StockQuantity,
+                                                     ps.Product.Title,
+                                                 })
+                                                 .AsNoTracking()
+                                                 .FirstOrDefaultAsync(cancellationToken)
+                                                 ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Product not avaiable.");
+
+                        var cacheQuantity = await _redisService.GetValueAsync(productStock.ProductId.ToString());
+
+                        if (od.QuantityProduct > productStock.StockQuantity || ((!string.IsNullOrEmpty(cacheQuantity)) && od.QuantityProduct > Convert.ToUInt32(cacheQuantity)))
                         {
-                            OrderId = newOrder.OrderId,
-                            ProductId = od.ProductId,
-                            PriceProduct = od.PriceProduct,
-                            QuantityProduct = od.QuantityProduct,
-                            DiscountProduct = od.DiscountProduct,
-                            Color = od.Color,
-                        };
-                        listOrderDetail.Add(newOrderDetail);
+                            var newItemFailure = new OrderDetailFailureDto()
+                            {
+                                ProductId = productStock.ProductId,
+                                Title = productStock.Title,
+                                PriceProduct = od.PriceProduct,
+                                StockQuantity = productStock.StockQuantity,
+                                QuantityProduct = od.QuantityProduct,
+                                DiscountProduct = od.DiscountProduct,
+                                Color = od.Color,
+                            };
+                            listItemFailure.Add(newItemFailure);
+                        }
+                        else
+                        {
+                            if (string.IsNullOrEmpty(cacheQuantity))
+                            {
+                                var keyValuePair = new KeyValuePair<string, string>(
+                                    productStock.ProductId.ToString(),
+                                    Convert.ToString(productStock.StockQuantity - od.QuantityProduct)
+                                );
+                                await _redisService.SetValueAsync(keyValuePair);
+                            };
+                            var newOrderDetail = new OrderDetail()
+                            {
+                                OrderId = newOrder.OrderId,
+                                ProductId = od.ProductId,
+                                PriceProduct = od.PriceProduct,
+                                QuantityProduct = od.QuantityProduct,
+                                DiscountProduct = od.DiscountProduct,
+                                Color = od.Color,
+                            };
+                            listOrderDetail.Add(newOrderDetail);
+                        }
+                    }
+
+                    if (listItemFailure.Count > 0)
+                    {
+                        throw new ProductStatusException(HttpStatusCode.Conflict, "Products stock not avaiable.", listItemFailure);
                     }
 
                     var newPayment = new Payment()
@@ -382,6 +441,11 @@ namespace EcommerceApi.Services.PaymentService
                         PaymentUrl = paymentUrl,
                         PaymentId = newPayment.PaymentId
                     };
+                }
+                catch (ProductStatusException pse)
+                {
+                    await newTransaction.RollbackAsync(cancellationToken);
+                    throw new ProductStatusException(pse.Status, pse.Message, pse.Result);
                 }
                 catch (Exception ex)
                 {
@@ -673,18 +737,68 @@ namespace EcommerceApi.Services.PaymentService
                 await _context.Orders.AddAsync(newOrder, cancellationToken);
 
                 var listOrderDetail = new List<OrderDetail>();
+                var listItemFailure = new List<OrderDetailFailureDto>();
                 foreach (var od in paymentDto.OrderDetails)
                 {
-                    var newOrderDetail = new OrderDetail()
+                    var productStock = await _context
+                                             .ProductStocks
+                                             .Include(ps => ps.Product)
+                                             .Where(p => p.ProductId == od.ProductId)
+                                             .Select(ps => new
+                                             {
+                                                 ps.ProductId,
+                                                 ps.StockQuantity,
+                                                 ps.Product.Title,
+                                             })
+                                             .AsNoTracking()
+                                             .FirstOrDefaultAsync(cancellationToken)
+                                             ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Product not avaiable.");
+                    if (od.QuantityProduct > productStock.StockQuantity)
                     {
-                        OrderId = newOrder.OrderId,
-                        ProductId = od.ProductId,
-                        PriceProduct = od.PriceProduct,
-                        QuantityProduct = od.QuantityProduct,
-                        DiscountProduct = od.DiscountProduct,
-                        Color = od.Color,
-                    };
-                    listOrderDetail.Add(newOrderDetail);
+                        var newItemFailure = new OrderDetailFailureDto()
+                        {
+                            ProductId = productStock.ProductId,
+                            Title = productStock.Title,
+                            PriceProduct = od.PriceProduct,
+                            StockQuantity = productStock.StockQuantity,
+                            QuantityProduct = od.QuantityProduct,
+                            DiscountProduct = od.DiscountProduct,
+                            Color = od.Color,
+                        };
+                        listItemFailure.Add(newItemFailure);
+                    }
+                    else
+                    {
+                        var newOrderDetail = new OrderDetail()
+                        {
+                            OrderId = newOrder.OrderId,
+                            ProductId = od.ProductId,
+                            PriceProduct = od.PriceProduct,
+                            QuantityProduct = od.QuantityProduct,
+                            DiscountProduct = od.DiscountProduct,
+                            Color = od.Color,
+                        };
+                        listOrderDetail.Add(newOrderDetail);
+                    }
+                }
+
+                if (listItemFailure.Count > 0)
+                {
+                    throw new ProductStatusException(HttpStatusCode.Conflict, "Products stock not avaiable.", listItemFailure);
+                }
+
+                List<ItemData> items = new();
+                foreach (var item in paymentDto.OrderDetails)
+                {
+                    var productName = await _context
+                        .Products
+                        .Where(p => p.ProductId.Equals(item.ProductId))
+                        .Select(p => p.Title)
+                        .FirstOrDefaultAsync(cancellationToken)
+                        ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Product not found.");
+                    var productSalePrice = item.PriceProduct * (1 - (item.DiscountProduct / 100.0f));
+                    var newItem = new ItemData(productName, item.QuantityProduct, (int)productSalePrice);
+                    items.Add(newItem);
                 }
 
                 var newPayment = new Payment()
@@ -702,19 +816,6 @@ namespace EcommerceApi.Services.PaymentService
                     ExpiredAt = DateTime.Now.AddMinutes(15),
                     PaymentStatus = "pending"
                 };
-                List<ItemData> items = new();
-                foreach (var item in paymentDto.OrderDetails)
-                {
-                    var productName = await _context
-                        .Products
-                        .Where(p => p.ProductId.Equals(item.ProductId))
-                        .Select(p => p.Title)
-                        .FirstOrDefaultAsync(cancellationToken)
-                        ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Product not found.");
-                    var productSalePrice = item.PriceProduct * (1 - (item.DiscountProduct / 100.0f));
-                    var newItem = new ItemData(productName, item.QuantityProduct, (int)productSalePrice);
-                    items.Add(newItem);
-                }
                 PaymentData paymentData = new(orderCode, paymentDto.RequiredAmount, "Thanh toan don hang", items
                     , _payoslibrary._options.PAYOS_CANCEL_URL, _payoslibrary._options.PAYOS_RETURN_URL);
 
@@ -751,7 +852,12 @@ namespace EcommerceApi.Services.PaymentService
                     PaymentId = newPayment.PaymentId
                 };
             }
-            catch(Exception ex)
+            catch (ProductStatusException pse)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw new ProductStatusException(pse.Status, pse.Message, pse.Result);
+            }
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync(cancellationToken);
                 throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
@@ -781,6 +887,13 @@ namespace EcommerceApi.Services.PaymentService
             catch(Exception ex)
             {
                 throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+        private async Task RemoveCacheQuantity(List<OrderDetail> orderDetails)
+        {
+            foreach (var item in orderDetails)
+            {
+                await _redisService.RemoveValueAsync(item.ProductId.ToString());
             }
         }
     }

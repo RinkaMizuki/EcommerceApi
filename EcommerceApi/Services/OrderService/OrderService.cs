@@ -95,22 +95,6 @@ namespace EcommerceApi.Services.OrderService
                     filterValues.Add("");
                 }
 
-                //if (!filterValues.Contains(OrderFilterType.Returned))
-                //{
-                //    filterValues.Add(OrderFilterType.Returned);
-                //    filterValues.Add("");
-                //}
-                //if (!filterValues.Contains(OrderFilterType.Cancelled))
-                //{
-                //    filterValues.Add(OrderFilterType.Cancelled);
-                //    filterValues.Add("");
-                //}
-                //if (!filterValues.Contains(OrderFilterType.Ordered))
-                //{
-                //    filterValues.Add(OrderFilterType.Ordered);
-                //    filterValues.Add("");
-                //}
-
                 if (!filterValues.Contains(OrderFilterType.MinAmount))
                 {
                     filterValues.Add(OrderFilterType.MinAmount);
@@ -123,9 +107,6 @@ namespace EcommerceApi.Services.OrderService
                 var orderId = filterValues[filterValues.IndexOf(OrderFilterType.OrderId) + 1].ToString();
                 var orderedBefore = filterValues[filterValues.IndexOf(OrderFilterType.Before) + 1];
                 var orderedSince = filterValues[filterValues.IndexOf(OrderFilterType.Since) + 1];
-                //var returned = filterValues[filterValues.IndexOf(OrderFilterType.Returned) + 1];
-                //var cancelled = filterValues[filterValues.IndexOf(OrderFilterType.Cancelled) + 1];
-                //var ordered = filterValues[filterValues.IndexOf(OrderFilterType.Ordered) + 1];
                 var minAmount = filterValues[filterValues.IndexOf(OrderFilterType.MinAmount) + 1];
 
                 var filters = _orderFilter
@@ -134,9 +115,6 @@ namespace EcommerceApi.Services.OrderService
                                      .AddIdFilter(orderId)
                                      .AddBeforeDateFilter(orderedBefore)
                                      .AddSinceDateFilter(orderedSince)
-                                     //.AddReturnedFilter(returned)
-                                     //.AddCancelledFilter(cancelled)
-                                     //.AddOrderedFilter(ordered)
                                      .AddAmountFilter(minAmount)
                                      .Build();
 

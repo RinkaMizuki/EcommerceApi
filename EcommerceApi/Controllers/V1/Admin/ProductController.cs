@@ -74,24 +74,24 @@ namespace EcommerceApi.Controllers.V1.Admin
             var listProductByCate = await _productService.GetProductByCategoryAsync(categoryId, userCancellationToken);
             return new JsonResult(listProductByCate);
         }
-        [AllowAnonymous]
-        [HttpGet]
-        [Route("product/preview")]
-        public async Task<IActionResult> GetProductImage(string productImage, CancellationToken userCancellationToken)
-        {
-            var userAvatar = await _productService.GetImageAsync(productImage, userCancellationToken);
-            return File(userAvatar.FileStream, userAvatar.ContentType);
-        }
+        //[AllowAnonymous]
+        //[HttpGet]
+        //[Route("product/preview")]
+        //public async Task<IActionResult> GetProductImage(string productImage, CancellationToken userCancellationToken)
+        //{
+        //    var userAvatar = await _productService.GetImageAsync(productImage, userCancellationToken);
+        //    return File(userAvatar.FileStream, userAvatar.ContentType);
+        //}
 
-        [AllowAnonymous]
-        [HttpGet]
-        [Route("products/images")]
-        public async Task<IActionResult> GetListProductImage(string prefix, CancellationToken userCancellationToken)
-        {
-            var response = await _cloudFlareService.GetListObjectAsync(prefix, userCancellationToken);
-            var files = response.Select(x => x.Key);
-            var arquivos = files.Select(x => $"{Request.Scheme}://{Request.Host}/api/v1/Admin/product/preview?productImage={Path.GetFileName(x)}").ToList();
-            return Ok(arquivos);
-        }
+        //[AllowAnonymous]
+        //[HttpGet]
+        //[Route("products/images")]
+        //public async Task<IActionResult> GetListProductImage(string prefix, CancellationToken userCancellationToken)
+        //{
+        //    var response = await _cloudFlareService.GetListObjectAsync(prefix, userCancellationToken);
+        //    var files = response.Select(x => x.Key);
+        //    var arquivos = files.Select(x => $"{Request.Scheme}://{Request.Host}/api/v1/Admin/product/preview?productImage={Path.GetFileName(x)}").ToList();
+        //    return Ok(arquivos);
+        //}
     }
 }
