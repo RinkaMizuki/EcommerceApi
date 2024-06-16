@@ -2,7 +2,8 @@
 {
     public class MessageDto
     {
-        public Guid SeenderId { get; set; }
+        public Guid? MessageId { get; set; }
+        public Guid SenderId { get; set; }
         public Guid ConversationId { get; set; }
         public string MessageContent { get; set; } = string.Empty;
         public Guid? OriginalMessageId { get; set; } = null;

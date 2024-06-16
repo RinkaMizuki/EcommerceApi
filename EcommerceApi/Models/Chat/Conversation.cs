@@ -10,6 +10,7 @@ namespace EcommerceApi.Models.Chat
         public string? Title { get; set; } = string.Empty;
         public string? LastestMessage { get; set; } = string.Empty;
         public DateTime? LastestSend { get; set; }
+        public bool IsSeen { get; set; }
         public List<Message> Messages { get; set; } = new();
     }
 }

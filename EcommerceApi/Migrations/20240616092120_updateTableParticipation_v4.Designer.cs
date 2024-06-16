@@ -4,6 +4,7 @@ using EcommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EcommerceApi.Migrations
 {
     [DbContext(typeof(EcommerceDbContext))]
-    partial class EcommerceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240616092120_updateTableParticipation_v4")]
+    partial class updateTableParticipation_v4
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -67,11 +70,11 @@ namespace EcommerceApi.Migrations
                     b.Property<Guid?>("OriginalMessageId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("SeenderId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("SendAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<Guid>("SenderId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("MessageId");
 
@@ -79,7 +82,7 @@ namespace EcommerceApi.Migrations
 
                     b.HasIndex("OriginalMessageId");
 
-                    b.HasIndex("SenderId");
+                    b.HasIndex("SeenderId");
 
                     b.ToTable("Messages");
                 });
@@ -984,9 +987,9 @@ namespace EcommerceApi.Migrations
                         .WithMany("ListMessageChild")
                         .HasForeignKey("OriginalMessageId");
 
-                    b.HasOne("EcommerceApi.Models.UserAddress.User", "Sender")
+                    b.HasOne("EcommerceApi.Models.UserAddress.User", "Seender")
                         .WithMany()
-                        .HasForeignKey("SenderId")
+                        .HasForeignKey("SeenderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -994,7 +997,7 @@ namespace EcommerceApi.Migrations
 
                     b.Navigation("OriginalMessage");
 
-                    b.Navigation("Sender");
+                    b.Navigation("Seender");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Chat.Participation", b =>

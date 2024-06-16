@@ -9,10 +9,9 @@ namespace EcommerceApi.Models.Chat
     {
         [Key]
         public Guid MessageId { get; set; }
-        public Guid SeenderId { get; set; }
-        [JsonIgnore]
-        [ForeignKey("SeenderId")]
-        public User Seender { get; set; }
+        public Guid SenderId { get; set; }
+        [ForeignKey("SenderId")]
+        public User Sender { get; set; }
         public Guid ConversationId { get; set; }
         [JsonIgnore]
         [ForeignKey("ConversationId")]

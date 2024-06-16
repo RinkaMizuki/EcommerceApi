@@ -6,5 +6,6 @@
         public string? Title { get; set; } = string.Empty;
         public string? LastestMessage { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public Guid AdminId { get; set; }
     }
 }

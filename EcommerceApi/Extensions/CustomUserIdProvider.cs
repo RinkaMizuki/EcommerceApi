@@ -6,8 +6,7 @@ namespace EcommerceApi.Extensions
     {
         public string? GetUserId(HubConnectionContext connection)
         {
-            string adminId = connection.User.Claims.FirstOrDefault(claim => claim.Type == "UserId")!.Value;
-            return adminId.ToString();
+            return connection.User.Claims.FirstOrDefault(claim => claim.Type == "Email")!.Value;
         }
     }
 }

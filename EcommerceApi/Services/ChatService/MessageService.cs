@@ -2,6 +2,7 @@
 using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models;
 using EcommerceApi.Models.Chat;
+using Microsoft.EntityFrameworkCore;
 using System.Net;
 
 namespace EcommerceApi.Services.ChatService
@@ -18,9 +19,21 @@ namespace EcommerceApi.Services.ChatService
             throw new NotImplementedException();
         }
 
-        public Task<List<Message>> GetListMessageAsync(CancellationToken cancellationToken)
+        public async Task<List<Message>> GetListMessageAsync(Guid conversationId, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var listMessage = await _context
+                                                .Messages
+                                                .Where(m => m.ConversationId == conversationId)
+                                                .Include(m => m.Sender)
+                                                .ToListAsync(cancellationToken);
+                return listMessage;
+            }
+            catch(Exception ex)
+            {
+                throw new HttpStatusException(HttpStatusCode.InternalServerError, ex.Message);
+            }
         }
 
         public Task<Message> GetMessageByIdAsync(Guid messageId, CancellationToken cancellationToken)
@@ -28,18 +41,27 @@ namespace EcommerceApi.Services.ChatService
             throw new NotImplementedException();
         }
 
-        public async Task<bool> PostMessageAsync(MessageDto messageDto, CancellationToken cancellationToken)
+        public async Task<Message> PostMessageAsync(MessageDto messageDto, CancellationToken cancellationToken)
         {
             try
             {
                 var newMessage = new Message()
                 {
-                    MessageId = Guid.NewGuid(),
+                    MessageId = (Guid)(messageDto.MessageId != null ? messageDto.MessageId : Guid.NewGuid()),
                     MessageContent = messageDto.MessageContent,
-                    SeenderId = messageDto.SeenderId,
+                    SenderId = messageDto.SenderId,
                     ModifiedAt = DateTime.UtcNow,
                     SendAt = DateTime.UtcNow,
+                    ConversationId = messageDto.ConversationId,
                 };
+
+                var conversationUpdated = await _context
+                                                    .Conversations
+                                                    .Where(cs => cs.ConversationId.Equals(newMessage.ConversationId))
+                                                    .FirstOrDefaultAsync(cancellationToken)
+                                                    ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Conversation not found.");
+                conversationUpdated.LastestMessage = messageDto.MessageContent;
+                conversationUpdated.LastestSend = DateTime.UtcNow;
 
                 if (messageDto.OriginalMessageId is not null)
                 {
@@ -52,7 +74,11 @@ namespace EcommerceApi.Services.ChatService
 
                 await _context
                             .SaveChangesAsync(cancellationToken);
-                return true;
+                return await _context
+                                    .Messages
+                                    .Where(m => m.MessageId.Equals(newMessage.MessageId))
+                                    .Include(m => m.Sender)
+                                    .FirstAsync(cancellationToken);
             }
             catch (Exception ex)
             {
