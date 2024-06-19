@@ -1,4 +1,5 @@
-﻿using EcommerceApi.Dtos.User;
+﻿using EcommerceApi.Constant;
+using EcommerceApi.Dtos.User;
 using EcommerceApi.ExtensionExceptions;
 using EcommerceApi.Models;
 using EcommerceApi.Models.Chat;
@@ -9,6 +10,7 @@ using EcommerceApi.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System.Net;
 
 namespace EcommerceApi.Hubs
@@ -21,14 +23,17 @@ namespace EcommerceApi.Hubs
         private readonly EcommerceDbContext _context;
         private readonly IConversationService _conversationService;
         private readonly IMessageService _messageService;
+        private readonly UserConnection _userConnection;
         public ChatHub(AdminConnection adminConnection, IUserService userService, EcommerceDbContext context, 
-            IConversationService conversationService, IMessageService messageService)
+            IConversationService conversationService, IMessageService messageService, UserConnection userConnection)
         {
             _adminConnection = adminConnection;
             _userService = userService;
             _context = context;
             _conversationService = conversationService;
             _messageService = messageService;
+            _userConnection = userConnection;
+
         }
         public override async Task OnConnectedAsync()
         {
@@ -37,15 +42,21 @@ namespace EcommerceApi.Hubs
                                     !.Claims
                                     .FirstOrDefault(claim => claim.Type == "Role")
                                     !.Value;
+            string id = Context.User.Claims.FirstOrDefault(claim => claim.Type == "UserId")!.Value;
+            string email = Context.User.Claims.FirstOrDefault(claim => claim.Type == "Email")!.Value;
+
             if (roleName == "admin")
             {
-                string adminId = Context
-                                        .User
-                                        .Claims
-                                        .FirstOrDefault(claim => claim.Type == "UserId")
-                                        !.Value;
-                _adminConnection.AddAdmin(adminId, Context.ConnectionId);
-                await SendListParticipant(adminId);
+                _adminConnection.AddAdmin(id, Context.ConnectionId);
+
+                await SendListParticipant(id);
+      
+                await Clients
+                            .Users(_userConnection.GetAllUser())
+                            .SendAsync("ReceiveStatus", id, ChatStatus.Connected);
+                await Clients
+                            .User(email)
+                            .SendAsync("ReceiveListUserStatus", _userConnection.GetAllUser());
             }
             else
             {
@@ -82,10 +93,10 @@ namespace EcommerceApi.Hubs
                                                     ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Admin not found.");
                     }
                     var senderId = await _context
-                                             .Users
-                                             .Where(u => u.Email.Equals(userEmail))
-                                             .Select(u => u.UserId)
-                                             .FirstOrDefaultAsync(CancellationToken.None);
+                                                 .Users
+                                                 .Where(u => u.Email.Equals(userEmail))
+                                                 .Select(u => u.UserId)
+                                                 .FirstOrDefaultAsync(CancellationToken.None);
                                             
                     var conversation = new ConversationDto()
                     {
@@ -96,7 +107,9 @@ namespace EcommerceApi.Hubs
                     participant = await _conversationService
                                                             .PostConversationAsync(conversation, CancellationToken.None);
                     conversationId = participant.ConversationId.ToString();
-                    await Clients.Users(receiverAdmin.Email).SendAsync("NewParticipant", participant);
+                    await Clients
+                                .Users(receiverAdmin.Email)
+                                .SendAsync("ReceiveNewParticipant", participant);
                 }
                 else
                 {
@@ -106,22 +119,57 @@ namespace EcommerceApi.Hubs
                     conversationId = participant.ConversationId.ToString();
                     
                 }
-                await Clients.Caller.SendAsync("ReceiveAdmin", receiverAdmin, conversationId);
+                _userConnection.AddUser(email, receiverAdmin.Email);
+
+                await Clients
+                            .Caller
+                            .SendAsync("ReceiveAdmin", receiverAdmin, conversationId);
+                await Clients
+                            .User(receiverAdmin.Email)
+                            .SendAsync("ReceiveListUserStatus", _userConnection.GetAllUser());
+                await Clients
+                            .User(email)
+                            .SendAsync("ReceiveStatus", receiverAdmin.UserId, _adminConnection.IsOnlineAdmin(receiverAdmin.UserId.ToString()));
             }
             await base.OnConnectedAsync();
         }
         public override async Task OnDisconnectedAsync(Exception ex)
         {
-            string adminId = Context
+            string roleName = Context
+                                  .User
+                                  !.Claims
+                                  .FirstOrDefault(claim => claim.Type == "Role")
+                                  !.Value;
+            string id = Context
                                     .User
                                     !.Claims
                                     .FirstOrDefault(claim => claim.Type == "UserId")
                                     !.Value;
-
-            if(!string.IsNullOrEmpty(adminId))
+            string email = Context
+                                    .User
+                                    !.Claims
+                                    .FirstOrDefault(claim => claim.Type == "Email")
+                                    !.Value;
+            if (!string.IsNullOrEmpty(roleName))
             {
-                _adminConnection.RemoveAdmin(adminId);
+                if(roleName == "admin")
+                {
+                    _adminConnection.RemoveAdmin(id);
+
+                    await Clients
+                                .Users(_userConnection.GetAllUser())
+                                .SendAsync("ReceiveStatus", id, ChatStatus.Disconnected);
+                }
+                else
+                {
+                    var adminEmail = _userConnection.GetOneUser(email);
+                    _userConnection.RemoveUser(email);
+                    await Clients
+                                .User(adminEmail)
+                                .SendAsync("ReceiveListUserStatus", _userConnection.GetAllUser()); 
+                }
             }
+
             await base.OnDisconnectedAsync(ex);
         }
         public async Task SendMessageAsync(string senderId, string email, string message, string conversationId, string? originMessageId)
@@ -146,12 +194,36 @@ namespace EcommerceApi.Hubs
         public async Task GetMessageAsync(Guid conversationId)
         {
             var listMessage = await _messageService.GetListMessageAsync(conversationId, CancellationToken.None);
-            await Clients.Caller.SendAsync("ReceiveMessages", listMessage);
+            await Clients
+                        .Caller
+                        .SendAsync("ReceiveMessages", listMessage);
+        }
+        public async Task GetConversationAsync(Guid conversationId)
+        {
+            var conversation = await _conversationService.GetConversationByIdAsync(conversationId, CancellationToken.None);
+            await Clients
+                        .Caller
+                        .SendAsync("ReceiveConversation", conversation);
+        }
+        public async Task GetListParticipantAsync(string adminId, string email)
+        {
+            var participentList = await _conversationService.GetListParticipationAsync(JsonConvert.SerializeObject(new
+            {
+                adminId
+            }), CancellationToken.None);
+            await Clients
+                        .User(email)
+                        .SendAsync("ReceiveUpdatedReceiveParticipants", participentList);
         }
         private async Task SendListParticipant(string adminId)
         {
-            var participentList = await _conversationService.GetListParticipationAsync(Guid.Parse(adminId), CancellationToken.None);
-            await Clients.Caller.SendAsync("ReceiveParticipants", participentList);
+            var participentList = await _conversationService.GetListParticipationAsync(JsonConvert.SerializeObject(new
+            {
+                adminId
+            }), CancellationToken.None);
+            await Clients
+                        .Caller
+                        .SendAsync("ReceiveParticipants", participentList);
         }
     }
 }

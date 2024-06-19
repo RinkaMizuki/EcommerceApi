@@ -4,6 +4,7 @@ using EcommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EcommerceApi.Migrations
 {
     [DbContext(typeof(EcommerceDbContext))]
-    partial class EcommerceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240617131218_updateTableConversation_v2")]
+    partial class updateTableConversation_v2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,6 +33,12 @@ namespace EcommerceApi.Migrations
 
                     b.Property<bool>("IsSeen")
                         .HasColumnType("bit");
+
+                    b.Property<string>("LastestMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastestSend")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("StartedAt")
                         .HasColumnType("datetime2");
@@ -969,7 +978,7 @@ namespace EcommerceApi.Migrations
             modelBuilder.Entity("EcommerceApi.Models.Chat.Message", b =>
                 {
                     b.HasOne("EcommerceApi.Models.Chat.Conversation", "Conversation")
-                        .WithMany("Messages")
+                        .WithMany()
                         .HasForeignKey("ConversationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1256,11 +1265,6 @@ namespace EcommerceApi.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EcommerceApi.Models.Chat.Conversation", b =>
-                {
-                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("EcommerceApi.Models.Chat.Message", b =>

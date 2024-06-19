@@ -54,7 +54,7 @@ builder.Services.AddDbContext<EcommerceDbContext>(options =>
     var connectionString = configure.GetConnectionString("DefaultConnection");
     if (!string.IsNullOrEmpty(connectionString))
     {
-        options.UseSqlServer(connectionString);
+        options.UseSqlServer(connectionString, o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
     }
     else
     {
@@ -101,6 +101,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(option =>
 });
 
 builder.Services.AddSingleton<AdminConnection>();
+builder.Services.AddSingleton<UserConnection>();
 builder.Services.AddSingleton<IRedisService, RedisService>();
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 builder.Services.AddScoped<JwtMiddleware>();
@@ -128,6 +129,7 @@ builder.Services.AddScoped<RateFilterBuilder>();
 builder.Services.AddScoped<ProductFilterBuilder>();
 builder.Services.AddScoped<OrderFilterBuilder>();
 builder.Services.AddScoped<UserFilterBuilder>();
+builder.Services.AddScoped<ChatFilterBuilder>();
 builder.Services.AddScoped<InvoiceFilterBuilder>();
 builder.Services.AddScoped<IConfirmService, ConfirmService>();
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();

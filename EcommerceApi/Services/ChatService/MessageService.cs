@@ -55,14 +55,6 @@ namespace EcommerceApi.Services.ChatService
                     ConversationId = messageDto.ConversationId,
                 };
 
-                var conversationUpdated = await _context
-                                                    .Conversations
-                                                    .Where(cs => cs.ConversationId.Equals(newMessage.ConversationId))
-                                                    .FirstOrDefaultAsync(cancellationToken)
-                                                    ?? throw new HttpStatusException(HttpStatusCode.NotFound, "Conversation not found.");
-                conversationUpdated.LastestMessage = messageDto.MessageContent;
-                conversationUpdated.LastestSend = DateTime.UtcNow;
-
                 if (messageDto.OriginalMessageId is not null)
                 {
                     newMessage.OriginalMessageId = messageDto.OriginalMessageId;

@@ -18,6 +18,10 @@ namespace EcommerceApi.Shared
         {
             _onlineAdmins.TryRemove(adminId, out _);
         }
+        public bool IsOnlineAdmin(string adminId)
+        {
+            return _onlineAdmins.TryGetValue(adminId, out _);
+        }
         public KeyValuePair<string, string>? GetRandomAdmin()
         {
             if(_onlineAdmins.IsEmpty)

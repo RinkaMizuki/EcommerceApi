@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using EcommerceApi.Extensions;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace EcommerceApi.Models.Chat
 {
@@ -8,8 +10,6 @@ namespace EcommerceApi.Models.Chat
         public Guid ConversationId { get; set; }
         public DateTime StartedAt { get; set; }
         public string? Title { get; set; } = string.Empty;
-        public string? LastestMessage { get; set; } = string.Empty;
-        public DateTime? LastestSend { get; set; }
         public bool IsSeen { get; set; }
         public List<Message> Messages { get; set; } = new();
     }
