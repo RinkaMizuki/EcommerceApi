@@ -41,7 +41,7 @@ namespace EcommerceApi.Hubs
                                     .User
                                     !.Claims
                                     .FirstOrDefault(claim => claim.Type == "Role")
-                                    !.Value;
+                                    ?.Value ?? "member";
             string id = Context.User.Claims.FirstOrDefault(claim => claim.Type == "UserId")!.Value;
             string email = Context.User.Claims.FirstOrDefault(claim => claim.Type == "Email")!.Value;
 
@@ -139,17 +139,17 @@ namespace EcommerceApi.Hubs
                                   .User
                                   !.Claims
                                   .FirstOrDefault(claim => claim.Type == "Role")
-                                  !.Value;
+                                  ?.Value ?? "member";
             string id = Context
-                                    .User
-                                    !.Claims
-                                    .FirstOrDefault(claim => claim.Type == "UserId")
-                                    !.Value;
+                              .User
+                              !.Claims
+                              .FirstOrDefault(claim => claim.Type == "UserId")
+                              !.Value;
             string email = Context
-                                    .User
-                                    !.Claims
-                                    .FirstOrDefault(claim => claim.Type == "Email")
-                                    !.Value;
+                                 .User
+                                 !.Claims
+                                 .FirstOrDefault(claim => claim.Type == "Email")
+                                 !.Value;
             if (!string.IsNullOrEmpty(roleName))
             {
                 if(roleName == "admin")
@@ -214,6 +214,12 @@ namespace EcommerceApi.Hubs
             await Clients
                         .User(email)
                         .SendAsync("ReceiveUpdatedReceiveParticipants", participentList);
+        }
+        public async Task SendMessagePreparingAsync(string email, bool isPreparing)
+        {
+            await Clients
+                        .User(email)
+                        .SendAsync("ReceivePreparing", isPreparing);
         }
         private async Task SendListParticipant(string adminId)
         {

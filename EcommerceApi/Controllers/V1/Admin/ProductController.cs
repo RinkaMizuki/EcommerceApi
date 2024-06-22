@@ -16,11 +16,9 @@ namespace EcommerceApi.Controllers.V1.Admin
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;
-        private readonly ICloudflareClientService _cloudFlareService;
-        public ProductController(IProductService productService, ICloudflareClientService cloudflareClientService)
+        public ProductController(IProductService productService)
         {
             _productService = productService;
-            _cloudFlareService = cloudflareClientService;
         }
         [HttpGet]
         [Route("products")]

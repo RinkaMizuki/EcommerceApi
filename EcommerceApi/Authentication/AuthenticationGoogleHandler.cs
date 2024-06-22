@@ -25,7 +25,7 @@ namespace EcommerceApi.Authentication
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            var endpoint = _httpContext.HttpContext.GetEndpoint();
+            var endpoint = _httpContext.HttpContext!.GetEndpoint();
             if (endpoint?.Metadata?.GetMetadata<IAllowAnonymous>() != null)
             {
                 return AuthenticateResult.NoResult();

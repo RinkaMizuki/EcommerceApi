@@ -15,15 +15,18 @@ namespace EcommerceApi.Middlewares
             if(defaultAuthResult.Failure is HttpStatusException)
             {
                 var RevokeTokenException = (HttpStatusException)defaultAuthResult.Failure;
-                context.Response.Clear();
-                context.Response.ContentType = "text/plain";
-                context.Response.StatusCode = (int)RevokeTokenException.Status!;
-                await context.Response.WriteAsJsonAsync(new
+                if((int)RevokeTokenException.Status! == 403)
                 {
-                    message = RevokeTokenException.Message,
-                    statusCode = RevokeTokenException.Status
-                });
-                return;
+                    context.Response.Clear();
+                    context.Response.ContentType = "text/plain";
+                    context.Response.StatusCode = (int)RevokeTokenException.Status!;
+                    await context.Response.WriteAsJsonAsync(new
+                    {
+                        message = RevokeTokenException.Message,
+                        statusCode = RevokeTokenException.Status
+                    });
+                    return;
+                }
             }
 
             if ((!defaultAuthResult.Succeeded && !fbAuthResult.Succeeded && !ggAuthResult.Succeeded) && (!defaultAuthResult.None || !fbAuthResult.None || !ggAuthResult.None))
