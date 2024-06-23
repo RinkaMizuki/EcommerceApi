@@ -132,13 +132,6 @@ namespace EcommerceApi.Services.ProductService
                     filterValues.Add(ProductFilterType.Suggest);
                     filterValues.Add("");
                 }
-
-                if (!filterValues.Contains(ProductFilterType.Random))
-                {
-                    filterValues.Add(ProductFilterType.Random);
-                    filterValues.Add("8");
-                }
-
                 if(!filterValues.Contains(ProductFilterType.Total))
                 {
                     filterValues.Add(ProductFilterType.Total);
@@ -207,7 +200,6 @@ namespace EcommerceApi.Services.ProductService
                 var searchValue = filterValues[filterValues.IndexOf(ProductFilterType.Search) + 1].ToLower();
                 var sale = filterValues[filterValues.IndexOf(ProductFilterType.Sale) + 1].ToLower();
                 var forYou = filterValues[filterValues.IndexOf(ProductFilterType.Suggest) + 1].ToLower();
-                var numberRandom = Convert.ToInt32(filterValues[filterValues.IndexOf(ProductFilterType.Random) + 1].ToLower());
                 var favorites = new List<Guid>();
 
 
@@ -270,7 +262,7 @@ namespace EcommerceApi.Services.ProductService
                 }
 
                 if (!string.IsNullOrEmpty(forYou)) {
-                    listProduct = Helpers.GetRandomElements(listProduct, numberRandom);
+                    listProduct = Helpers.GetRandomElements(listProduct);
                 }
                 if(!string.IsNullOrEmpty(sortString))
                 {

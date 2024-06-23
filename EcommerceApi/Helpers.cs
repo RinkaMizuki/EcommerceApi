@@ -98,10 +98,15 @@ namespace EcommerceApi
             response.Headers.Append("Content-Range", $"{type} {rangeValues[0]}-{rangeValues[1]}/{totalCount}");
             return list;
         }
-        public static List<T> GetRandomElements<T>(List<T> list, int count)
+        public static List<T> GetRandomElements<T>(List<T> list)
         {
-            Random random = new ();
-            return list.OrderBy(item => random.Next()).Take(count).ToList();
+            var today = DateTime.Today;
+
+            // Tính toán seed dựa trên ngày hiện tại
+            int seed = today.Year * 10000 + today.Month * 100 + today.Day;
+            var random = new Random(seed);
+
+            return list.OrderBy(item => random.Next()).ToList();
         }
 
         public static int CalcPriceSale(decimal price, int percent)
