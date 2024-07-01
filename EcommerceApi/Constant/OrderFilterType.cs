@@ -13,5 +13,6 @@
         public const string Ordered = "ordered";
         public const string Delivered = "delivered";
         public const string MinAmount = "minAmount";
+        public const string OrderedOrDelivered = "ordered || delivered";
     }
 }

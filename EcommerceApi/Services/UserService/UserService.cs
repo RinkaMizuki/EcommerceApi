@@ -26,7 +26,10 @@ public class UserService : IUserService
     private readonly UserFilterBuilder _userFilterBuilder;
     private readonly CloudflareR2Config _cloudFlareOption;
 
-    public UserService(EcommerceDbContext context, ICloudflareClientService cloudflareClient, IOptions<CloudflareR2Config> cloudFlareOption, UserFilterBuilder userFilterBuilder)
+    public UserService(EcommerceDbContext context, 
+        ICloudflareClientService cloudflareClient, 
+        IOptions<CloudflareR2Config> cloudFlareOption,
+        UserFilterBuilder userFilterBuilder)
     {
         _context = context;
         _cloudflareClient = cloudflareClient;
@@ -68,6 +71,10 @@ public class UserService : IUserService
                 .Where(u => u.UserName == newUser.UserName)
                 .FirstOrDefaultAsync(userCancellationToken);
             return userResponse!;
+        }
+        catch (HttpStatusException hse)
+        {
+            throw new HttpStatusException(hse.Status, hse.Message);
         }
         catch (Exception ex)
         {
@@ -343,11 +350,16 @@ public class UserService : IUserService
     {
         try
         {
+            var isExistedPhone = await _context
+                                               .Users
+                                               .AnyAsync(u => u.Phone.Equals(userProfileDto.Phone) && !u.UserId.Equals(userId), userCancellationToken);
+            if (isExistedPhone) throw new HttpStatusException(HttpStatusCode.Conflict, "The phone number is already used by another account.");
+
             var userProfile = await _context
                                             .Users
                                             .Where(u => u.UserId.Equals(userId))
                                             .FirstOrDefaultAsync(userCancellationToken)
-                                            ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User profile not found.");
+                                            ?? throw new HttpStatusException(HttpStatusCode.NotFound, "User not found.");
 
             if (userProfileDto?.Avatar?.FileName != userProfile.Avatar && userProfileDto?.Avatar is not null)
             {
@@ -392,7 +404,11 @@ public class UserService : IUserService
             };
 
         }
-        catch(Exception ex)
+        catch (HttpStatusException hse)
+        {
+            throw new HttpStatusException(hse.Status, hse.Message);
+        }
+        catch (Exception ex)
         {
             throw new HttpStatusException(HttpStatusCode.BadRequest, ex.Message);
         }
@@ -463,12 +479,6 @@ public class UserService : IUserService
             updateUser.Phone = userAdminDto.Phone ?? "";
             updateUser.BirthDate = Convert.ToDateTime(userAdminDto.BirthDate.ToLongDateString());
             updateUser.ModifiedAt = DateTime.Now;
-
-            //if (!string.IsNullOrEmpty(userAdminDto.Password) && currentUserRole == "admin")
-            //{
-            //    updateUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(userAdminDto.Password);
-            //}
-
             updateUser.EmailConfirm = userAdminDto.EmailConfirm;
             updateUser.IsActive = userAdminDto.IsActive;
             await _context.SaveChangesAsync(userCancellationToken);

@@ -16,7 +16,8 @@ namespace EcommerceApi.Authentication
     {
         private readonly ISsoService _ssoService;
         private readonly IHttpContextAccessor _httpContext;
-        public AuthenticationGoogleHandler(IHttpContextAccessor httpContext, ISsoService ssoService, IOptionsMonitor<TokenAuthSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock) 
+        public AuthenticationGoogleHandler(IHttpContextAccessor httpContext, ISsoService ssoService,
+            IOptionsMonitor<TokenAuthSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock) 
             : base(options, logger, encoder, clock)
         {
             _ssoService = ssoService;

@@ -19,7 +19,8 @@ namespace EcommerceApi.Authentication
         private readonly IRedisService _redisService;
         private readonly IHttpContextAccessor _httpContext;
 
-        public AuthenticationDefaultHandler(IHttpContextAccessor httpContext, ISsoService ssoService, IRedisService redisService, IOptionsMonitor<TokenAuthSchemeOptions> options,
+        public AuthenticationDefaultHandler(IHttpContextAccessor httpContext, ISsoService ssoService,
+            IRedisService redisService, IOptionsMonitor<TokenAuthSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder, ISystemClock clock) : base(options, logger, encoder, clock)
         {

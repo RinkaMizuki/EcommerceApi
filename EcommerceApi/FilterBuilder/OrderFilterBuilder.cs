@@ -28,6 +28,11 @@ namespace EcommerceApi.FilterBuilder
                 {
                     _filterOptions.Add(od => od.Status.ToLower().Equals(status));
                 }
+                else if (status == OrderFilterType.OrderedOrDelivered)
+                {
+                    string[] statuses = status.Split("||");
+                    _filterOptions.Add(od => (od.Status.ToLower().Equals(statuses[0].Trim()) || od.Status.ToLower().Equals(statuses[1].Trim())) && !od.Returned);
+                }
                 else
                 {
                     _filterOptions.Add(od => od.Status.ToLower().Equals(status));//shipped

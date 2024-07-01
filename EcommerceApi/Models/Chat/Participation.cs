@@ -13,6 +13,5 @@ namespace EcommerceApi.Models.Chat
         public Conversation Conversation { get; set; }
         public DateTime JoinedAt { get; set; }
         public Guid AdminId { get; set; }
-        public string Email { get; set; } = string.Empty;
     }
 }

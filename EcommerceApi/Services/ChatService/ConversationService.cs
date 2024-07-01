@@ -117,7 +117,6 @@ namespace EcommerceApi.Services.ChatService
                                                             Title = pp.Conversation.Title,
                                                         },
                                                         AdminId = pp.AdminId,
-                                                        Email = pp.Email,
                                                         JoinedAt = pp.JoinedAt,
                                                         User = pp.User,
                                                         UserId = pp.UserId,
@@ -154,7 +153,6 @@ namespace EcommerceApi.Services.ChatService
                     ConversationId = newConversation.ConversationId,
                     JoinedAt = DateTime.UtcNow,
                     UserId = conversationDto.UserId,
-                    Email = conversationDto.Email,
                     User = user,
                     AdminId = conversationDto.AdminId,
                 };

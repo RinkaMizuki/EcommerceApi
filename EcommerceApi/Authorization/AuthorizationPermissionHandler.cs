@@ -12,7 +12,7 @@ namespace EcommerceApi.Attributes
         }
         private bool IsAdmin(IAuthorizationRequirement requirement)
         {
-           var claimsPrincipal = _httpContext.HttpContext!.User;
+            var claimsPrincipal = _httpContext.HttpContext!.User;
             var require = requirement as AdminAccessApiRequirement;
             var correctRole = claimsPrincipal.HasClaim(c =>
                 c.Type == "Role" && c.Value == require!.Role

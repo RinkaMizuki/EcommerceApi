@@ -1,6 +1,5 @@
 ﻿using EcommerceApi.ExtensionExceptions;
 using Microsoft.AspNetCore.Authentication;
-using System;
 
 namespace EcommerceApi.Middlewares
 {
@@ -9,8 +8,8 @@ namespace EcommerceApi.Middlewares
         public async Task InvokeAsync(HttpContext context, RequestDelegate next)
         {
             var defaultAuthResult = await context.AuthenticateAsync("SsoDefaultSchema");
-            var fbAuthResult = await context.AuthenticateAsync("SsoFacebookSchema");
-            var ggAuthResult = await context.AuthenticateAsync("SsoGoogleSchema");
+            //var fbAuthResult = await context.AuthenticateAsync("SsoFacebookSchema");
+            //var ggAuthResult = await context.AuthenticateAsync("SsoGoogleSchema");
 
             if(defaultAuthResult.Failure is HttpStatusException)
             {
@@ -28,8 +27,8 @@ namespace EcommerceApi.Middlewares
                     return;
                 }
             }
-
-            if ((!defaultAuthResult.Succeeded && !fbAuthResult.Succeeded && !ggAuthResult.Succeeded) && (!defaultAuthResult.None || !fbAuthResult.None || !ggAuthResult.None))
+            // && !fbAuthResult.Succeeded && !ggAuthResult.Succeeded  || !fbAuthResult.None || !ggAuthResult.None
+            if ((!defaultAuthResult.Succeeded) && (!defaultAuthResult.None))
             {
                 context.Response.Clear();
                 context.Response.ContentType = "text/plain";

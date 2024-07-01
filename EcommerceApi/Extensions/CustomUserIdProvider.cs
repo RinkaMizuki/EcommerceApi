@@ -6,7 +6,7 @@ namespace EcommerceApi.Extensions
     {
         public string? GetUserId(HubConnectionContext connection)
         {
-            return connection.User.Claims.FirstOrDefault(claim => claim.Type == "Email")!.Value;
+            return connection.User.Claims.FirstOrDefault(claim => claim.Type == "UserId")!.Value;
         }
     }
 }

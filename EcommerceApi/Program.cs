@@ -167,18 +167,19 @@ builder.Services.AddCors(options =>
 builder.Services.AddAuthentication().AddScheme<TokenAuthSchemeOptions, AuthenticationDefaultHandler>(
     "SsoDefaultSchema",
     opts => { }
-).AddScheme<TokenAuthSchemeOptions, AuthenticationFacebookHandler>(
-    "SsoFacebookSchema",
-    opts => { }
-).AddScheme<TokenAuthSchemeOptions, AuthenticationGoogleHandler>(
-    "SsoGoogleSchema",
-    opts => { }
 );
+//.AddScheme<TokenAuthSchemeOptions, AuthenticationFacebookHandler>(
+//    "SsoFacebookSchema",
+//    opts => { }
+//).AddScheme<TokenAuthSchemeOptions, AuthenticationGoogleHandler>(
+//    "SsoGoogleSchema",
+//    opts => { }
+//);
 builder.Services.AddAuthorization(options =>
 {
     options.DefaultPolicy = new AuthorizationPolicyBuilder() //default [Authorize]
             .RequireAuthenticatedUser()
-            .AddAuthenticationSchemes("SsoDefaultSchema", "SsoFacebookSchema", "SsoGoogleSchema") //custom Facebook, Google Schema 
+            .AddAuthenticationSchemes("SsoDefaultSchema") //custom Facebook, Google Schema 
             .Build();
     options.AddPolicy("SsoAdmin", new AuthorizationPolicyBuilder()
             .RequireAuthenticatedUser()
@@ -206,8 +207,12 @@ if (app.Environment.IsDevelopment())
         }
     });
 }
+else
+{
+    app.UseHsts();
+    app.UseHttpsRedirection(); //For production mode
+}
 
-app.UseHttpsRedirection();
 app.UseDetection();
 app.UseCors("MyAllowSpecificOrigins");
 
